@@ -1,4 +1,5 @@
-# smash -- modular reproducible research environment manager
+# smash
+modular reproducible research environment manager
 
 --------------------------------------------------------------------------
 
