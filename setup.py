@@ -29,7 +29,7 @@ setup(
     version         = __version__,
 
     description     = __description__,
-    url             = 'https://github.com/philipov/cogwright',
+    url             = 'https://github.com/philipov/smash',
 
     author          = 'Philip Loguinov',
     author_email    = 'philipov@gmail.com',
