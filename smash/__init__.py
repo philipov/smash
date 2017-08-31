@@ -5,9 +5,9 @@ An integrated environment for reproducible research and development: from idea t
 """
 
 __setup__ = dict(
-    name    ='smash',
-    packages=['smash', 'smash.sys', 'smash.ext'],
-    version ='0.0.1',
+    name     = 'smash',
+    packages = ['smash', 'smash.sys', 'smash.ext'],
+    version  = '0.0.1',
 
     description=__doc__,
     url='https://github.com/philipov/smash',
@@ -22,7 +22,7 @@ __setup__ = dict(
     requires=[
         'psutil',
         'ruamel.yaml',
-        'ordered-set',
+        'ordered_set',
 
         'colored_traceback',
         'colorama',
@@ -44,8 +44,8 @@ __setup__ = dict(
         'Operating System :: Microsoft :: Windows :: Windows 7',
         'Operating System :: POSIX :: Linux',
 
-        'Programming Language :: Python :: 3.6',
-    ],
+        'Programming Language :: Python :: 3.6'
+    ]
 )
 
 __version__ = __setup__['version']
@@ -58,6 +58,7 @@ __test_setup__= dict(
 #----------------------------------------------------------------------#
 
 from .cmdline import parse as parse_cmdline
+
 from .__main__ import main
 from .__main__ import run
 

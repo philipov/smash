@@ -13,9 +13,6 @@ debug = lambda *a, **b : print( "".join( str( arg ) for arg in a ) )
 info  = lambda *a, **b : print( "".join( str( arg ) for arg in a ) )
 # debug = lambda *a, **b : None
 
-
-
-debug('a')
 ################################
 
 import os

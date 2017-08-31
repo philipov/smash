@@ -15,7 +15,6 @@ import colorama
 colorama.init()
 import colored_traceback
 colored_traceback.add_hook()
-
 ###
 import logging
 log = logging.getLogger( name='smash.__main__' )
@@ -33,6 +32,7 @@ __all__ = []
 
 from . import cmdline
 from . import modes
+
 from .sys.config import ConfigTree
 
 
