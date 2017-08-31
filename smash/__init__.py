@@ -5,21 +5,18 @@ An integrated environment for reproducible research and development: from idea t
 """
 
 __setup__ = dict(
-    name     = 'smash',
-    packages = ['smash', 'smash.sys', 'smash.ext'],
-    version  = '0.0.2',
+    name            = 'smash',
+    packages        = ['smash', 'smash.sys', 'smash.ext'],
+    version         = '0.0.2',
+    description     = __doc__,
 
-    description=__doc__,
-    url='https://github.com/philipov/smash',
-
-    author='Philip Loguinov',
-    author_email='philipov@gmail.com',
-
-    entry_points={
+    url             = 'https://github.com/philipov/smash',
+    author          = 'Philip Loguinov',
+    author_email    = 'philipov@gmail.com',
+    entry_points    = {
         'console_scripts' : ['smash=smash:run'],
     },
-
-    requires=[
+    requires        = [
         'psutil',
         'ruamel.yaml',
         'ordered_set',
@@ -28,8 +25,7 @@ __setup__ = dict(
         'colorama',
         'termcolor'
     ],
-
-    classifiers=[
+    classifiers     = [
         'Environment :: Console',
         'Environment :: Other Environment',
 

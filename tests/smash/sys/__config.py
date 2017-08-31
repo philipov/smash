@@ -117,9 +117,10 @@ def test__Config_from_env( path_env00_config, configtree ) :
 def test__Config_magic( path_env00_config, configtree ) :
     config = configtree[path_env00_config]
     print( '\nconfig.magic' )
-    print( config.magic['__inherits__'][0] )
+    print( config.magic['__inherits__'] )
 
     # assert False
+
 
 #----------------------------------------------------------------------#
 

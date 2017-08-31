@@ -5,19 +5,19 @@ path-related utility functions
 """
 
 
+import logging
+log = logging.getLogger( name="smash.sys.path" )
+debug = print
+info = print
+
+################################
 import contextlib
 import os
 from copy import deepcopy
 from pathlib import Path
 from itertools import chain
 
-import logging
-log     = logging.getLogger( name="smash.sys.path" )
-#debug   = lambda *a, **b : log.debug( "".join( str( arg ) for arg in a ) )
-#info    = lambda *a, **b : log.info(  "".join( str( arg ) for arg in a ) )
-debug   = print
-info    = print
-# log.debug = lambda *a, **b : None
+
 
 from glob import iglob, glob
 

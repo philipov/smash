@@ -12,6 +12,8 @@ logging.basicConfig( level=logging.DEBUG )
 log.debug = print
 # log.debug = lambda *a, **b : None
 
+################################
+from pathlib import Path
 
 #----------------------------------------------------------------------#
 
@@ -26,5 +28,17 @@ def export( obj ) :
 
 #----------------------------------------------------------------------#
 
+def register_script_to_context_menu( ) :
+    # http://support.microsoft.com/kb/310516
+    cmd_line = 'regedit.exe registerOne.reg'
+    import os
+    os.system( cmd_line )
+
+#----------------------------------------------------------------------#
+
+def install_configsystem( install_root: Path, force=False ) :
+    if install_root.exists( ) :
+        # todo: make backup
+        pass
 
 #----------------------------------------------------------------------#

@@ -7,11 +7,8 @@ callback functions implementing the action selected by the first command-line pa
 import logging
 log = logging.getLogger( name="smash.modes" )
 logging.basicConfig( level=logging.DEBUG )
-# debug   = lambda *a, **b : log.debug( "".join( str( arg ) for arg in a ) )
-# info    = lambda *a, **b : log.info(  "".join( str( arg ) for arg in a ) )
 debug = print
 info = print
-# debug = lambda *a, **b : None
 
 import sys
 import os
@@ -65,7 +62,7 @@ def do_build( *target, workdir, configs, verbose=False ):
 @export
 def do_install( *target, workdir, configs, verbose=False ):
     info( "Create new system root in target directory" )
-    from .sys.install import install_configsystem
+    from .sys.env import install_configsystem
     install_root = Path(target[0])
     return install_configsystem(install_root)
 
