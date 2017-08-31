@@ -1,13 +1,13 @@
 #-- smash.__init__
 
-"""   Smart Shell ---
+"""--- Smart Shell
 An integrated environment for reproducible research and development: from idea to production.
 """
 
 __setup__ = dict(
     name     = 'smash',
     packages = ['smash', 'smash.sys', 'smash.ext'],
-    version  = '0.0.1',
+    version  = '0.0.2',
 
     description=__doc__,
     url='https://github.com/philipov/smash',
