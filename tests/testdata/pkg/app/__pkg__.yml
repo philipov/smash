@@ -1,4 +1,17 @@
-# __pkg__.yml -- entry point for package config
+# __root__.yml -- define config system
 ##########################################################
+
+__name__:         app/demo00
+__protocol__:     0
+__version__:      0.0.0
+
+__inherit__:
+  - ${pkg:LIB}/__pkg__.yml
+
+
+##########################################################
+path:
+
+  PKG_ROOT:                 ${ROOT}/pkgs/lib
 
 ##########################################################

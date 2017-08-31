@@ -62,7 +62,7 @@ def do_build( *target, workdir, configs, verbose=False ):
 @export
 def do_install( *target, workdir, configs, verbose=False ):
     info( "Create new system root in target directory" )
-    from .sys.env import install_configsystem
+    from .sys.manager import install_configsystem
     install_root = Path(target[0])
     return install_configsystem(install_root)
 

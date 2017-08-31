@@ -17,9 +17,10 @@ from copy import deepcopy
 from pathlib import Path
 from itertools import chain
 
-
-
 from glob import iglob, glob
+
+# ToDo: Path-addressable Dictionary
+
 
 #----------------------------------------------------------------------#
 
@@ -66,7 +67,6 @@ def find_yamls(target_path:Path):
         yaml_filepaths = list(chain(yaml_filepaths,
                                     *( find_yamls( path ) for path in subdirectories_of(target_path) )
                                 ))
-
     return yaml_filepaths
 
 
@@ -162,4 +162,5 @@ def fix_paths( struct, working_directory: Path ) :
 #----------------------------------------------------------------------#
 
 
-# ToDo: Path-addressable Dictionary
+
+#----------------------------------------------------------------------#

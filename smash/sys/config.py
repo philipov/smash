@@ -60,6 +60,24 @@ def getdeepitem( data, keys ) :
     return reduce( lambda d, key : d.setdefault( key, OrderedDict( ) ) if not isinstance(d, list) else d[key], keys, data )
 
 
+class GreedyOrderedSet(OrderedSet):
+    '''OrderedSet that keeps the last value added to it instead of the first.'''
+
+    def add( self, key ) :
+        """ Add `key` as an item to this OrderedSet, then return its index.
+            If `key` is already in the OrderedSet, delete it and add it again.
+        """
+
+        if key not in self.map :
+            self.map[key] = len( self.items )
+            self.items.append( key )
+        else:
+            self.discard(key)
+            self.add(key)
+        return self.map[key]
+
+    append = add
+
 #----------------------------------------------------------------------#
 
 @export
@@ -224,7 +242,7 @@ class ConfigTree:
 
     @property
     def envfile( self ) :
-        return '__env__\.yml'
+        return '__env__.yml'
 
     ####################
     def find_nodes( self, pattern ) :
@@ -277,7 +295,7 @@ class ConfigTree:
         try:
             return self.nodes[self.env_path / self.envfile]
         except KeyError as e:
-            #debug('KeyError:', e)
+            debug('KeyError:', e)
             return self.root
 
 
@@ -362,7 +380,7 @@ class Config:
         self._final_cache   = OrderedDict( )
 
         self.tree       = tree
-        self._parents   = OrderedSet()    # 'inherit' parents; always inherit from tree.root
+        self._parents   = GreedyOrderedSet()    # 'inherit' parents; always inherit from tree.root
 
 
     ####################
@@ -413,10 +431,13 @@ class Config:
 
         try:
             parent_paths = self._yaml_data['__inherit__']
+            parsed_paths = ConfigSectionView(self.tree.root).evaluate_list('__inherit__', parent_paths)
+            #todo: this means that ConfigSectionView needs refactoring
+            print('PARSED~~~~~',parsed_paths)
         except KeyError as e:
-            parent_paths = list()
+            parsed_paths = list()
 
-        return parent_paths
+        return parsed_paths
 
 
     @property
@@ -428,13 +449,13 @@ class Config:
             parents.append( parent )
             parents.extend( parent.parents )
 
-        return OrderedSet(chain( parents, [self.tree.root] ))
+        return GreedyOrderedSet(chain( parents, [self.tree.root] ))
 
     ####################
     @property
     def key_resolution_order(self):
         # todo: !!! This needs to be in order of last-duplicate -- parents follow all children
-        return OrderedSet(chain( [self], self.parents ))
+        return GreedyOrderedSet(chain( [self], self.parents ))
 
 
     ####################
@@ -459,10 +480,6 @@ class Config:
     def __getitem__( self, section_name ) :
         return ConfigSectionView( self, section_name )
 
-    @property
-    def magic(self):
-        return ConfigSectionView(self)
-
 
     ####################
     def setdefault( self, key, default ):
@@ -486,10 +503,13 @@ class ConfigSectionView :
         search config parents for keys if not found in the current one
         perform token substitution, expression evaluation, and path resolution on raw scalar values
     '''
+
+    ####################
     def __init__( self, config:Config, *names ) :
         self.config = config
         self.section_keys = names
         self.parse_counter = 0
+
 
     ####################
     def __str__( self ) :
@@ -497,6 +517,8 @@ class ConfigSectionView :
             '<', self.__class__.__name__, ': ', self.config.name, ' \'', self.section_keys, '\'>'
         ])
 
+
+    ####################
     def keys( self ) :
         key_union = set()
         for node in self.config.key_resolution_order :
@@ -511,11 +533,21 @@ class ConfigSectionView :
         # for node in self.config.key_resolution_order():
         #     print(str(node))
 
+
+    ####################
+    def setdefault( self, key, default ) :
+        ''' support for getdeepitem on Config object'''
+        try :
+            return self[key]
+        except KeyError :
+            return getdeepitem( self.config._yaml_data, self.section_keys ).setdefault( key, default )
+
+
     ####################
     def __getitem__( self, key ) :
         ''' obtain the 'flat' value of the key in the configtree, from the point of view of the current config
             if the current config contains the key, evaluate it and store it in a cache
-            if the value is a list, evaluate each element of the list
+            if the value is a list, evaluate each element of the list and return the parsed list
             if we need to look in a different node for the key, the process recurses from the point of view of that node
             paths are resolved relative to the path of the file they're defined in, so '.' means the current file's path.
             supports dictionaries inside dictionaries by returning nested ConfigSectionView objects
@@ -531,66 +563,71 @@ class ConfigSectionView :
             return final_value
 
         # check current node
-        print("find_item")
+        print("find_item", self.section_keys, key)
         try:
             raw_value = getdeepitem( self.config._yaml_data, self.section_keys )[key]
         except KeyError:
             raw_value = None
         else:
-            if isinstance( raw_value, dict ) :
+            if isinstance( raw_value, dict ) :                                                  # Dict Value Found
                 print( 'config_view', key )
                 configview = ConfigSectionView( self.config, *self.section_keys, key )
                 return configview
 
-            elif isinstance( raw_value, list ) :
+            elif isinstance( raw_value, list ) :                                                # List Value Found
                 print( 'list' )
-                parsed_list = []
-                for (i, value) in enumerate(raw_value) :
-                    if isinstance(value, list) or isinstance(value, dict):
-                        new_value = ConfigSectionView( self.config, *self.section_keys, key, i )
-                    else:
-                        new_value = self.evaluate( key, value )
-
-                    parsed_list.append( new_value )
+                parsed_list = self.evaluate_list(key, raw_value)
 
                 print( out.cyan('~~~Cache List Result'), self.section_keys, key, parsed_list )
-                getdeepitem( self.config._final_cache, self.section_keys )[key] = parsed_list   # CACHE LIST
+                getdeepitem( self.config._final_cache, self.section_keys )[key] = parsed_list   # CACHE LIST ###
                 return parsed_list
 
-            else :
+            else :                                                                              # Scalar Value Found
                 final_value = self.evaluate( key, raw_value )
 
                 print( out.cyan('~~~Cache Scalar Result'), self.section_keys, key, final_value )
-                getdeepitem( self.config._final_cache, self.section_keys )[key] = final_value   # CACHE VALUE
+                getdeepitem( self.config._final_cache, self.section_keys )[key] = final_value   # CACHE VALUE ###
                 return final_value
 
 
         # check parents
-        print('MISSING IN', self.config.filepath)
+        print('MISSING IN', self.config.filepath, 'keys', self.section_keys)
         for node in self.config.parents:
+            # print("look in parent:", node)
+            if node is self.config:
+                continue
             try:
                 parent_value = getdeepitem( node, self.section_keys )[key]
             except KeyError:
-                print("MISSING IN ", node.filepath)
+                # print("MISSING IN ", node.filepath)
                 continue
             else:
-                print(out.blue('parent_value:'), self.section_keys, key, parent_value)
+                print(out.blue('parent_value:'), self.section_keys, key, parent_value, self.config.filepath)
                 return parent_value
 
         # not found
         raise KeyError(str(key)+' not found.')
 
+
     ####################
-    def setdefault( self, key, default ) :
-        ''' support for getdeepitem on Config object'''
-        try :
-            return self[key]
-        except KeyError :
-            return getdeepitem( self.config._yaml_data, self.section_keys ).setdefault( key, default )
+    def evaluate_list(self, key, raw_list):
+        parsed_list = []
+        for (i, value) in enumerate( raw_list ) :
+            if isinstance( value, list ) or isinstance( value, dict ) :
+                new_value = ConfigSectionView( self.config, *self.section_keys, key, i )
+            else :
+                new_value = self.evaluate( key, value )
+            parsed_list.append( new_value )
+        return parsed_list
 
 
     ####################
-    def evaluate(self, key, value):
+    def evaluate(self, key, value) -> str:
+        ''' parse a raw value
+            perform regex substitution on ${} token expressions until there are none left
+            then attempt to resolve the result relative to the config file's path
+        '''
+
         new_value=value
         total_count = 1
 
@@ -602,6 +639,7 @@ class ConfigSectionView :
         final_value = try_resolve(new_value, self.config.path)
 
         return final_value  # todo: DifferedPath
+
 
     ####################
     def substitute( self, key, value: str ) :
@@ -623,14 +661,22 @@ class ConfigSectionView :
 
     ####################
     def expression_parser( self, key ) :
-        counter = [0]
+        ''' factory that creates a replacement function to be used by regex subn
+            process ${configpath@section:key} token expressions:
+            -    key:        look up value in target node
+            -    sections:   [optional] key is in a sibling section
+            -    configpath: [optional] key is in a different file
 
+            a token specifies a key that is to be looked up in a certain config node.
+            If no section is specified, the same section the key is found in is searched.
+            If no configpath is specified, the same file is assumed, except in the case of a self-referential key
+            lookup for self-referential keys looks directly in the config's first parent.
+            if configpath is specified, the parent list pseudo-chainmap behavior is still respected.
+            if section or sections (section1:section2:section3) are specified, look in those sections
+        '''
+
+        counter = [0]
         def expression_replacer( matchobj ) :
-            """ process ${filename@section:key} expressions:
-                key:        look up value in target node
-                sections:   [optional] key is in a sibling section
-                configpath: [optional] key is in a different file
-            """
 
             target_configpath   = matchobj.group( 'configpath' ) \
                 if (matchobj.group( 'configpath' ) is not None) \
@@ -641,20 +687,29 @@ class ConfigSectionView :
             target_key          = matchobj.group( 'key' )
 
             self.parse_counter += 1
-            debug( '>'*20, " MATCH ", target_configpath, ' ', target_sections, ' ', target_key, ' ', self.section_keys )
+            debug( '>'*20, " MATCH ", target_configpath, ' ', target_sections, ' ', target_key, ' | ', key, ' ',  self.section_keys )
             debug( matchobj.groups( ) )
 
-            section_keys = [*target_sections, target_key]
-            result = getdeepitem(self.config.tree[target_configpath], section_keys)
+            section_keys    = [*target_sections, target_key]
+            node            = self.config.tree[target_configpath]
 
+            # self-key references begin the search from the config's immediate parent
+            if key == target_key \
+                    and self.section_keys == target_sections \
+                    and self.config.filepath == target_configpath:
+                node = node.parents[0]
+
+            result = getdeepitem(node, section_keys)
             return result
 
+        ###
         expression_replacer.counter = counter
-
         return expression_replacer
+
 
 #----------------------------------------------------------------------#
 
+#todo: delayed key evaluation syntax -- causes a parent value to have its token expressions evaluated from the child's point of view
 token_expression_regex = re.compile(
     r"""\${                                  # ${
             ((?P<configpath>[^${}]+?)@)?     #   configpath@         [optional]

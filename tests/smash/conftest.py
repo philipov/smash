@@ -96,7 +96,7 @@ def path_host_config( path_host ) :
 
 @pytest.fixture( scope="session" )
 def path_network( path_testdata ) :
-    return path_testdata/'pkg'/'network'
+    return path_testdata/'pkg'/'net'
 
 @pytest.fixture( scope="session" )
 def path_network_config( path_network ) :

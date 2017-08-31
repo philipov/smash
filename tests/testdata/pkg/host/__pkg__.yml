@@ -6,7 +6,8 @@ __protocol__:     0
 __version__:      0.0.0
 
 __inherit__:
-  - C:\dev\projects\philipov\smash\tests\__tmp__\env0\testdata\pkg\data\__pkg__.yml
+  - ${pkg:DATA}\__pkg__.yml
+  - ${pkg:NET}\__pkg__.yml
 
 ##########################################################
 path:
@@ -22,8 +23,10 @@ path:
 shell:
   BUILD_VERSION:            20170615211806   #BUILD_20170413232505 #ToDo: this doesn't inherit properly
   PYTHONHOME:               ${path:PYTHONHOME}
+  REMOTE_URL:               ${server:DATA}
 
   TEST2:                    [path, ., "${INPUT_DIR}"]
+  RECVAL:                   HELLO
 
   PATH:
     - ~~path~~

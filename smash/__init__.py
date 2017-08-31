@@ -13,6 +13,7 @@ __setup__ = dict(
     url             = 'https://github.com/philipov/smash',
     author          = 'Philip Loguinov',
     author_email    = 'philipov@gmail.com',
+
     entry_points    = {
         'console_scripts' : ['smash=smash:run'],
     },

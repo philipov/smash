@@ -21,15 +21,40 @@ def test__Config( ) :
 
     # assert False
 
+#----------------------------------------------------------------------#
+
+def test__ConfigSectionView( conftree ) :
+    from smash.sys.config import Config
+    from smash.sys.config import getdeepitem
+    from collections import OrderedDict
+    config = Config( tree=conftree )
+    config._yaml_data = OrderedDict( )
+    config._yaml_data[1] = OrderedDict( )
+    config._yaml_data[1][2] = OrderedDict( )
+    config._yaml_data[1][2][3] = OrderedDict( )
+    config._yaml_data[1][2][3][4] = OrderedDict( )
+    config._yaml_data[1][2][3][4][5] = 6
+    keys = [1, 2, 3, 4, 5]
+
+    value0 = getdeepitem( config._yaml_data, keys )
+    assert value0 == 6
+
+    value1 = config[1][2][3][4][5]
+    assert value1 == '6'
+
+    value2 = getdeepitem( config, keys )
+
+    assert value2 == '6'
+
+    # assert False
+
 
 #----------------------------------------------------------------------#
 
 @pytest.fixture( scope='session' )
-def configtree( path_root_config ) :
+def conftree( path_root_config ) :
     from smash import ConfigTree
-
-    configs = ConfigTree( )
-    return configs
+    return ConfigTree()
 
 
 ####################
@@ -55,40 +80,68 @@ def try_Config( config ) :
 
 
 ####################
-def test__Config_from_root( path_root_config, configtree ):
+def test__Config_from_root( path_root_config, conftree ):
     from smash.sys.config import Config
 
-    config = Config.from_yaml( path_root_config, tree=configtree )
-    configtree.root = config
-
-    config = try_Config( config )
-    # assert False
-
-def test__Config_from_data( path_data_config, configtree ) :
-    from smash.sys.config import Config
-
-    config = Config.from_yaml( path_data_config, tree=configtree )
-
-    config = try_Config( config )
-    # assert False
-
-def test__Config_from_host( path_host_config, configtree ) :
-    from smash.sys.config import Config
-
-    config = Config.from_yaml( path_host_config, tree=configtree )
-
+    config = Config.from_yaml( path_root_config, tree=conftree )
+    conftree.root = config
     config = try_Config( config )
     # assert False
 
 
-def test__Config_from_env( path_env00_config, configtree ) :
+####################
+#todo: these can be parametrized
+
+
+
+def test__Config_from_net( path_network_config, conftree ) :
     from smash.sys.config import Config
-    import smash.sys.out as out
 
-    config = Config.from_yaml( path_env00_config, tree=configtree )
-
+    config = Config.from_yaml( path_network_config, tree=conftree )
     config = try_Config( config )
+    # assert False
 
+def test__Config_from_data( path_data_config, conftree ) :
+    from smash.sys.config import Config
+
+    config = Config.from_yaml( path_data_config, tree=conftree )
+    config = try_Config( config )
+    # assert False
+
+def test__Config_from_lib( path_lib_config, conftree ) :
+    from smash.sys.config import Config
+
+    config = Config.from_yaml( path_lib_config, tree=conftree )
+    config = try_Config( config )
+    # assert False
+
+def test__Config_from_app( path_app_config, conftree ) :
+    from smash.sys.config import Config
+
+    config = Config.from_yaml( path_app_config, tree=conftree )
+    config = try_Config( config )
+    # assert False
+
+def test__Config_from_host( path_host_config, conftree ) :
+    from smash.sys.config import Config
+
+    config = Config.from_yaml( path_host_config, tree=conftree )
+    config = try_Config( config )
+    # assert False
+
+def test__Config_from_env( path_env00_config, conftree ) :
+    from smash.sys.config import Config
+
+    config = Config.from_yaml( path_env00_config, tree=conftree )
+    config = try_Config( config )
+    # assert False
+
+####################
+
+
+def test__Config_env_fields( path_env00_config, conftree ) :
+    from smash.sys import out
+    config = conftree[path_env00_config]
 
     print( '\n${path:PATH1}   ', out.pink( config['path']['PATH1'] ))
     print( '\n${path:PATH2}   ', out.pink( config['path']['PATH2'] ))
@@ -111,45 +164,34 @@ def test__Config_from_env( path_env00_config, configtree ) :
 
     print( '\nconfig[path][SUBKEYS][KEY2]   ', config['path']['SUBKEYS']['KEY2'] )
 
+    print( '\n${shell:RECVAL}   ', out.pink( config['shell']['RECVAL'] ) )
+
     # assert False
 
 
-def test__Config_magic( path_env00_config, configtree ) :
-    config = configtree[path_env00_config]
+def test__Config_env_parents( path_env00_config, conftree ) :
+    from smash.sys import out
+    config = conftree[path_env00_config]
     print( '\nconfig.magic' )
-    print( config.magic['__inherits__'] )
+    first_parent = config['__inherit__'][0]
+
+    print(out.yellow('-'*40))
+    kro = config.key_resolution_order
+
+    print( out.yellow( '-' * 40 ) )
+    listprint(kro)
 
     # assert False
 
 
-#----------------------------------------------------------------------#
+def test__Config_env_fields2( path_env00_config, conftree ) :
+    from smash.sys import out
+    config = conftree[path_env00_config]
 
-def test__ConfigSectionView( configtree ) :
-
-    from smash.sys.config import Config
-    from smash.sys.config import getdeepitem
-    from collections import OrderedDict
-    config = Config( tree=configtree )
-    config._yaml_data = OrderedDict( )
-    config._yaml_data[1] = OrderedDict( )
-    config._yaml_data[1][2] = OrderedDict( )
-    config._yaml_data[1][2][3] = OrderedDict( )
-    config._yaml_data[1][2][3][4] = OrderedDict( )
-    config._yaml_data[1][2][3][4][5] = 6
-    keys = [1, 2, 3, 4, 5]
-
-    value0 = getdeepitem( config._yaml_data, keys )
-    assert value0 == 6
-
-    value1 = config[1][2][3][4][5]
-    assert value1 == '6'
-
-    value2 = getdeepitem( config, keys )
-
-    assert value2 == '6'
+    print( '\n${shell:REMOTE_URL}   ', out.pink( config['shell']['REMOTE_URL'] ) )
+    print( out.yellow( '-' * 40 ) )
 
     # assert False
-
 
 
 #----------------------------------------------------------------------#
@@ -166,67 +208,67 @@ def try_ConfigTree_from_path( target_path ) :
     print( 'PATH:    ', target_path )
 
     print( '' )
-    configs = ConfigTree.from_path( target_path )
-    print( 'configs', configs )
+    conftree = ConfigTree.from_path( target_path )
+    print( 'conftree', conftree )
 
     print('nodes')
-    pprint(configs.nodes)
+    pprint(conftree.nodes)
     print('root:            ', end='')
-    pprint(configs.root)
+    pprint(conftree.root)
     print('root_filepath:   ', end='')
-    pprint(configs.root_filepath)
+    pprint(conftree.root_filepath)
     print('env_path:        ', end='')
-    pprint(configs.env_path)
+    pprint(conftree.env_path)
     print('out_file:        ', end='')
-    pprint(configs.out_file)
+    pprint(conftree.out_file)
     print('raw_file:        ', end = '')
-    pprint(configs.raw_file)
+    pprint(conftree.raw_file)
 
     print('\nfind_nodes')
-    listprint( configs.find_nodes( '.*yml' ) )
+    listprint( conftree.find_nodes( '.*yml' ) )
 
     print( '\nenvlist' )
-    listprint( configs.envlist )
+    listprint( conftree.envlist )
 
     print( '\npackagelist' )
-    listprint( configs.packagelist )
+    listprint( conftree.packagelist )
 
-    print("\nconfigs.by_name")
-    dictprint(configs.by_name)
-    #print( '${00#__env__/shell:PYTHONHOME}:', configs.env['00']['shell']['PYTHONHOME'] )
+    print("\nconftree.by_name")
+    dictprint(conftree.by_name)
+    #print( '${00#__env__/shell:PYTHONHOME}:', conftree.env['00']['shell']['PYTHONHOME'] )
 
-    print( "\nconfigs.by_env" )
-    dictprint( configs.by_env )
+    print( "\nconftree.by_env" )
+    dictprint( conftree.by_env )
 
-    print( "\nconfigs.by_pkg" )
-    dictprint( configs.by_pkg )
+    print( "\nconftree.by_pkg" )
+    dictprint( conftree.by_pkg )
 
-    print( '\nconfigs.current_env' )
-    print( configs.current_env )
+    print( '\nconftree.current_env' )
+    print( conftree.current_env )
     print( '\nKRO         ' )
-    listprint( list( configs.current_env.key_resolution_order ) )
+    listprint( list( conftree.current_env.key_resolution_order ) )
 
-    print( '\n[path]      ', configs.current_env['path'])
-    print( '\n[path][ENVS]', configs.current_env['path']['ENVS'] )
+    print( '\n[path]      ', conftree.current_env['path'])
+    print( '\n[path][ENVS]', conftree.current_env['path']['ENVS'] )
 
-    print('\nsections     ', configs.current_env.sections)
+    print('\nsections     ', conftree.current_env.sections)
 
     # print('\nsubenv')
-    # subenv = configs.subenv(pure=True)
+    # subenv = conftree.subenv(pure=True)
     # print('~~~')
     # dictprint( subenv )
 
     print('\n~~~DONE~~~')
-    return configs
+    return conftree
 
 ###################
 def test__ConfigTree_from_root( path_testdata ) :
-    configs = try_ConfigTree_from_path( path_testdata )
+    conftree = try_ConfigTree_from_path( path_testdata )
     # assert False
 
 
-def test__ConfigTree_from_env( path_env00 ) :
-    configs = try_ConfigTree_from_path( path_env00 )
+def test__conftree_from_env( path_env00 ) :
+    conftree = try_ConfigTree_from_path( path_env00 )
     # assert False
 
 
