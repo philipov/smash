@@ -1,0 +1,36 @@
+# __root__.yml -- define config system
+##########################################################
+
+__protocol__:     0
+__version__:      0.0.0
+
+__name__:         smash
+__type__:         II
+
+__sections__:
+  __inherit__:    inherit
+  __import__:     import
+  path:           path
+  pkg:            __pkg__
+  shell:          none
+  main:           none
+
+__export__:
+  path:           environment
+  shell:          environment
+  main:           [key-equals-value main_config.txt]
+
+path:
+  ROOT:           .
+  ENVS:           ${ROOT}/env
+  PKGS:           ${ROOT}/pkg
+
+pkg:
+  APP:            ${path:PKGS}/app
+  LIB:            ${path:PKGS}/lib
+  DATA:           ${path:PKGS}/data
+  HOST:           ${path:PKGS}/host
+  NET:            ${path:PKGS}/net
+
+
+##########################################################

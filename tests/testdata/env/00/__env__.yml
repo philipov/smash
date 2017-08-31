@@ -1,0 +1,36 @@
+# __env__.yml -- entry point for environment config
+##########################################################
+
+__name__:         env/00
+__protocol__:     0
+__version__:      0.0.0
+
+__inherit__:
+  - C:\dev\projects\philipov\smash\tests\__tmp__\env0\testdata\pkg\host\__pkg__.yml
+
+path:
+  ROOT:           .
+  ENVS:           ${ROOT}/test
+  PATH1:          ${ROOT}/path1
+  PATH2:          ${PATH1}/path2
+  PYTHON:         ${shell:PYTHON}/python
+  APP:            ${pkg:APP}
+  SECTION:        pkg
+  APP2:           ${${SECTION}:APP}
+  HOST1:          ${${pkg:HOST}@path:SECRETS}
+  LIST1:          ["${APP}","${ENVS}"]
+  LIST2:
+    - abc
+    - [1, 2, 3]
+    - KEY1:       hello
+      KEY2:       world
+  SUBKEYS:
+    KEY1:       hello
+    KEY2:       world
+
+shell:
+  PYTHON:         mconda36
+  PYTHONHOME:     ${pkgs:LIB}/python/${PYTHON}
+
+
+##########################################################

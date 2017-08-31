@@ -1,0 +1,38 @@
+# __pkg__.yml -- entry point for package config
+##########################################################
+
+__name__:         host/win-demo-00
+__protocol__:     0
+__version__:      0.0.0
+
+__inherit__:
+  - C:\dev\projects\philipov\smash\tests\__tmp__\env0\testdata\pkg\data\__pkg__.yml
+
+##########################################################
+path:
+
+  PKG_ROOT:                 ${ROOT}/pkgs/lib
+  PYTHONHOME:               ${ROOT}/pkgs/lib/python/Anaconda_3_5_2
+
+  SECRETS:                  ${ROOT}/secrets
+  DATA_GLOBAL:              ${ROOT}/data
+
+
+##########################################################
+shell:
+  BUILD_VERSION:            20170615211806   #BUILD_20170413232505 #ToDo: this doesn't inherit properly
+  PYTHONHOME:               ${path:PYTHONHOME}
+
+  TEST2:                    [path, ., "${INPUT_DIR}"]
+
+  PATH:
+    - ~~path~~
+    - ${path:MAIN_DIST}/bin
+    - ${PYTHONHOME}
+
+
+##########################################################
+main:
+  FILE_PATH:                [path, .] #[^append, .]
+
+##########################################################

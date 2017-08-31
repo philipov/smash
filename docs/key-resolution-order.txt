@@ -1,0 +1,13 @@
+ConfigTree contains a dictionary of nodes, indexed by filepath
+Config is a dictionary of config section dictionaries by name
+
+expression types:
+key1 = ${filepath@section:key}
+
+the divider to use for outputing vector keys is dependant on the output module for the final section
+filepath also takes a pure path and will try to infer __env__.yml __pkg__.yml and __root__.yml filename if they exist.
+
+- search the KRO for the closest available populated key
+- if it's a raw value, clean it up
+- if it contains an expression into a different key, fetch that key recursively and sub it in
+

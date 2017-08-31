@@ -1,5 +1,6 @@
 @setlocal
 @ECHO off
+cls
 rem ---------------------------------
 
 set THIS_PATH=%~dp0
