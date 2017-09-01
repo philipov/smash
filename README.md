@@ -76,7 +76,7 @@ modular reproducible research environment manager
 ---
 ### Modular Configuration System 
 
-##### inheritance-based configuration using a modified chainmap
+##### hereditary yaml configuration by way of a modified chainmap
 
 ##### `${configname@section:key}` token expressions
 
