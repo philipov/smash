@@ -14,6 +14,8 @@ modular reproducible research environment manager
     - Modularity
     - Test-driven
     - A Command-Line IDE
+- Tutorials
+    - none
 - Documentation
     - nope
  
