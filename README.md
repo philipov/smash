@@ -54,7 +54,7 @@ modular reproducible research environment manager
 
 ##### daemon-mode
 
-##### git-based change management
+##### git-based centralized config
 
 ##### packaging, environment management, and conda
 
