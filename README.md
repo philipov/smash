@@ -6,12 +6,13 @@ modular reproducible research environment manager
 ### Table of Contents:
 
 - Installation
-- Introduction
+- Getting Started
     - Reproducible Research
     - Modularity
     - Test-driven
     - A Command-Line IDE
-- Tutorial
+- Tutorials
+    - none
 - Documentation
  
  
@@ -32,19 +33,41 @@ modular reproducible research environment manager
 
 
 --------------------------------------------------------------------------
- 
----
-### Introduction
 
+---
+### Installation
+- `pip install smash`
+- build a smash payload
 
 ---
 ### Getting Started
 
+##### dynamic virtual environments
+
+##### contextual file operations
+
+##### daemon-mode
+
+##### git-based change management
+
+##### packaging, environment management, and conda
+
+##### jupyter notebooks
+
+##### scheduling and deployment
+
 
 ---
-### Building
+### Modular Configuration System 
+
+##### inheritance-based configuration using a modified chainmap concept
+
+##### token expressions
+
+##### plugins
+
+##### exporters for generating ini or xml-like configuration 
  
----
-    
+ 
 
 --------------------------------------------------------------------------
