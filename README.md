@@ -40,7 +40,7 @@ modular reproducible research environment manager
 ### Installation
 - `pip install smash`
 - `smash install <install_path>`
-- `smash setup_windows`
+- `smash setup_windows` _(optional)_
 
 ##### installing a smash payload
 
