@@ -7,12 +7,13 @@ modular reproducible research environment manager
 
 - Installation
 - Getting Started
+- Modular Configuration System
+- Packaging Methodology
+- Ideology
     - Reproducible Research
     - Modularity
     - Test-driven
     - A Command-Line IDE
-- Tutorials
-    - none
 - Documentation
     - nope
  
@@ -45,7 +46,7 @@ modular reproducible research environment manager
 
 
 ---
-### Getting Started
+### Introduction
 
 ##### dynamic virtual environments
 - `smash root <template>`
