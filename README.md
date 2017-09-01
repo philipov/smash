@@ -106,7 +106,7 @@ modular reproducible research environment manager
 
 ##### task description files
  
-##### plugins
+##### creating project-specific extensions using the plugin system
 
 ##### compiling configurations with `Exporter`
 
