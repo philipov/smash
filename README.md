@@ -60,6 +60,7 @@ modular reproducible research environment manager
 
 ##### daemon-mode
 - `smash start <filepath>`
+- refreshing the configuration
 
 ##### git-based centralized config
 
@@ -68,6 +69,8 @@ modular reproducible research environment manager
 ##### jupyter notebooks
 
 ##### scheduling and deployment
+
+##### backups
 
 
 ---
