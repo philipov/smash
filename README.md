@@ -106,8 +106,6 @@ modular reproducible research environment manager
 
 ##### task description files
  
-##### creating project-specific extensions using the plugin system
-
 ##### compiling configurations with `Exporter`
 
 - `ExportEnvironment`
@@ -127,6 +125,8 @@ modular reproducible research environment manager
 
 
 ##### creating new system layouts using `RootTemplate`
+
+##### creating project-specific extensions using the plugin system
 
 ##### specifying configurations directly using python classes
 
