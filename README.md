@@ -61,6 +61,8 @@ modular reproducible research environment manager
 
 ##### running tests
 - `smash test <target>`
+- `./sh/win/tests.bat`
+- `./sh/nix/tests.sh`
 
 ##### running a command
 - `smash cmd ...`
