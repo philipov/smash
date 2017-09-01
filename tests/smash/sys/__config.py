@@ -197,6 +197,14 @@ def test__Config_env_fields2( path_env00_config, conftree ) :
 
     # assert False
 
+def test__Config_env_export( path_env00_config, conftree ) :
+    from smash.sys import out
+    config = conftree[path_env00_config]
+
+    print( '\n${shell:REMOTE_URL}   ', out.pink( config['shell']['REMOTE_URL'] ) )
+    print( out.yellow( '-' * 40 ) )
+
+    # assert False
 
 #----------------------------------------------------------------------#
 

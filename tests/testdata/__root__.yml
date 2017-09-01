@@ -7,18 +7,8 @@ __version__:      0.0.0
 __name__:         smash
 __type__:         II
 
-__sections__:
-  __inherit__:    inherit
-  __import__:     import
-  path:           path
-  pkg:            __pkg__
-  shell:          none
-  main:           none
-
 __export__:
-  path:           environment
-  shell:          environment
-  main:           [key-equals-value main_config.txt]
+  __env__:        [Environment, path, shell]
 
 path:
   ROOT:           .

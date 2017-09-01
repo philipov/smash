@@ -210,14 +210,6 @@ class ConfigTree:
     #----------------------------------------------------------------#
 
     @property
-    def root_protocol( self ) :
-        return self.root._yaml_data['__protocol__']
-
-    @property
-    def root_version( self ) :
-        return self.root._yaml_data['__version__']
-
-    @property
     def root_name( self ) :
         return self.root._yaml_data['__name__']
 
@@ -226,12 +218,12 @@ class ConfigTree:
         return self.root._yaml_data['__type__']
 
     @property
-    def root_sections( self ) :
-        return self.root._yaml_data['__sections__']
+    def root_protocol( self ) :
+        return self.root._yaml_data['__protocol__']
 
     @property
-    def root_export( self ) :
-        return self.root._yaml_data['__export__']
+    def root_version( self ) :
+        return self.root._yaml_data['__version__']
 
     @property
     def envfile( self ) :
@@ -411,81 +403,77 @@ class Config:
                             '<', self.__class__.__name__, ': ', self.filepath, '>'
                         ] )
 
-    def __repr( self ) :
-        return str( self )
-
-    def __pprint__( self ) :
-        return str( self )
-
+    __pprint__= __str__
+    __repr__ = str
 
     ####################
     @property
-    def inherits(self) -> list:
+    def inherits( self ) -> list :
 
-        try:
+        try :
             parent_paths = self._yaml_data['__inherit__']
-            parsed_paths = ConfigSectionView(self.tree.root).evaluate_list('__inherit__', parent_paths)
+            parsed_paths = ConfigSectionView( self.tree.root ).evaluate_list( '__inherit__', parent_paths )
             #todo: this means that ConfigSectionView needs refactoring
-            print('PARSED~~~~~',parsed_paths)
-        except KeyError as e:
-            parsed_paths = list()
+            print( 'PARSED~~~~~', parsed_paths )
+        except KeyError as e :
+            parsed_paths = list( )
 
         return parsed_paths
 
 
+
     @property
-    def parents(self):
-        parent_paths    = self.inherits
-        parents         = list()
+    def parents( self ) :
+        parent_paths = self.inherits
+        parents = list( )
         for parent_path in parent_paths :
             parent = self.tree.nodes[Path( parent_path )]
             parents.append( parent )
             parents.extend( parent.parents )
 
-        return GreedyOrderedSet(chain( parents, [self.tree.root] ))
+        return GreedyOrderedSet( chain( parents, [self.tree.root] ) )
 
     ####################
     @property
-    def key_resolution_order(self):
+    def key_resolution_order( self ) :
         # todo: !!! This needs to be in order of last-duplicate -- parents follow all children
-        return GreedyOrderedSet(chain( [self], self.parents ))
-
+        return GreedyOrderedSet( chain( [self], self.parents ) )
 
     ####################
     @property
-    def sections(self):
-        section_names = set()
-        for node in self.key_resolution_order:
-            for (key, section) in node.items():
-                if not key.startswith('__') and not key.endswith('__'):
-                    section_names.add(key)
+    def sections( self ) :
+        section_names = set( )
+        for node in self.key_resolution_order :
+            for (key, section) in node.items( ) :
+                if not key.startswith( '__' ) and not key.endswith( '__' ) :
+                    section_names.add( key )
         return section_names
 
-    def keys(self):
-        kro         = list( self.key_resolution_order )
-        datalist    = [node._yaml_data for node in kro]
-        datachain   = ChainMap(*datalist)
-        keyview     = OrderedSet( sorted( datachain.keys( ) ) )
+    def keys( self ) :
+        kro = list( self.key_resolution_order )
+        datalist = [node._yaml_data for node in kro]
+        datachain = ChainMap( *datalist )
+        keyview = OrderedSet( sorted( datachain.keys( ) ) )
         return keyview
 
-
+    ####################
     def items( self ) -> list :
         # todo: exclude dunder keys
         return self._yaml_data.items( )
-
 
     ####################
     def __getitem__( self, section_name ) :
         return ConfigSectionView( self, section_name )
 
+    ####################
+    def setdefault( self, key, default ) :
+        '''support for getdeepitem on Config object'''
+        try :
+            return self[key]
+        except KeyError :
+            return self._yaml_data.setdefault( key, default )
 
     ####################
-    def setdefault( self, key, default ):
-        '''support for getdeepitem on Config object'''
-        try:
-            return self[key]
-        except KeyError:
-            return self._yaml_data.setdefault(key, default)
 
 
 #----------------------------------------------------------------------#

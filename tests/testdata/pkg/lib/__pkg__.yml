@@ -9,9 +9,11 @@ __inherit__:
   - ${pkg:DATA}/__pkg__.yml
 
 __export__:
-  __env__:        [ExportEnvironment, path, shell]
-  ./test.ini:     [ExportINI, path, main]
+  __env__:        [Environment, settings]
+  ./test.ini:     [INI, path, main]
 
+settings:
+  KEY0:           72
 
 ##########################################################
 path:
