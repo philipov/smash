@@ -6,7 +6,7 @@ An integrated environment for reproducible research and development: from idea t
 
 __setup__ = dict(
     name            = 'smash',
-    packages        = ['smash', 'smash.sys'],
+    packages        = ['smash', 'smash.sys', 'smash.dash', 'smash.tools'],
     version         = '0.0.2',
     description     = __doc__,
 

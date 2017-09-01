@@ -48,7 +48,7 @@ def _load_exporters(plugins_):
     return results
 exporters = _load_exporters(plugins)
 
-print(  out.green('~~~~~~~~~~~') +' smash.sys.plugins' )
+print(  out.green('~~~~~~~~~~~'), __name__ )
 rprint( plugins )
 print(  out.green('~~~~~~~~~~~') +' exporters:')
 rprint( exporters )
