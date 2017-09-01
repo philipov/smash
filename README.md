@@ -48,7 +48,7 @@ modular reproducible research environment manager
 ### Getting Started
 
 ##### dynamic virtual environments
-- `smash root`
+- `smash root <template>`
 - `smash env create`
 
 ##### running a command
@@ -91,6 +91,8 @@ modular reproducible research environment manager
 ##### binding operations to file types using `FileHandler`
 
 ##### wrapping subprocess utilities inside `Tool`
+
+##### creating new system layouts using `RootTemplate`
 
 
 ---
