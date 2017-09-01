@@ -23,12 +23,12 @@ modular reproducible research environment manager
 - `powertools`
 
 - `smash`
-    - `smash.boot`
     - `smash.sys`
-    - `smash.dash`
-    - `smash.tools`
-    - `smash.git`
     - `smash.env`
+    - `smash.git`
+    - `smash.dash`
+    - `smash.boot`
+    - `smash.tools`
 
 
 --------------------------------------------------------------------------
