@@ -129,6 +129,7 @@ modular reproducible research environment manager
 - `Validator`
 - `Daemon`
 - `Monitor`
+- `Service`
 
 
 ##### creating new system layouts using `RootTemplate`
