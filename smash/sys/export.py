@@ -22,6 +22,7 @@ from . import out
 from .out import rprint
 from pprint import pprint, pformat
 
+
 #----------------------------------------------------------------------#
 
 __all__ = []
@@ -67,5 +68,12 @@ class ExportEnvironment( Exporter ):
 class ExportDebug( Exporter ) :
     pass
 
+#----------------------------------------------------------------------#
+
+base_exporters = {
+    'Exporter':             Exporter,
+    'ExportEnvironment':    ExportEnvironment,
+    'ExportDebug':          ExportDebug
+}
 
 #----------------------------------------------------------------------#
