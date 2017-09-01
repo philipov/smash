@@ -16,6 +16,7 @@ from pathlib import Path
 
 #todo: use coroutines that yield for user input
 
+
 #----------------------------------------------------------------------#
 
 __all__ = []
@@ -39,8 +40,6 @@ def do_cmd(*target, workdir, configs, verbose=False):
     os.chdir(str(workdir))
 
     # subenv = proc.build_subenv(configs)
-
-
     # (shell, children) = proc.execute(args, subenv)
     return True
 

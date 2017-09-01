@@ -6,7 +6,7 @@ An integrated environment for reproducible research and development: from idea t
 
 __setup__ = dict(
     name            = 'smash',
-    packages        = ['smash', 'smash.sys', 'smash.ext'],
+    packages        = ['smash', 'smash.sys'],
     version         = '0.0.2',
     description     = __doc__,
 
@@ -62,5 +62,12 @@ from .__main__ import run
 from .sys.config import Config
 from .sys.config import ConfigTree
 
+from .sys.export import Exporter
+from .sys.export import ExportDebug
+from .sys.export import ExportEnvironment
+
+#----------------------------------------------------------------------#
+
+from .sys.plugins import plugins
 
 #----------------------------------------------------------------------#

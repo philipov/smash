@@ -32,20 +32,20 @@ def path_env00_config( path_env00 ) :
 
 
 @pytest.fixture( scope="session" )
-def path_examples( path_env00 ) :
+def path_tasks( path_env00 ) :
     return path_env00/'examples'
 
 @pytest.fixture( scope="session" )
-def path_example_daemon( path_examples ) :
-    return path_examples/'start_daemon.yml'
+def path_example_daemon( path_tasks ) :
+    return path_tasks/'start_daemon.yml'
 
 @pytest.fixture( scope="session" )
-def path_example_job( path_examples ) :
-    return path_examples/'schedule_job.yml'
+def path_example_job( path_tasks ) :
+    return path_tasks/'schedule_job.yml'
 
 @pytest.fixture( scope="session" )
-def path_example_task( path_examples ) :
-    return path_examples/'run_task.yml'
+def path_example_task( path_tasks ) :
+    return path_tasks/'run_task.yml'
 
 
 #----------------------------------------------------------------------#

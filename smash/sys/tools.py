@@ -17,8 +17,6 @@ from .config import ConfigTree
 
 from collections import OrderedDict
 
-from ..ext.default import extension_handler
-
 #----------------------------------------------------------------------#
 
 __all__ = []
@@ -131,6 +129,9 @@ def run_cmd( subenv: dict, working_dir:Path, command:str, *, config, verbose=Fal
 
 
 #----------------------------------------------------------------------#
+
+def extension_handler( extension, filename ) :
+    return NotImplemented
 
 @export
 def run_open( filename, verbose=False, pure_mode=False ) -> list :

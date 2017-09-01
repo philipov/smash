@@ -78,14 +78,6 @@ class GreedyOrderedSet(OrderedSet):
 
     append = add
 
-#----------------------------------------------------------------------#
-
-@export
-class ExportWriter:
-    ''' methods for writing contents of configtree to an output file'''
-    pass
-
-
 
 
 #----------------------------------------------------------------------#
@@ -720,3 +712,26 @@ token_expression_regex = re.compile(
 
 
 #----------------------------------------------------------------------#
+
+@export
+class ExportWriter :
+    ''' methods for writing contents of configtree to an output file'''
+
+    def __init__( self, config, filename, refname ) :
+        self.config = config
+        self.filename = filename
+        self.refname = refname
+
+    def getline( self ) :
+        yield NotImplementedError
+
+    def write( self, target_path: Path ) :
+        raise NotImplementedError
+
+    def export( self ) :
+        self.write( self.config.path )
+
+
+#----------------------------------------------------------------------#
+
+

@@ -92,8 +92,6 @@ def test__Config_from_root( path_root_config, conftree ):
 ####################
 #todo: these can be parametrized
 
-
-
 def test__Config_from_net( path_network_config, conftree ) :
     from smash.sys.config import Config
 
@@ -136,8 +134,8 @@ def test__Config_from_env( path_env00_config, conftree ) :
     config = try_Config( config )
     # assert False
 
-####################
 
+####################
 
 def test__Config_env_fields( path_env00_config, conftree ) :
     from smash.sys import out
@@ -267,9 +265,12 @@ def test__ConfigTree_from_root( path_testdata ) :
     # assert False
 
 
-def test__conftree_from_env( path_env00 ) :
+def test__ConfigTree_from_env( path_env00 ) :
     conftree = try_ConfigTree_from_path( path_env00 )
     # assert False
 
+def test__ConfigTree_from_tasks( path_tasks ) :
+    conftree = try_ConfigTree_from_path( path_tasks )
+    # assert False
 
 #----------------------------------------------------------------------#
