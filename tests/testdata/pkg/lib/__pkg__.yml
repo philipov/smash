@@ -8,10 +8,16 @@ __version__:      0.0.0
 __inherit__:
   - ${pkg:DATA}/__pkg__.yml
 
+__export__:
+  __env__:        [ExportEnvironment, path, shell]
+  ./test.ini:     [ExportINI, path, main]
+
 
 ##########################################################
 path:
+  PKG_ROOT:       ${ROOT}/pkgs/lib
 
-  PKG_ROOT:                 ${ROOT}/pkgs/lib
+main:
+  TEST0:          ${}
 
 ##########################################################

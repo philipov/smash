@@ -179,6 +179,12 @@ def test__Config_env_parents( path_env00_config, conftree ) :
     print( out.yellow( '-' * 40 ) )
     listprint(kro)
 
+    print( out.yellow( '-' * 40 ) )
+    keys = config.keys( )
+    print('keys')
+    for key in keys:
+        print(out.cyan('KEY:'), key)
+
     # assert False
 
 

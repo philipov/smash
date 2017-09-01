@@ -38,7 +38,7 @@ modular reproducible research environment manager
 
 --------------------------------------------------------------------------
 
-### Purpose
+### What Problem does this Solve?
 
 ---
 ### Installation

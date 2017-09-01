@@ -21,6 +21,7 @@ import re
 from termcolor import colored
 
 from collections import defaultdict
+from collections import ChainMap
 from collections import OrderedDict
 from ordered_set import OrderedSet
 
@@ -38,7 +39,7 @@ from .path import try_resolve
 from .path import find_yamls
 
 from . import out
-from .out import rprint
+from .out import rprint, listprint, dictprint
 from pprint import pprint, pformat
 
 #----------------------------------------------------------------------#
@@ -461,7 +462,12 @@ class Config:
         return section_names
 
     def keys(self):
-        return self._yaml_data.keys()
+        kro         = list( self.key_resolution_order )
+        datalist    = [node._yaml_data for node in kro]
+        datachain   = ChainMap(*datalist)
+        keyview     = OrderedSet( sorted( datachain.keys( ) ) )
+        return keyview
+
 
     def items( self ) -> list :
         # todo: exclude dunder keys
@@ -514,7 +520,7 @@ class ConfigSectionView :
     def keys( self ) :
         key_union = set()
         for node in self.config.key_resolution_order :
-            for key in node.keys():
+            for key in getdeepitem(node._yaml_data, self.section_keys).keys():
                 key_union.add(key)
         return list(key_union)
 
@@ -711,25 +717,6 @@ token_expression_regex = re.compile(
     """, re.VERBOSE )
 
 
-#----------------------------------------------------------------------#
-
-@export
-class ExportWriter :
-    ''' methods for writing contents of configtree to an output file'''
-
-    def __init__( self, config, filename, refname ) :
-        self.config = config
-        self.filename = filename
-        self.refname = refname
-
-    def getline( self ) :
-        yield NotImplementedError
-
-    def write( self, target_path: Path ) :
-        raise NotImplementedError
-
-    def export( self ) :
-        self.write( self.config.path )
 
 
 #----------------------------------------------------------------------#

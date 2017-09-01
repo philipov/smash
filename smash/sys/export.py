@@ -59,14 +59,41 @@ class Exporter:
 
 @export
 class ExportEnvironment( Exporter ):
-    pass
+    def write( self, target_path: Path ) :
+        raise NotImplementedError
 
 
 #----------------------------------------------------------------------#
 
 @export
 class ExportDebug( Exporter ) :
-    pass
+    def write( self, target_path: Path ) :
+        raise NotImplementedError
+
+
+#----------------------------------------------------------------------#
+
+@export
+class ExportYAML( Exporter ) :
+    def write( self, target_path: Path ) :
+        raise NotImplementedError
+
+
+#----------------------------------------------------------------------#
+
+@export
+class ExportXML( Exporter ) :
+    def write( self, target_path: Path ) :
+        raise NotImplementedError
+
+
+#----------------------------------------------------------------------#
+
+@export
+class ExportINI( Exporter ) :
+    def write( self, target_path: Path ) :
+        for key in self.config.keys():
+            pass
 
 #----------------------------------------------------------------------#
 

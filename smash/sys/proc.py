@@ -79,8 +79,6 @@ def build_subenv( configs:ConfigTree, pure_mode=False ):
     else:
         subenv = OrderedDict()
 
-
-
     try:
         for (key, value) in configs.data['shell'].items():
             subenv[key] = value
