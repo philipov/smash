@@ -46,7 +46,7 @@ modular reproducible research environment manager
 
 
 ---
-### Introduction
+### Getting Started
 
 ##### dynamic virtual environments
 - `smash root <template>`
