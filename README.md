@@ -18,49 +18,31 @@ modular reproducible research environment manager
 ---
 ##### Components:
 
-- `powertools`
 - `cogwright`
-- `yamlisp`
-- `gitgud`
-
+- `powertools`
 
 - `smash`
 - `smash.boot`
-- `smash.test`
-
-
-- `smash.__main__`
-- `smash.run`
-- `smash.start`
-
+- `smash.sys`
+- `smash.dash`
+- `smash.tools`
 
 - `smash.git`
-- `smash.pkg`
 - `smash.env`
 
 
 --------------------------------------------------------------------------
  
 ---
-### Introduction:
+### Introduction
+
 
 ---
-##### A Command-Line IDE
+### Getting Started
 
--  1
-  
-  
+
 ---
-##### Reproducible Research
-
--  2
-
- 
----
-##### Modularity
-
--  3
-
+### Building
  
 ---
     
