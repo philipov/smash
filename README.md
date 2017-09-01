@@ -54,6 +54,14 @@ modular reproducible research environment manager
 - `smash root <template>`
 - `smash env create`
 
+##### git-based centralized config
+
+##### installing a package
+- `smash pkg <pkgname>`
+
+##### running tests
+- `smash test <target>`
+
 ##### running a command
 - `smash cmd ...`
 
@@ -65,9 +73,6 @@ modular reproducible research environment manager
 - `smash start <filepath>`
 - refreshing the configuration
 
-##### git-based centralized config
-
-##### running tests
 
 ##### packaging, environment management, and conda
 
