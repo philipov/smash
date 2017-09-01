@@ -14,6 +14,7 @@ modular reproducible research environment manager
     - Modularity
     - Test-driven
     - A Command-Line IDE
+    - Scripting in python 
 - Tutorials
     - none
 - Documentation
