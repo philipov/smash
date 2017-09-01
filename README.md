@@ -94,15 +94,15 @@ modular reproducible research environment manager
 ---
 ### Modular Configuration System 
 
-##### class-based configuration by way of a modified chainmap on top of yaml source
+##### class-like configuration by way of a modified chainmap on top of yaml source
 
 ##### `${configname@section:key}` token expressions
 
-##### `__root__.yml`
+##### `__root__.yml` defines the top of the filesystem
 
-##### `__env__.yml`
+##### `__env__.yml` configures the point-of-view and entry for execution environments
 
-##### `__pkg__.yml` 
+##### `__pkg__.yml` specifies the contents of a reusable configuration package
 
 ##### task description files
  
