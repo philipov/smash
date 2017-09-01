@@ -88,6 +88,7 @@ modular reproducible research environment manager
 ---
 ### Packaging Methodology
 
+##### module types:
 - app
 - client
 - host
@@ -95,7 +96,13 @@ modular reproducible research environment manager
 - lib
 - data
 
-##### factoring out the difference between the user and the server
+##### factor out the difference between the user and the server
+
+##### separate the general solution and the client's application
+
+##### separate the resources on a host from the resources on a network/cluster
+
+##### data specifications vs state
 
 
 --------------------------------------------------------------------------
