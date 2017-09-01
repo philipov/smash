@@ -56,6 +56,7 @@ modular reproducible research environment manager
 
 ##### contextual file operations
 - `smash run <filepath>`
+- windows context menu options
 
 ##### daemon-mode
 - `smash start <filepath>`
