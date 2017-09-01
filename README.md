@@ -36,8 +36,10 @@ modular reproducible research environment manager
 ---
 ### Installation
 - `pip install smash`
+- `smash install <install_path>`
+- `smash setup_windows`
 
-##### installing from a smash payload
+##### installing a smash payload
 
 ##### building a smash payload
 
@@ -46,12 +48,17 @@ modular reproducible research environment manager
 ### Getting Started
 
 ##### dynamic virtual environments
+- `smash root`
+- `smash env create`
 
 ##### running a command
+- `smash cmd ...`
 
 ##### contextual file operations
+- `smash run ...`
 
 ##### daemon-mode
+- `smash start ...`
 
 ##### git-based centralized config
 
