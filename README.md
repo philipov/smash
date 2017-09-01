@@ -5,6 +5,7 @@ modular reproducible research environment manager
 
 ### Table of Contents:
 
+- Purpose
 - Installation
 - Getting Started
 - Modular Configuration System
@@ -36,6 +37,8 @@ modular reproducible research environment manager
 
 
 --------------------------------------------------------------------------
+
+### Purpose
 
 ---
 ### Installation
@@ -74,14 +77,16 @@ modular reproducible research environment manager
 
 ##### daemon-mode
 - `smash start <filepath>`
+- service registration
 - refreshing the configuration
 
-
-##### packaging, environment management, and conda
+##### packaging, environment management, conda, and cookiecutter
 
 ##### jupyter notebooks
 
 ##### scheduling and deployment
+
+##### docker-compose and helm
 
 ##### backups
 
