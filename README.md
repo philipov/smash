@@ -85,4 +85,17 @@ modular reproducible research environment manager
 ##### FileHandler for binding operations to file types
 
 
+---
+### Packaging Methodology
+
+- app
+- client
+- host
+- net
+- lib
+- data
+
+##### factoring out the difference between the user and the server
+
+
 --------------------------------------------------------------------------
