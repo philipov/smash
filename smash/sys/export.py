@@ -6,7 +6,7 @@ write output files from compiled configtree node
 
 
 import logging
-log     = logging.getLogger( name='smash.sys.export' )
+log     = logging.getLogger( name=__name__ )
 # debug   = lambda *a, **b : log.debug( "".join( str( arg ) for arg in a ) )
 # info    = lambda *a, **b : log.info(  "".join( str( arg ) for arg in a ) )
 debug = lambda *a, **b : print( "".join( str( arg ) for arg in a ) )
@@ -98,9 +98,11 @@ class ExportINI( Exporter ) :
 #----------------------------------------------------------------------#
 
 base_exporters = {
-    'Exporter':             Exporter,
-    'ExportEnvironment':    ExportEnvironment,
-    'ExportDebug':          ExportDebug
+    'Environment' : ExportEnvironment,
+    'Debug'       : ExportDebug,
+    'YAML'        : ExportYAML,
+    'XML'         : ExportXML,
+    'INI'         : ExportINI
 }
 
 #----------------------------------------------------------------------#

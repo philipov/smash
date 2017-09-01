@@ -22,6 +22,11 @@ __setup__ = dict(
         'ruamel.yaml',
         'ordered_set',
 
+
+        'click',
+        'cookiecutter',
+        'conda',
+        'pytest',
         'colored_traceback',
         'colorama',
         'termcolor'

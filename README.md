@@ -90,6 +90,8 @@ modular reproducible research environment manager
 
 ##### backups
 
+##### email notifications
+
 
 ---
 ### Modular Configuration System 
@@ -110,10 +112,15 @@ modular reproducible research environment manager
 
 - `ExportEnvironment`
 - `ExportDebug`
+- `ExportYAML`
+- `ExportXML`
+- `ExportINI`
 
 ##### binding contextual operations to file types using `FileHandler`
 
 - `YAMLHandler`
+- `EXEHandler`
+- `ScriptHandler`
 
 ##### wrapping subprocess utilities inside `Tool`
 
