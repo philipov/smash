@@ -17,13 +17,15 @@ import colored_traceback
 colored_traceback.add_hook()
 ###
 import logging
-log = logging.getLogger( name=__name__ )
-logging.basicConfig( level=logging.DEBUG )
+# log = logging.getLogger( name=__name__ )
+logging.basicConfig( level=logging.INFO )
+from .sys.out import loggers_for
 # debug   = lambda *a, **b : log.debug( ''.join( str(arg) for arg in a ))
 # info    = lambda *a, **b : log.info(  ''.join( str(arg) for arg in a ))
-debug = print
-info  = print
+# debug = print
+# info  = print
 # debug = lambda *a, **b : None
+(debug, info, warning, error, critical) = loggers_for(__name__)
 
 ###
 __all__ = []
@@ -34,7 +36,7 @@ from . import cmdline
 from . import modes
 
 from .sys.config import ConfigTree
-
+from .sys.out import debuglog
 
 def main( args: cmdline.Arguments ) :
     # ToDo: initialize logging: stdout/stderr redirect

@@ -44,7 +44,7 @@ def _load_exporters(plugins_):
             if not attribute.startswith('_'):
                 with suppress(TypeError):
                     if issubclass(value, Exporter):
-                        results[value.__name__]=value
+                        results[value.__key__]=value
     return results
 exporters = _load_exporters(plugins)
 

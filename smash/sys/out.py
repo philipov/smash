@@ -77,21 +77,45 @@ def callstr( obj ) -> str:
         return str(obj())
     return str(obj)
 
+
 def wrap_log_func (func, prefix='', suffix='', **static_kwargs):
     return lambda *args, **kwargs : func( callstr(prefix)+"".join( str( arg ) for arg in args )+callstr(suffix), **static_kwargs )
 
-def logger_funcs():
-    import logging
-    log = logging.getLogger( name='smash.sys.config' )
 
+def loggers_for(name):
+    import logging
+    log = logging.getLogger( name=name )
+
+    # todo: fix logger levels
+    # todo: fix logger format
     debug       = wrap_log_func( print )
     info        = wrap_log_func( print )
     warning     = wrap_log_func( print )
     error       = wrap_log_func( print )
     critical    = wrap_log_func( print )
-
+    # debug       = wrap_log_func( log.debug )
+    # info        = wrap_log_func( log.info )
+    # warning     = wrap_log_func( log.warning )
+    # error       = wrap_log_func( log.error)
+    # critical    = wrap_log_func( log.critical)
 
     return debug, info, warning, error, critical
+
+
+####################
+def debuglog(logger_name):
+    ''' synchronously enable debug logging while the function is being called '''
+    import logging
+    logger = logging.getLogger(logger_name)
+    def logging_decorator(func):
+        def logged_func(*args, **kwargs):
+            logger.setLevel(logging.DEBUG)
+            result = func(*args, **kwargs)
+            logger.setLevel(logging.INFO)
+            return result
+        return logged_func
+    return logging_decorator
+###
 
 
 #----------------------------------------------------------------------#

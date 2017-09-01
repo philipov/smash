@@ -22,6 +22,7 @@ from . import out
 from .out import rprint
 from pprint import pprint, pformat
 
+from .meta import classproperty
 
 #----------------------------------------------------------------------#
 
@@ -38,9 +39,14 @@ def export( obj ) :
 
 #----------------------------------------------------------------------#
 
+
 @export
 class Exporter:
     ''' methods for writing contents of configtree to an output file'''
+
+    @classproperty
+    def __key__(cls):
+        return cls.__name__
 
     def __init__( self, config:Config, filename:str, refname:str ) :
         self.config = config

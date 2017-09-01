@@ -39,6 +39,7 @@ from .path import try_resolve
 from .path import find_yamls
 
 from . import out
+from .out import debuglog
 from .out import rprint, listprint, dictprint
 from pprint import pprint, pformat
 
@@ -203,8 +204,8 @@ class ConfigTree:
                 '<', self.__class__.__name__, ' of ', self.root.__class__.__name__, ': [', len(self), '], ', 'root=', self.root.path, '>'
             ])
 
-    def __pprint__(self):
-        return str(self)
+    __pprint__ = __str__
+    __repr__ = str
 
 
     #----------------------------------------------------------------#
@@ -462,16 +463,16 @@ class Config:
         return self._yaml_data.items( )
 
     ####################
-    def __getitem__( self, section_name ) :
-        return ConfigSectionView( self, section_name )
-
-    ####################
     def setdefault( self, key, default ) :
         '''support for getdeepitem on Config object'''
         try :
             return self[key]
         except KeyError :
             return self._yaml_data.setdefault( key, default )
+
+    ####################
+    def __getitem__( self, section_name ) :
+        return ConfigSectionView( self, section_name )
 
     ####################
 
@@ -503,6 +504,8 @@ class ConfigSectionView :
             '<', self.__class__.__name__, ': ', self.config.name, ' \'', self.section_keys, '\'>'
         ])
 
+    __pprint__ = __str__
+    __repr__ = str
 
     ####################
     def keys( self ) :
@@ -574,7 +577,6 @@ class ConfigSectionView :
                 print( out.cyan('~~~Cache Scalar Result'), self.section_keys, key, final_value )
                 getdeepitem( self.config._final_cache, self.section_keys )[key] = final_value   # CACHE VALUE ###
                 return final_value
-
 
         # check parents
         print('MISSING IN', self.config.filepath, 'keys', self.section_keys)

@@ -71,6 +71,9 @@ from .sys.export import Exporter
 from .sys.export import ExportDebug
 from .sys.export import ExportEnvironment
 
+from .sys.out import debuglog
+from .sys.out import loggers_for
+
 #----------------------------------------------------------------------#
 
 from .sys.plugins import plugins
