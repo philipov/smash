@@ -90,6 +90,8 @@ modular reproducible research environment manager
 
 ##### binding operations to file types using `FileHandler`
 
+##### wrapping subprocess utilities inside `Tool`
+
 
 ---
 ### Packaging Methodology
