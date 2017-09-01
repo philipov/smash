@@ -80,9 +80,9 @@ modular reproducible research environment manager
  
 ##### plugins
 
-##### Exporter for generating ini or xml-like configurations
+##### compiling configurations with `Exporter`
 
-##### FileHandler for binding operations to file types
+##### binding operations to file types using `FileHandler`
 
 
 ---
