@@ -7,7 +7,7 @@ environment management
 
 import logging
 
-log = logging.getLogger( name="smash.sys.manager" )
+log = logging.getLogger( name=__name__ )
 logging.basicConfig( level=logging.DEBUG )
 log.debug = print
 # log.debug = lambda *a, **b : None

@@ -11,7 +11,7 @@ from collections import namedtuple
 
 import logging
 
-log = logging.getLogger( name="smash.__main__" )
+log = logging.getLogger( name=__name__ )
 logging.basicConfig( level=logging.DEBUG )
 log.debug = print
 # log.debug = lambda *a, **b : None

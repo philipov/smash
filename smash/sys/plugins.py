@@ -6,7 +6,7 @@ load plugins
 
 
 import logging
-log = logging.getLogger( name="smash.sys.plugins" )
+log = logging.getLogger( name=__name__ )
 logging.basicConfig( level=logging.DEBUG )
 log.debug = print
 # log.debug = lambda *a, **b : None
@@ -45,5 +45,6 @@ def _load_exporters(plugins_):
     return dict()
 exporters = _load_exporters(plugins)
 
+print("__name__", __name__)
 
 #----------------------------------------------------------------------#

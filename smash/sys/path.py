@@ -6,7 +6,7 @@ path-related utility functions
 
 
 import logging
-log = logging.getLogger( name="smash.sys.path" )
+log = logging.getLogger( name=__name__ )
 debug = print
 info = print
 

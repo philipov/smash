@@ -17,7 +17,7 @@ import colored_traceback
 colored_traceback.add_hook()
 ###
 import logging
-log = logging.getLogger( name='smash.__main__' )
+log = logging.getLogger( name=__name__ )
 logging.basicConfig( level=logging.DEBUG )
 # debug   = lambda *a, **b : log.debug( ''.join( str(arg) for arg in a ))
 # info    = lambda *a, **b : log.info(  ''.join( str(arg) for arg in a ))

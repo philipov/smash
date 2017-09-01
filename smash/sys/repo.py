@@ -7,7 +7,7 @@ methods for manipulating repositories using choice of backend (github, gitlab, b
 
 import logging
 
-log = logging.getLogger( name="smash.sys.repo" )
+log = logging.getLogger( name=__name__ )
 logging.basicConfig( level=logging.DEBUG )
 log.debug = print
 # log.debug = lambda *a, **b : None

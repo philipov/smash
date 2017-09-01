@@ -5,7 +5,7 @@ callback functions implementing the action selected by the first command-line pa
 """
 
 import logging
-log = logging.getLogger( name="smash.modes" )
+log = logging.getLogger( name=__name__ )
 logging.basicConfig( level=logging.DEBUG )
 debug = print
 info = print
