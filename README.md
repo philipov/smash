@@ -68,7 +68,7 @@ modular reproducible research environment manager
 
 ##### inheritance-based configuration using a modified chainmap
 
-##### token expressions
+##### `${configname@section:key}` token expressions
 
 ##### `__root__.yml`
 
@@ -103,6 +103,8 @@ modular reproducible research environment manager
 ##### separate the resources on a host from the resources on a network/cluster
 
 ##### data specifications vs state
+
+##### version controlling data
 
 
 --------------------------------------------------------------------------
