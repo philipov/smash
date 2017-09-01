@@ -55,10 +55,10 @@ modular reproducible research environment manager
 - `smash cmd ...`
 
 ##### contextual file operations
-- `smash run ...`
+- `smash run <filepath>`
 
 ##### daemon-mode
-- `smash start ...`
+- `smash start <filepath>`
 
 ##### git-based centralized config
 
