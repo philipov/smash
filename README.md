@@ -64,6 +64,8 @@ modular reproducible research environment manager
 
 ##### git-based centralized config
 
+##### running tests
+
 ##### packaging, environment management, and conda
 
 ##### jupyter notebooks
@@ -101,8 +103,12 @@ modular reproducible research environment manager
 
 ##### wrapping subprocess utilities inside `Tool`
 
-- `LoaderTool`
 - `Task`
+- `Loader`
+- `Validator`
+- `Daemon`
+- `Monitor`
+
 
 ##### creating new system layouts using `RootTemplate`
 
