@@ -37,12 +37,18 @@ modular reproducible research environment manager
 ---
 ### Installation
 - `pip install smash`
-- build a smash payload
+
+##### installing from a smash payload
+
+##### building a smash payload
+
 
 ---
 ### Getting Started
 
 ##### dynamic virtual environments
+
+##### running a command
 
 ##### contextual file operations
 
@@ -60,14 +66,23 @@ modular reproducible research environment manager
 ---
 ### Modular Configuration System 
 
-##### inheritance-based configuration using a modified chainmap concept
+##### inheritance-based configuration using a modified chainmap
 
 ##### token expressions
 
+##### `__root__.yml`
+
+##### `__env__.yml`
+
+##### `__pkg__.yml` 
+
+##### task description files
+ 
 ##### plugins
 
-##### exporters for generating ini or xml-like configuration 
- 
- 
+##### Exporter for generating ini or xml-like configurations
+
+##### FileHandler for binding operations to file types
+
 
 --------------------------------------------------------------------------
