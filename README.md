@@ -106,7 +106,7 @@ modular reproducible research environment manager
 
 ##### creating new system layouts using `RootTemplate`
 
-##### specifying configurations directly in python
+##### specifying configurations directly using python classes
 
 
 ---
