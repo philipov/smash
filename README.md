@@ -92,11 +92,21 @@ modular reproducible research environment manager
 
 ##### compiling configurations with `Exporter`
 
-##### binding operations to file types using `FileHandler`
+- `ExportEnvironment`
+- `ExportDebug`
+
+##### binding contextual operations to file types using `FileHandler`
+
+- `YAMLHandler`
 
 ##### wrapping subprocess utilities inside `Tool`
 
+- `LoaderTool`
+- `Task`
+
 ##### creating new system layouts using `RootTemplate`
+
+##### specifying configurations directly in python
 
 
 ---
