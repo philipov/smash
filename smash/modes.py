@@ -10,12 +10,13 @@ logging.basicConfig( level=logging.DEBUG )
 debug = print
 info = print
 
-import sys
-import os
+
 from pathlib import Path
 
 #todo: use coroutines that yield for user input
 
+from .sys.config import ConfigTree
+from .env.virtual import subenv
 
 #----------------------------------------------------------------------#
 
@@ -31,17 +32,14 @@ def export( obj ) :
 #----------------------------------------------------------------------#
 
 @export
-def do_cmd(*target, workdir, configs, verbose=False):
+def do_run(*command, workdir:Path, configs:ConfigTree, verbose=False):
     info( "Execute target shell command inside an environment" )
-
-    # subenv  = proc.build_subenv( config, pure_mode=pure_mode )
-
-    sys.path.append(str(workdir) )
-    os.chdir(str(workdir))
-
-    # subenv = proc.build_subenv(configs)
-    # (shell, children) = proc.execute(args, subenv)
+    with subenv(workdir, configs) as interior:
+        shell = interior.run(command)
+        print("interior.processes", interior.processes)
+    print('interior.run:', shell)
     return True
+
 
 @export
 def do_open( *target, workdir, configs, verbose=False ):
@@ -61,7 +59,7 @@ def do_build( *target, workdir, configs, verbose=False ):
 @export
 def do_install( *target, workdir, configs, verbose=False ):
     info( "Create new system root in target directory" )
-    from .sys.manager import install_configsystem
+    from .boot.install import install_configsystem
     install_root = Path(target[0])
     return install_configsystem(install_root)
 

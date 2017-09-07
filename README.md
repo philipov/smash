@@ -24,9 +24,6 @@ modular reproducible research environment manager
 ---
 ##### Components:
 
-- `cogwright`
-- `powertools`
-
 - `smash`
     - `smash.sys`
     - `smash.env`
@@ -34,6 +31,11 @@ modular reproducible research environment manager
     - `smash.dash`
     - `smash.boot`
     - `smash.tools`
+
+
+- `power.tools`
+- `power.test`
+- `cogwright`
 
 
 --------------------------------------------------------------------------
@@ -91,6 +93,8 @@ modular reproducible research environment manager
 ##### backups
 
 ##### email notifications
+
+##### customizing the terminal console and shell
 
 
 ---

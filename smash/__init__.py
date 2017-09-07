@@ -17,7 +17,7 @@ __setup__ = dict(
     entry_points    = {
         'console_scripts' : ['smash=smash:run'],
     },
-    requires        = [
+    install_requires= [
         'psutil',
         'ruamel.yaml',
         'ordered_set',
@@ -62,7 +62,7 @@ __test_setup__= dict(
 from .cmdline import parse as parse_cmdline
 
 from .__main__ import main
-from .__main__ import run
+from .__main__ import enter
 
 from .sys.config import Config
 from .sys.config import ConfigTree
@@ -71,12 +71,14 @@ from .sys.export import Exporter
 from .sys.export import ExportDebug
 from .sys.export import ExportEnvironment
 
-from .sys.out import debuglog
-from .sys.out import loggers_for
+from .utils.out import debuglog
+from .utils.out import loggers_for
+
 
 #----------------------------------------------------------------------#
 
 from .sys.plugins import plugins
+
 
 #----------------------------------------------------------------------#
 

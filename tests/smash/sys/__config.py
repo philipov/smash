@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 
 from pprint import pprint, pformat
-from smash.sys.out import rprint, listprint, dictprint #ToDo: move these functions outside the package under test
+from smash.utils.out import rprint, listprint, dictprint #ToDo: move these functions outside the package under test
 
 
 #----------------------------------------------------------------------#
@@ -59,7 +59,7 @@ def conftree( path_root_config ) :
 
 ####################
 def try_Config( config ) :
-    import smash.sys.out as out
+    from smash.utils import out
 
     print( config )
     pprint( config._yaml_data )
@@ -131,6 +131,7 @@ def test__Config_from_env( path_env00_config, conftree ) :
     from smash.sys.config import Config
 
     config = Config.from_yaml( path_env00_config, tree=conftree )
+    conftree.env_path =config.path
     config = try_Config( config )
     # assert False
 
@@ -138,7 +139,7 @@ def test__Config_from_env( path_env00_config, conftree ) :
 ####################
 
 def test__Config_env_fields( path_env00_config, conftree ) :
-    from smash.sys import out
+    from smash.utils import out
     config = conftree[path_env00_config]
 
     print( '\n${path:PATH1}   ', out.pink( config['path']['PATH1'] ))
@@ -168,7 +169,7 @@ def test__Config_env_fields( path_env00_config, conftree ) :
 
 
 def test__Config_env_parents( path_env00_config, conftree ) :
-    from smash.sys import out
+    from smash.utils import out
     config = conftree[path_env00_config]
     print( '\nconfig.magic' )
     first_parent = config['__inherit__'][0]
@@ -189,7 +190,7 @@ def test__Config_env_parents( path_env00_config, conftree ) :
 
 
 def test__Config_env_fields2( path_env00_config, conftree ) :
-    from smash.sys import out
+    from smash.utils import out
     config = conftree[path_env00_config]
 
     print( '\n${shell:REMOTE_URL}   ', out.pink( config['shell']['REMOTE_URL'] ) )
@@ -197,14 +198,6 @@ def test__Config_env_fields2( path_env00_config, conftree ) :
 
     # assert False
 
-def test__Config_env_export( path_env00_config, conftree ) :
-    from smash.sys import out
-    config = conftree[path_env00_config]
-
-    print( '\n${shell:REMOTE_URL}   ', out.pink( config['shell']['REMOTE_URL'] ) )
-    print( out.yellow( '-' * 40 ) )
-
-    # assert False
 
 #----------------------------------------------------------------------#
 
@@ -256,14 +249,14 @@ def try_ConfigTree_from_path( target_path ) :
     dictprint( conftree.by_pkg )
 
     print( '\nconftree.current_env' )
-    print( conftree.current_env )
+    print( conftree.env )
     print( '\nKRO         ' )
-    listprint( list( conftree.current_env.key_resolution_order ) )
+    listprint( list( conftree.env.key_resolution_order ) )
 
-    print( '\n[path]      ', conftree.current_env['path'])
-    print( '\n[path][ENVS]', conftree.current_env['path']['ENVS'] )
+    print( '\n[path]      ', conftree.env['path'] )
+    print( '\n[path][ENVS]', conftree.env['path']['ENVS'] )
 
-    print('\nsections     ', conftree.current_env.sections)
+    print('\nsections     ', conftree.env.sections )
 
     # print('\nsubenv')
     # subenv = conftree.subenv(pure=True)
@@ -286,5 +279,72 @@ def test__ConfigTree_from_env( path_env00 ) :
 def test__ConfigTree_from_tasks( path_tasks ) :
     conftree = try_ConfigTree_from_path( path_tasks )
     # assert False
+
+
+#----------------------------------------------------------------------#
+
+def try_export( conftree ) :
+    from smash.utils import out
+
+    # print( out.pink( '\n>>>>>>>>> PATH/ROOT' ), conftree.env['path']['ROOT'] )
+
+    # print(getdeepitem(configs.current_env._yaml_data, ['__inherit__']))
+
+    # print( out.pink( '\n>>>>>>>>> configs.env' ), conftree.env )
+    #
+    # print( out.pink( '\n>>>>>>>>> config.env.parents:'))
+    # listprint( conftree.env.parents )
+
+    # lib_key = Path( conftree.env['pkg']['LIB'] )
+    # print( out.pink( '\n>>>>>>>>> lib_key' ), lib_key )
+    #
+    # lib_config = conftree[lib_key]
+    # print( out.pink( '\n>>>>>>>>> lib_config' ), lib_config )
+
+    lib_config  = conftree[Path( conftree.env['pkg']['LIB'] )]
+    env_config  = conftree.env
+    root_config = conftree.root
+
+    print( '' )
+    lib_exports = lib_config['__export__']
+    print( out.pink( '>>>>>>>>> lib_exports             ' ), lib_exports )
+
+    # print( out.pink('\n>>>>>>>>> lib_exports.keys'), lib_exports.keys( ) )
+    print( out.pink('\n>>>>>>>>> lib_exports.items()    '), lib_exports.items( ) )
+
+    print( out.yellow( '-' * 40 ) )
+
+    print('')
+    export0 = env_config._exports
+    print( out.pink('env_config._exports      '), export0)
+
+    print( '' )
+    export1 = lib_config._exports
+    print( out.pink('lib_config._exports      '), export1 )
+
+    print( '' )
+    export2 = root_config._exports
+    print( out.pink('root_config._exports     '), export2 )
+
+    print( '' )
+    export3 = env_config.exports
+    print( out.pink( 'env_config.exports      ' ) )
+    rprint(export3)
+
+def test__Config_env_export( path_env00_config, path_lib_config, conftree ) :
+
+    try_export( conftree )
+
+    assert False
+
+
+def test__ConfigTree_env_export( path_env00 ) :
+    from smash.sys.config import ConfigTree
+    conftree = ConfigTree.from_path( path_env00 )
+
+    try_export( conftree )
+
+    # assert False
+
 
 #----------------------------------------------------------------------#

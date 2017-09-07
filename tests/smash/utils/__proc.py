@@ -17,8 +17,8 @@ def test__execute_command():
         check that the shell is dead, but the python process is still running
         kill the python process
         """
-    from smash.sys.proc import execute
-    from smash.sys.proc import kill_all
+    from smash.utils.proc import execute
+    from smash.utils.proc import kill_all
 
     command_string = "echo import time; time.sleep(5) | python -"
     (parent, children) = execute( command_string )

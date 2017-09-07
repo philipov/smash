@@ -1,23 +1,19 @@
-#-- smash.sys.notify
+#-- smash.sys.manager
 
 """
-send emails
+daemon to coordinate requests to modify state on an instance
 """
 
 
 import logging
-log     = logging.getLogger( name=__name__ )
-debug = lambda *a, **b : print( "".join( str( arg ) for arg in a ) )
-info  = lambda *a, **b : print( "".join( str( arg ) for arg in a ) )
+
+log = logging.getLogger( name=__name__ )
+logging.basicConfig( level=logging.DEBUG )
+log.debug = print
+# log.debug = lambda *a, **b : None
 
 ################################
-
 from pathlib import Path
-
-from . import out
-from .out import rprint
-from pprint import pprint, pformat
-
 
 #----------------------------------------------------------------------#
 
@@ -30,10 +26,7 @@ def export( obj ) :
         __all__.append( obj.__main__.__name__ )
     return obj
 
-
-
 #----------------------------------------------------------------------#
-
 
 
 

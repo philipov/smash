@@ -15,8 +15,9 @@ import pkg_resources
 from contextlib import suppress
 from copy import copy
 
-from .out import rprint
-from . import out
+from ..utils import out
+from ..utils.out import rprint
+
 from .export import Exporter, base_exporters
 
 #----------------------------------------------------------------------#

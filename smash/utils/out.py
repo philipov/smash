@@ -9,6 +9,8 @@ from contextlib import suppress
 #----------------------------------------------------------------------#
 
 from termcolor import colored
+
+white   = lambda s : colored( s, 'white', attrs=['bold'] )
 green   = lambda s : colored( s, 'green', attrs=['bold'] )
 red     = lambda s : colored( s, 'red', attrs=['bold'] )
 blue    = lambda s : colored( s, 'blue', attrs=['bold'] )

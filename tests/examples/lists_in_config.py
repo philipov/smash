@@ -19,11 +19,11 @@ print('path', path)
 configs = ConfigTree.from_path(path)
 
 
-print(configs.current_env['path']['ROOT'])
+print( configs.env['path']['ROOT'] )
 
 # print(getdeepitem(configs.current_env._yaml_data, ['__inherit__']))
-print(configs.current_env._yaml_data)
-listprint( configs.current_env.parents )
+print( configs.env._yaml_data )
+listprint( configs.env.parents )
 
 
 #----------------------------------------------------------------------#

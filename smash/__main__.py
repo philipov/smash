@@ -19,7 +19,7 @@ colored_traceback.add_hook()
 import logging
 # log = logging.getLogger( name=__name__ )
 logging.basicConfig( level=logging.INFO )
-from .sys.out import loggers_for
+from .utils.out import loggers_for
 # debug   = lambda *a, **b : log.debug( ''.join( str(arg) for arg in a ))
 # info    = lambda *a, **b : log.info(  ''.join( str(arg) for arg in a ))
 # debug = print
@@ -36,8 +36,10 @@ from . import cmdline
 from . import modes
 
 from .sys.config import ConfigTree
-from .sys.out import debuglog
+from .utils.out import debuglog
+from .env.virtual import runtime_context
 
+@debuglog(__name__)
 def main( args: cmdline.Arguments ) :
     # ToDo: initialize logging: stdout/stderr redirect
     # ToDo: handle dev mode
@@ -61,16 +63,17 @@ def main( args: cmdline.Arguments ) :
     info( 'TARGET:  ', args.target )
     info( '' )
 
-    do_func = getattr( modes
-                     , 'do_'+args.mode
-                     , modes.__default__
-                     )
+    with runtime_context(workdir, configs) as context:
+        do_func = getattr( modes
+                         , 'do_'+args.mode
+                         , modes.__default__
+                         )
 
-    result  = do_func( *args.target
-                     , workdir=workdir
-                     , configs=configs
-                     , verbose=args.verbose
-                     )
+        result  = do_func( *args.target
+                         , workdir=workdir
+                         , configs=configs
+                         , verbose=args.verbose
+                         )
 
     debug( '' )
     info( 'SMASH DONE...' )
@@ -78,7 +81,7 @@ def main( args: cmdline.Arguments ) :
 
 
 ##############################
-def run( args=None ) :
+def enter( args=None ) :
     '''bind main to command-line argmuntes; print exceptions'''
 
     try :
@@ -94,7 +97,7 @@ def run( args=None ) :
 
 ##############################
 if __name__ == '__main__' :
-    run()
+    enter( )
 
 
 #----------------------------------------------------------------------#

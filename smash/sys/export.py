@@ -7,22 +7,20 @@ write output files from compiled configtree node
 
 import logging
 log     = logging.getLogger( name=__name__ )
-# debug   = lambda *a, **b : log.debug( "".join( str( arg ) for arg in a ) )
-# info    = lambda *a, **b : log.info(  "".join( str( arg ) for arg in a ) )
 debug = lambda *a, **b : print( "".join( str( arg ) for arg in a ) )
 info  = lambda *a, **b : print( "".join( str( arg ) for arg in a ) )
-# debug = lambda *a, **b : None
 
 ################################
 
+from collections import OrderedDict
 from pathlib import Path
 from .config import Config
 
-from . import out
-from .out import rprint
+from ..utils import out
+from ..utils.out import rprint
 from pprint import pprint, pformat
 
-from .meta import classproperty
+from ..utils.meta import classproperty
 
 #----------------------------------------------------------------------#
 
@@ -39,7 +37,6 @@ def export( obj ) :
 
 #----------------------------------------------------------------------#
 
-
 @export
 class Exporter:
     ''' methods for writing contents of configtree to an output file'''
@@ -48,13 +45,11 @@ class Exporter:
     def __key__(cls):
         return cls.__name__
 
-    def __init__( self, config:Config, filename:str, refname:str ) :
+    def __init__( self, config:Config ) :
         self.config = config
-        self.filename = filename
-        self.refname = refname
 
 
-    def write( self, target_path: Path ) :
+    def write( self, target_path: Path ):
         raise NotImplementedError
 
     def export( self ) :
@@ -65,15 +60,17 @@ class Exporter:
 
 @export
 class ExportEnvironment( Exporter ):
-    def write( self, target_path: Path ) :
-        raise NotImplementedError
+    def write( self, target_path: Path ) -> OrderedDict:
+        result = OrderedDict()
+
+        return result
 
 
 #----------------------------------------------------------------------#
 
 @export
 class ExportDebug( Exporter ) :
-    def write( self, target_path: Path ) :
+    def write( self, target_path: Path ) -> None:
         raise NotImplementedError
 
 
@@ -81,7 +78,7 @@ class ExportDebug( Exporter ) :
 
 @export
 class ExportYAML( Exporter ) :
-    def write( self, target_path: Path ) :
+    def write( self, target_path: Path ) -> None:
         raise NotImplementedError
 
 
@@ -89,7 +86,7 @@ class ExportYAML( Exporter ) :
 
 @export
 class ExportXML( Exporter ) :
-    def write( self, target_path: Path ) :
+    def write( self, target_path: Path ) -> None:
         raise NotImplementedError
 
 
@@ -97,7 +94,7 @@ class ExportXML( Exporter ) :
 
 @export
 class ExportINI( Exporter ) :
-    def write( self, target_path: Path ) :
+    def write( self, target_path: Path ) -> None:
         for key in self.config.keys():
             pass
 

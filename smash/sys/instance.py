@@ -1,14 +1,14 @@
-#-- smash.sys.handle
+#-- smash.sys.instance
 
 """
 
 """
-
 
 import logging
-log     = logging.getLogger( name=__name__ )
+
+log = logging.getLogger( name=__name__ )
 debug = lambda *a, **b : print( "".join( str( arg ) for arg in a ) )
-info  = lambda *a, **b : print( "".join( str( arg ) for arg in a ) )
+info = lambda *a, **b : print( "".join( str( arg ) for arg in a ) )
 
 ################################
 
@@ -32,42 +32,27 @@ def export( obj ) :
         __all__.append( obj.__main__.__name__ )
     return obj
 
-
-
 #----------------------------------------------------------------------#
 
 @export
-class FileHandler:
-    ''' figure out what to do with a file'''
+class InstanceTemplate :
+    '''template specifying an instance structure'''
 
-    def __init__( self, config:Config, filename:str, refname:str ) :
+    def __init__( self, config: Config, filename: str, refname: str ) :
         self.config = config
         self.filename = filename
         self.refname = refname
 
-
 #----------------------------------------------------------------------#
 
 @export
-class YAMLHandler( FileHandler ) :
+class SmashTemplate( InstanceTemplate ) :
     pass
-
-@export
-class EXEHandler( FileHandler ) :
-    pass
-
-@export
-class ScriptHandler( FileHandler ) :
-    pass
-
 
 #----------------------------------------------------------------------#
 
 base_handlers = {
-    'yml'    : YAMLHandler,
-    'yaml'   : YAMLHandler,
-    'exe'    : EXEHandler,
-    'sh'     : ScriptHandler
+    'smash' : SmashTemplate,
 }
 
 #----------------------------------------------------------------------#

@@ -36,9 +36,6 @@ def register_script_to_context_menu( ) :
 
 #----------------------------------------------------------------------#
 
-def install_configsystem( install_root: Path, force=False ) :
-    if install_root.exists( ) :
-        # todo: make backup
-        pass
+
 
 #----------------------------------------------------------------------#

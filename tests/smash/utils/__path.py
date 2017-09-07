@@ -20,7 +20,7 @@ def test__path( ) :
 #----------------------------------------------------------------------#
 
 def test__temporary_working_directory( path_env00 ) :
-    from smash.sys.path import temporary_working_directory
+    from smash.utils.path import temporary_working_directory
 
     os.chdir( str( Path( '/' ) ) )
     cwd = Path( os.getcwd( ) )
@@ -38,7 +38,7 @@ def test__temporary_working_directory( path_env00 ) :
 #----------------------------------------------------------------------#
 
 def test__files_in( path_env00 ):
-    from smash.sys.path import files_in
+    from smash.utils.path import files_in
 
     print( path_env00 )
     for file in files_in( path_env00 ):
@@ -48,7 +48,7 @@ def test__files_in( path_env00 ):
 
 
 def test__subdirectories_of( path_testdata ) :
-    from smash.sys.path import subdirectories_of
+    from smash.utils.path import subdirectories_of
 
     print( path_testdata )
     for directory in subdirectories_of( path_testdata ):
@@ -58,7 +58,7 @@ def test__subdirectories_of( path_testdata ) :
 
 
 def test__stack_of_files( path_env00 ) :
-    from smash.sys.path import stack_of_files
+    from smash.utils.path import stack_of_files
 
     print( path_env00 )
     for file in stack_of_files( path_env00, "*.*" ) :
@@ -71,7 +71,7 @@ def test__stack_of_files( path_env00 ) :
 
 def test__find_yamls( path_testdata ):
     '''presense of '__stop__' file should prevent searching in 'deep' directory'''
-    from smash.sys.path import find_yamls
+    from smash.utils.path import find_yamls
 
     for filepath in find_yamls( path_testdata ) :
         print( 'yaml: ', filepath )
