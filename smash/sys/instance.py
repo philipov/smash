@@ -34,6 +34,8 @@ def export( obj ) :
 
 #----------------------------------------------------------------------#
 
+# this is where I can begin to flesh out the idea of config files being actual classes.
+
 @export
 class InstanceTemplate :
     '''template specifying an instance structure'''
@@ -47,6 +49,7 @@ class InstanceTemplate :
 
 @export
 class SmashTemplate( InstanceTemplate ) :
+    ''''a default template for smash instance'''
     pass
 
 #----------------------------------------------------------------------#

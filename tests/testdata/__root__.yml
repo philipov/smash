@@ -10,11 +10,15 @@ __type__:         II
 __export__:
   __env__:        [Environment, path, shell]
 
+
+##########################################################
 path:
   ROOT:           .
   ENVS:           ${ROOT}/env
   PKGS:           ${ROOT}/pkg
 
+
+##########################################################
 pkg:
   APP:            ${path:PKGS}/app
   LIB:            ${path:PKGS}/lib

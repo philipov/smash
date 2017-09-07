@@ -34,10 +34,13 @@ __all__ = []
 
 from . import cmdline
 from . import modes
-
+print('TEST')
 from .sys.config import ConfigTree
+print('TEST2')
 from .utils.out import debuglog
-from .env.virtual import runtime_context
+print('test3')
+from .sys.env import runtime_context
+print('test4')
 
 @debuglog(__name__)
 def main( args: cmdline.Arguments ) :
@@ -45,6 +48,7 @@ def main( args: cmdline.Arguments ) :
     # ToDo: handle dev mode
     # ToDo: manage env list
     # ToDo: manage package list
+    print("TEST")
 
 
     info( '~~~~~~~~~~~~~~~~~~~~ SMASH')
@@ -64,6 +68,7 @@ def main( args: cmdline.Arguments ) :
     info( '' )
 
     with runtime_context(workdir, configs) as context:
+        print("TESTING")
         do_func = getattr( modes
                          , 'do_'+args.mode
                          , modes.__default__
@@ -81,7 +86,7 @@ def main( args: cmdline.Arguments ) :
 
 
 ##############################
-def enter( args=None ) :
+def console( args=None ) :
     '''bind main to command-line argmuntes; print exceptions'''
 
     try :
@@ -97,7 +102,8 @@ def enter( args=None ) :
 
 ##############################
 if __name__ == '__main__' :
-    enter( )
+    print('MAIN')
+    console( )
 
 
 #----------------------------------------------------------------------#

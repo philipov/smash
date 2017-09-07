@@ -126,14 +126,14 @@ def environment( *args, envclass_=Environment, **kwargs ) -> Environment:
 
 
 @contextmanager
-def subenv(*args, **kwargs) -> Environment:
+def subenv(*args, **kwargs) -> VirtualEnvironment:
     '''run a subordinate environment within python'''
     with environment( *args, envclass_=VirtualEnvironment, **kwargs ) as e:
         yield e
 
 
 @contextmanager
-def runtime_context( *args, **kwargs ) -> Environment:
+def runtime_context( *args, **kwargs ) -> ContextEnvironment:
     '''control the exterior python environment'''
     with environment( *args, envclass_=ContextEnvironment, **kwargs ) as e:
         yield e

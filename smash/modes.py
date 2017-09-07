@@ -16,7 +16,7 @@ from pathlib import Path
 #todo: use coroutines that yield for user input
 
 from .sys.config import ConfigTree
-from .env.virtual import subenv
+from .sys.env import subenv
 
 #----------------------------------------------------------------------#
 

@@ -15,7 +15,7 @@ __setup__ = dict(
     author_email    = 'philipov@gmail.com',
 
     entry_points    = {
-        'console_scripts' : ['smash=smash:run'],
+        'console_scripts' : ['smash=smash:console'],
     },
     install_requires= [
         'psutil',
@@ -62,7 +62,7 @@ __test_setup__= dict(
 from .cmdline import parse as parse_cmdline
 
 from .__main__ import main
-from .__main__ import enter
+from .__main__ import console
 
 from .sys.config import Config
 from .sys.config import ConfigTree

@@ -10,6 +10,7 @@ __inherit__:
   - ${pkg:APP}\__pkg__.yml
 
 
+##########################################################
 path:
   ROOT:           .
   ENVS:           ${ROOT}/test
@@ -30,6 +31,8 @@ path:
     KEY1:       hello
     KEY2:       world
 
+
+##########################################################
 shell:
   PYTHON:         mconda36
   PYTHONHOME:     ${pkgs:LIB}/python/${PYTHON}
