@@ -14,20 +14,21 @@ __inherit__:
 path:
 
   PKG_ROOT:                 ${ROOT}/pkgs/lib
-  PYTHONHOME:               ${ROOT}/pkgs/lib/python/Anaconda_3_5_2
 
   SECRETS:                  ${ROOT}/secrets
   DATA_GLOBAL:              ${ROOT}/data
+  MAIN_DIST:                ${PKG_ROOT}
 
 
 ##########################################################
 shell:
   BUILD_VERSION:            20170615211806   #BUILD_20170413232505 #ToDo: this doesn't inherit properly
-  PYTHONHOME:               ${path:PYTHONHOME}
   REMOTE_URL:               ${server:DATA}
 
+  INPUT_DIR:                input_dir
   TEST2:                    [path, ., "${INPUT_DIR}"]
   RECVAL:                   HELLO
+  PYTHONHOME:               ${pkg:LIB}/python/${ENV@PYTHON}
 
   PATH:
     - ~~path~~

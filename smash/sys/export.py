@@ -13,9 +13,10 @@ info  = lambda *a, **b : print( "".join( str( arg ) for arg in a ) )
 ################################
 
 from collections import OrderedDict
+from collections import namedtuple
 from pathlib import Path
-from .config import Config
 
+from .config import Config
 from ..utils import out
 from ..utils.out import rprint
 from pprint import pprint, pformat
@@ -45,32 +46,75 @@ class Exporter:
     def __key__(cls):
         return cls.__name__
 
-    def __init__( self, config:Config ) :
-        self.config = config
+    def __init__( self, config:Config, sections, destination ) :
+        self.config         = config
+        self.sections       = sections
+        self.destination    = destination
 
 
-    def write( self, target_path: Path ):
+    def write( self, config:Config, sections:list, destination:str ):
         raise NotImplementedError
 
-    def export( self ) :
-        self.write( self.config.path )
+
+    @property
+    def result( self, ) :
+        return self.write(self.config, self.sections, self.destination)
+
+
+################################
+
+@export
+class AmbiguousExportKeyError(Exception):
+    '''two sections exported to the same destination have matching keys'''
+    def __init__(self, *args, **kwargs):
+        super().__init__( namedtuple( '_', ['conflicting_sections', 'key', 'values', 'config', 'destination'] )(*args),**kwargs)
 
 
 #----------------------------------------------------------------------#
 
 @export
 class ExportEnvironment( Exporter ):
-    def write( self, target_path: Path ) -> OrderedDict:
-        result = OrderedDict()
 
-        return result
+    pathlist_delimiter = ';'
+
+    def pathlist2string(self, paths:list) -> str:
+        pathlist = list()
+        for value in paths:
+            if isinstance(value, str):
+                pathlist.append(value)
+                continue
+            raise TypeError("Can't append to pathlist: "+str(value)+" | "+str(type(value)))
+
+        return self.pathlist_delimiter.join(pathlist)
+
+    def write( self, config: Config, sections:list, destination:None ) -> OrderedDict:
+        subenv = OrderedDict()
+        keysources = OrderedDict()
+        for section in sections:
+            for key, value in config[section].allitems():
+                if key not in subenv:
+                    if isinstance(value, str):
+                        subenv[key]     = str(value)
+                        keysources[key] = section
+                    elif isinstance(value, list):
+                        subenv[key]     = self.pathlist2string( value )
+                        keysources[key] = section
+                    else:
+                        raise TypeError('Invalid environment value',
+                                    namedtuple('_',['section', 'key', 'value', 'type' ])
+                                                    (section, key, str(value), str(type(value))))
+                    info( out.red( 'ExportEnvironment' ), " {:<20} = {:64}".format(str(key), subenv[key])  )
+                else:
+                    raise AmbiguousExportKeyError((section, keysources[key]), key, (value, subenv[key]) ,str(config), destination)
+
+        return subenv
 
 
 #----------------------------------------------------------------------#
 
 @export
 class ExportDebug( Exporter ) :
-    def write( self, target_path: Path ) -> None:
+    def write( self, config: Config, sections, destination ) -> None:
         raise NotImplementedError
 
 
@@ -78,7 +122,7 @@ class ExportDebug( Exporter ) :
 
 @export
 class ExportYAML( Exporter ) :
-    def write( self, target_path: Path ) -> None:
+    def write( self, config: Config, sections, destination ) -> None:
         raise NotImplementedError
 
 
@@ -86,7 +130,7 @@ class ExportYAML( Exporter ) :
 
 @export
 class ExportXML( Exporter ) :
-    def write( self, target_path: Path ) -> None:
+    def write( self, config: Config, sections, destination ) -> None:
         raise NotImplementedError
 
 
@@ -94,9 +138,10 @@ class ExportXML( Exporter ) :
 
 @export
 class ExportINI( Exporter ) :
-    def write( self, target_path: Path ) -> None:
+    def write( self, config: Config, sections, destination ) -> None:
         for key in self.config.keys():
             pass
+
 
 #----------------------------------------------------------------------#
 

@@ -16,12 +16,13 @@ path:
   ENVS:           ${ROOT}/test
   PATH1:          ${ROOT}/path1
   PATH2:          ${PATH1}/path2
-  PYTHON:         ${shell:PYTHON}/python
   APP:            ${pkg:APP}
   SECTION:        pkg
   APP2:           ${${SECTION}:APP}
   HOST1:          ${${pkg:HOST}@path:SECRETS}
   LIST1:          ["${APP}","${ENVS}"]
+
+extra:
   LIST2:
     - abc
     - [1, 2, 3]
@@ -35,7 +36,6 @@ path:
 ##########################################################
 shell:
   PYTHON:         mconda36
-  PYTHONHOME:     ${pkgs:LIB}/python/${PYTHON}
   RECVAL:         ${RECVAL} WORLD
 
 

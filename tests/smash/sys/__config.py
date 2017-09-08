@@ -135,6 +135,15 @@ def test__Config_from_env( path_env00_config, conftree ) :
     config = try_Config( config )
     # assert False
 
+####################
+def test__Config_protocol_check( path_bad_protocol, conftree  ) :
+    from smash.sys.config import Config
+
+    with pytest.raises(Config.ProtocolError):
+        config = Config.from_yaml( path_bad_protocol, tree=conftree )
+
+
+    # assert False
 
 ####################
 
@@ -144,7 +153,7 @@ def test__Config_env_fields( path_env00_config, conftree ) :
 
     print( '\n${path:PATH1}   ', out.pink( config['path']['PATH1'] ))
     print( '\n${path:PATH2}   ', out.pink( config['path']['PATH2'] ))
-    print( '\n${path:PYTHON}  ', out.pink( config['path']['PYTHON'] ))
+    print( '\n${shell:PYTHON} ', out.pink( config['shell']['PYTHON'] ))
     print( '\n${path:APP}     ', out.pink( config['path']['APP'] ))
     print( '\n${path:APP2}    ', out.pink( config['path']['APP2'] ))
     print( '\n${path:APP2}    ', out.pink( config['path']['APP2'] ))
@@ -156,12 +165,12 @@ def test__Config_env_fields( path_env00_config, conftree ) :
     print(out.pink( rprint(list1, quiet=True )))
 
     print( '' )
-    list2 = config['path']['LIST2']
-    print( '${path:LIST2}    ' )
+    list2 = config['extra']['LIST2']
+    print( '${extra:LIST2}    ' )
     print( out.pink( rprint( list2, quiet=True ) ) )
     # print( '\n   ', list2[2]['KEY1'] )
 
-    print( '\nconfig[path][SUBKEYS][KEY2]   ', config['path']['SUBKEYS']['KEY2'] )
+    print( '\nconfig[extra][SUBKEYS][KEY2]   ', config['extra']['SUBKEYS']['KEY2'] )
 
     print( '\n${shell:RECVAL}   ', out.pink( config['shell']['RECVAL'] ) )
 
@@ -197,6 +206,7 @@ def test__Config_env_fields2( path_env00_config, conftree ) :
     print( out.yellow( '-' * 40 ) )
 
     # assert False
+
 
 
 #----------------------------------------------------------------------#
@@ -307,24 +317,24 @@ def try_export( conftree ) :
 
     print( '' )
     lib_exports = lib_config['__export__']
-    print( out.pink( '>>>>>>>>> lib_exports             ' ), lib_exports )
+    print( out.pink( 'lib_config[__exports__]            ' ), lib_exports )
 
     # print( out.pink('\n>>>>>>>>> lib_exports.keys'), lib_exports.keys( ) )
-    print( out.pink('\n>>>>>>>>> lib_exports.items()    '), lib_exports.items( ) )
+    print( out.pink('\nlib_exports.items()    '), lib_exports.items( ) )
 
     print( out.yellow( '-' * 40 ) )
 
     print('')
-    export0 = env_config._exports
-    print( out.pink('env_config._exports      '), export0)
+    export0 = env_config.__export__
+    print( out.pink('env_config.__exports__      '), export0)
 
     print( '' )
-    export1 = lib_config._exports
-    print( out.pink('lib_config._exports      '), export1 )
+    export1 = lib_config.__export__
+    print( out.pink('lib_config.__exports__      '), export1 )
 
     print( '' )
-    export2 = root_config._exports
-    print( out.pink('root_config._exports     '), export2 )
+    export2 = root_config.__export__
+    print( out.pink('root_config.__exports__     '), export2 )
 
     print( '' )
     export3 = env_config.exports
@@ -335,7 +345,7 @@ def test__Config_env_export( path_env00_config, path_lib_config, conftree ) :
 
     try_export( conftree )
 
-    assert False
+    # assert False
 
 
 def test__ConfigTree_env_export( path_env00 ) :

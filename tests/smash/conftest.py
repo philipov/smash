@@ -102,5 +102,15 @@ def path_network( path_testdata ) :
 def path_network_config( path_network ) :
     return path_network/'__pkg__.yml'
 
+#----------------------------------------------------------------------#
+
+@pytest.fixture( scope="session" )
+def path_counterexamples( path_testdata ) :
+    return path_testdata/'pkg'/'counterexamples'
+
+@pytest.fixture( scope="session" )
+def path_bad_protocol( path_counterexamples ) :
+    return path_counterexamples/'bad'/'protocol.yml'
+
 
 #----------------------------------------------------------------------#

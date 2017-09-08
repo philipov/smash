@@ -23,6 +23,7 @@ from termcolor import colored
 from collections import defaultdict
 from collections import ChainMap
 from collections import OrderedDict
+from collections import namedtuple
 from ordered_set import OrderedSet
 
 from functools import reduce
@@ -43,6 +44,8 @@ from ..utils.out import debuglog
 from ..utils.out import rprint, listprint, dictprint
 from pprint import pprint, pformat
 
+from ..constants import config_protocol
+
 #----------------------------------------------------------------------#
 
 __all__ = []
@@ -60,7 +63,9 @@ def export( obj ) :
 ####################
 def getdeepitem( data, keys ) :
     return reduce( lambda d, key : d.setdefault( key, OrderedDict( ) )
-        if not isinstance(d, list)
+        if
+            # print( out.pink( '------------------------------------' ), keys, key, out.pink('|'), d) or
+           not isinstance(d, list)
             else d[key], keys, data )
 
 
@@ -83,7 +88,6 @@ class GreedyOrderedSet(OrderedSet):
     append = add
 
 
-
 #----------------------------------------------------------------------#
 
 # todo: a config could be in a python module instead of a yaml file
@@ -96,10 +100,19 @@ class Config:
         the interpretation of the keys is delegated to the ConfigSectionView
     """
 
+    class ProtocolError(Exception):
+        '''Yaml file did not have the correct protocol'''
+
+    class EmptyFileWarning(Exception):
+        '''May wish to ignore blank config files'''
+
+    class MissingSubstitutionKeyError(Exception):
+        '''expression token contained a key whose value could not be found during regex substitution'''
+
     ####################
     def __init__( self, tree=None ) :
 
-        self.name       = None
+        self.filename   = None
         self.path       = None
         self.filepath   = None
 
@@ -122,13 +135,23 @@ class Config:
     def load( self, target: Path ) :
         self.filepath   = target
         self.path       = target.parents[0]
-        self.name       = target.name
+        self.filename   = target.name
 
         self._yaml_data  = load_yaml( target )
         # todo: validate magic keys and immediately raise exception if not a compatible format
-        if self._yaml_data is not None :
-            for section_name in self._yaml_data.keys( ) :
-                self._final_cache[section_name] = OrderedDict( )
+
+        if self._yaml_data is None:
+            raise Config.EmptyFileWarning(self.filepath)
+
+        for section_name in self._yaml_data.keys( ) :
+            self._final_cache[section_name] = OrderedDict( )
+
+        try:
+            assert self.protocol == config_protocol
+        except KeyError as e:
+            raise Config.ProtocolError('Missing __protocol__', str(self))
+        except AssertionError as e:
+            raise Config.ProtocolError('Protocol version mismatch')
 
         debug( out.yellow( '*' * 20 ), ' load=', self.filepath )
 
@@ -141,17 +164,32 @@ class Config:
 
     def __str__( self ) :
         return "".join( str( s )
-                        for s in [
-                            '<', self.__class__.__name__, ': ', self.filepath, '>'
-                        ] )
+            for s in [
+                '<', self.__class__.__name__, ': ', self.filepath, '>'
+            ] )
 
     __pprint__= __str__
     __repr__ = str
 
+    @property
+    def name( self ) :
+        return self._yaml_data['__name__']
+
+    @property
+    def type( self ) :
+        return self._yaml_data['__type__']
+
+    @property
+    def protocol( self ) :
+        return self._yaml_data['__protocol__']
+
+    @property
+    def version( self ) :
+        return self._yaml_data['__version__']
 
     ####################
     @property
-    def inherits( self ) -> list :
+    def __inherit__( self ) -> list :
         ''' this node's immediate parents, a list of keys (paths) to find them in the configtree'''
         try :
             parent_paths = self._yaml_data['__inherit__']
@@ -167,7 +205,7 @@ class Config:
     def parents( self ) :
         ''' the full ordered set of all parent nodes, after recursive linearization'''
 
-        parent_paths    = self.inherits
+        parent_paths    = self.__inherit__
         parents         = list( )
         for parent_path in parent_paths :
             parent      = self.tree.nodes[Path( parent_path )]
@@ -180,6 +218,19 @@ class Config:
     @property
     def key_resolution_order( self ) :
         return GreedyOrderedSet( chain( [self], self.parents ) )
+
+
+    ####################
+    def __getitem__( self, section_name ) :
+        return ConfigSectionView( self, section_name )
+
+    ####################
+    def setdefault( self, key, default ) :
+        ''' support for getdeepitem on Config object'''
+        try :
+            return self[key]
+        except KeyError :
+            return self._yaml_data.setdefault( key, default )
 
 
     ####################
@@ -204,22 +255,11 @@ class Config:
         # todo: exclude dunder keys
         return self._yaml_data.items( )
 
-    ####################
-    def setdefault( self, key, default ) :
-        ''' support for getdeepitem on Config object'''
-        try :
-            return self[key]
-        except KeyError :
-            return self._yaml_data.setdefault( key, default )
-
-    ####################
-    def __getitem__( self, section_name ) :
-        return ConfigSectionView( self, section_name )
 
     ####################
 
     @property
-    def _exports(self):
+    def __export__( self ):
         ''' parse the export dictionary for this node and return it'''
         try :
             export_items    = self['__export__'].items()
@@ -239,12 +279,12 @@ class Config:
 
         result = OrderedDict()
         for node in self.key_resolution_order :
-            print( out.cyan( 'node:' ), node)
-            for destination, speclist in node._exports:
+            #print( out.cyan( 'node:' ), node)
+            for destination, speclist in node.__export__:
                 assert len(speclist) > 1
                 exporter_name   = speclist[0]
                 export_subtrees = OrderedSet(speclist[1:])
-                print( out.white( '    export' ), destination, out.white('|'), exporter_name, out.white( '|' ), export_subtrees )
+                # print( out.white( '    export' ), destination, out.white('|'), exporter_name, out.white( '|' ), export_subtrees )
 
                 if exporter_name not in result:
                     result[exporter_name] = OrderedDict()
@@ -286,13 +326,13 @@ class ConfigSectionView :
         '''list of keys for the current subtree of the config'''
         key_union = set( )
         for key in getdeepitem( self.config._yaml_data, self.section_keys ).keys( ) :
-            print( out.green( 'key:' ), key )
+            # print( out.green( 'key:' ), key )
             key_union.add( key )
         return list( key_union )
 
     def items( self ) :
         '''key-value tuples for the current subtree only, with values resolved'''
-        print( out.blue( 'items' ), self.section_keys )
+        # print( out.blue( 'items' ), self.section_keys )
         return list( map(
             lambda key : (
                 key,
@@ -306,22 +346,24 @@ class ConfigSectionView :
         '''get the union of keys for all nodes in the key resolution order'''
         key_union = set()
         for node in self.config.key_resolution_order :
-            print(out.cyan('node:'), node, self.section_keys, '\n',
-                  getdeepitem( node._yaml_data, self.section_keys ))
+            # print(out.cyan('node:'), node, self.section_keys, '\n',
+            #       getdeepitem( node._yaml_data, self.section_keys ))
             for key in getdeepitem(node._yaml_data, self.section_keys).keys():
-                print(out.green('    key:'), key)
+                # print(out.green('    key:'), key)
                 key_union.add(key)
+        #     print( out.green( '\n------------------------------------' ))
+        # print(out.cyan( '\n------------------------------------' ))
         return list(key_union)
 
     def allitems( self ) :
         '''same as items, but uses allkeys method'''
-        print( out.blue( 'allitems' ), self.section_keys )
+        # print( out.blue( 'allitems' ), self.section_keys )
         return list( map(
             lambda key : (
                 key,
                 getdeepitem( self.config, [*self.section_keys, key] )
             ),
-            self.deepkeys( )
+            self.allkeys( )
         ) )
 
 
@@ -396,13 +438,14 @@ class ConfigSectionView :
                 return parent_value
 
         # not found
-        print('__getitem__', key, out.red('|'), self.config, out.red( '|' ),self.section_keys)
+        # print('__getitem__', key, out.red('|'), self.config, out.red( '|' ),self.section_keys)
         raise KeyError(str(key)+' not found.')
 
 
     ####################
     def evaluate_list(self, key, raw_list):
         parsed_list = []
+        # print(out.yellow('------------'), 'EVALUATE LIST', raw_list)
         for (i, value) in enumerate( raw_list ) :
             if isinstance( value, list ) or isinstance( value, dict ) :
                 new_value = ConfigSectionView( self.config, *self.section_keys, key, i )
@@ -421,6 +464,7 @@ class ConfigSectionView :
 
         new_value=value
         total_count = 1
+        # print(out.green('EVALUATE:'), key, value, self)
 
         while total_count > 0 :
             total_count = 0
@@ -440,7 +484,11 @@ class ConfigSectionView :
 
         # debug( 'VALUE --- ', colored( value, 'red', attrs=['bold'] ) )
         expression_replacer = self.expression_parser( key)
-        (result, count)     = token_expression_regex.subn( expression_replacer, value )
+        try:
+            (result, count)     = token_expression_regex.subn( expression_replacer, value )
+        except TypeError as e:
+            print(out.red('SUBSTITUTE'), key, value, self)
+            raise e
         # debug( "After re.subn:  ", result, " | ", count, "|", expression_replacer.counter[0] )
 
         total_count += expression_replacer.counter[0] + count# ToDo: Replace monkey patch with class
@@ -470,6 +518,8 @@ class ConfigSectionView :
             target_configpath   = matchobj.group( 'configpath' ) \
                 if (matchobj.group( 'configpath' ) is not None) \
                 else self.config.filepath
+            if target_configpath == 'ENV':
+                target_configpath = self.config.tree.env.filepath
             target_sections     = matchobj.group( 'sections' ).split( ':' ) \
                 if (matchobj.group( 'sections' ) is not None) \
                 else self.section_keys
@@ -489,6 +539,11 @@ class ConfigSectionView :
                 node = node.parents[0]
 
             result = getdeepitem(node, section_keys)
+            # print(out.cyan("subn result:"), result, out.cyan('|'),key)
+            if isinstance(result, OrderedDict) and len(result) == 0:
+                raise Config.MissingSubstitutionKeyError(''.join(str(s) for s in ['Could not find ', target_sections,':', target_key,'@', target_configpath,' for inserting into ', self.section_keys,':', key, '@',self.config.filepath ]))
+            if not isinstance(result, str):
+                raise TypeError("Can't substitute non-scalar value", self.keys, key, result, self.config,)
             return result
 
         ###
@@ -564,6 +619,7 @@ class ConfigTree :
                     # todo: skip files that throw an invalid config exception
                     self.add_node( Path( file ) )
 
+
         self.finalize( )
         return self
 
@@ -582,9 +638,14 @@ class ConfigTree :
         self.root = node
 
     def add_node( self, target_file ) :
-        node = Config.from_yaml( target_file, tree=self )
-        self.nodes[node.filepath] = node
-        return node
+        try:
+            node = Config.from_yaml( target_file, tree=self )
+            self.nodes[node.filepath] = node
+            return node
+        except Config.EmptyFileWarning as e:
+            print('Config.EmptyFileWarning:', e)
+        except Config.ProtocolError as e:
+            print('Config.ProtocolError:', e)
 
     __add_root = add_root
     __add_node = add_node
@@ -627,32 +688,15 @@ class ConfigTree :
 
     ####################
     def __str__( self ) :
-        return "".join( str( s )
-                        for s in [
-                            '<', self.__class__.__name__, ' of ', self.root.__class__.__name__, ': [', len( self ),
-                            '], ', 'root=', self.root.path, '>'
-                        ] )
+        return "".join( str( s ) for s in [
+                '<', self.__class__.__name__, ' of ', self.root.__class__.__name__,
+                ': [', len( self ), '], root=', self.root.path, '>'
+            ] )
 
     __pprint__ = __str__
     __repr__ = str
 
     #----------------------------------------------------------------#
-
-    @property
-    def root_name( self ) :
-        return self.root._yaml_data['__name__']
-
-    @property
-    def root_type( self ) :
-        return self.root._yaml_data['__type__']
-
-    @property
-    def root_protocol( self ) :
-        return self.root._yaml_data['__protocol__']
-
-    @property
-    def root_version( self ) :
-        return self.root._yaml_data['__version__']
 
     @property
     def envfile( self ) :
@@ -662,7 +706,7 @@ class ConfigTree :
     def find_nodes( self, pattern ) :
         results = list( )
         for (node_filepath, node) in self.nodes.items( ) :
-            if re.match( pattern, str( node.name ) ) is not None :
+            if re.match( pattern, str( node.filename ) ) is not None :
                 results.append( node )
         if len( results ) == 0 :
             results.append( self.root )
@@ -681,7 +725,7 @@ class ConfigTree :
     def by_name( self ) :
         result = defaultdict( list )
         for (name, node) in self.nodes.items( ) :
-            result[node.name.split( '.' )[0]].append( node )
+            result[node.filename.split( '.' )[0]].append( node )
         return result
 
     @property

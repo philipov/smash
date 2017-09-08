@@ -26,44 +26,46 @@ import time
 
 class Environment:
     def __init__( self, workdir, configs, pure=False ) :
-        self.cwd        = workdir
-        self.configs    = configs
-        self.processes  = list()
-        self.pure       = pure
-        self.parent     = None
+        self.cwd            = workdir
+        self.configtree     = configs
+        self.processes      = list()
+        self.pure           = pure
+        self.parent         = None
         assert configs.final
 
     def build(self):
+        ''' prepare artifacts necessary for running the environment'''
         raise NotImplementedError
 
     def initialize(self):
+        ''' finalize preparation of the environment'''
         raise NotImplementedError
 
     def validate(self):
+        ''' check if the environment state satisfies constraints'''
         raise NotImplementedError
 
     def teardown(self):
+        ''' clean up the environment when it's no longer needed'''
         raise NotImplementedError
 
     def run(self, command):
+        ''' execute a command within the environment'''
         raise NotImplementedError
 
     @property
-    def variables(self):
-        from ..sys.plugins import exporters
-        export_subtrees = self.configs.env.exports['Environment']['__env__']
-        exporter = exporters['Environment']
-
-        result = exporter( self.configs.env ).write( self.cwd )
-        if not self.pure:
-            result.update(os.environ)
-
-        return result
+    def variables( self ) :
+        ''' access to shell state variables'''
+        raise NotImplementedError
 
 
 #----------------------------------------------------------------------#
 
 class ContextEnvironment( Environment ) :
+    ''' Environment within which smash is running,
+        could be an explicit smash instance,
+        or some implicit unmanaged system environment
+    '''
     def build( self ) :
         pass
 
@@ -81,11 +83,18 @@ class ContextEnvironment( Environment ) :
     def run( self, command ) :
         raise NotImplementedError
 
+    @property
+    def variables( self ) :
+        raise NotImplementedError
+
 
 #----------------------------------------------------------------------#
 
 SUBPROCESS_DELAY = 0.01
 class VirtualEnvironment(Environment):
+    ''' Environment that is launched as a child of the smash process
+        shell variables are supplied by evaluating the 'Environment' __export__ process in the configtree
+    '''
     def build( self ) :
         pass
 
@@ -111,6 +120,17 @@ class VirtualEnvironment(Environment):
         proc.wait( )
         return pid_shell
 
+    @property
+    def variables( self ) :
+        from ..sys.plugins import exporters
+
+        export_subtrees = self.configtree.env.exports['Environment']['__env__']
+        exporter        = exporters['Environment']
+        result          = exporter( self.configtree.env, export_subtrees, '__env__' ).result
+
+        if not self.pure :
+            result.update( os.environ )
+        return result
 
 #----------------------------------------------------------------------#
 
