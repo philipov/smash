@@ -1,16 +1,15 @@
 ##########################################################
 requires:
-  - PKG_TCA
-
+  - PKG_BAD
 
 ##########################################################
 path:
   DATA_LOCAL:               ./data
 
 shell:
-#  PYTHONPATH:               [prepend, .]
+
   PATH:                     [prepend, .]
-  DEPENDENCY:               ${path:DATA_LOCAL}  #${${pkg:TCA}::otconfig:CSV_FILE_PATH}
+  DEPENDENCY:               ${path:DATA_LOCAL}
 
 
 ##########################################################
