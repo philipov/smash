@@ -119,6 +119,21 @@ class ExportShell( Exporter ):
         return subenv
 
 
+@export
+class ExportShellScript( Exporter ) :
+    def write( self, config: Config, sections, destination ) -> None :
+        raise NotImplementedError
+
+@export
+class ExportShellScriptCMD( ExportShellScript) :
+    def write( self, config: Config, sections, destination ) -> None :
+        raise NotImplementedError
+
+@export
+class ExportShellScriptBASH( ExportShellScript ) :
+    def write( self, config: Config, sections, destination ) -> None :
+        raise NotImplementedError
+
 #----------------------------------------------------------------------#
 
 @export
@@ -180,14 +195,18 @@ class ExportINI( Exporter ) :
                     raise self.AmbiguousKeyError( (section, keysources[key]), key, (value, subenv[key]), str( config ),
                                                   destination )
 
+
+
 #----------------------------------------------------------------------#
 
 base_exporters = {
-    'Shell' : ExportShell,
-    'Debug' : ExportDebug,
-    'YAML'  : ExportYAML,
-    'XML'   : ExportXML,
-    'INI'   : ExportINI
+    'Shell'         : ExportShell,
+    'ShellScript'   : ExportShellScriptCMD if sys.platform=='win32'
+                 else ExportShellScriptBASH,
+    'Debug'         : ExportDebug,
+    'YAML'          : ExportYAML,
+    'XML'           : ExportXML,
+    'INI'           : ExportINI
 }
 
 #----------------------------------------------------------------------#

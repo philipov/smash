@@ -122,6 +122,7 @@ class VirtualEnvironment(Environment):
         proc.wait( )
         return pid_shell
 
+
     @property
     def variables( self ) :
         from ..sys.plugins import exporters
@@ -140,6 +141,7 @@ class VirtualEnvironment(Environment):
         if not self.pure :
             result.update( os.environ )
         return result
+
 
 #----------------------------------------------------------------------#
 

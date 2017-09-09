@@ -67,6 +67,7 @@ def getdeepitem( data, keys ) :
             else d[key], keys, data )
 
 
+####################
 class GreedyOrderedSet(OrderedSet):
     '''OrderedSet that keeps the last value added to it instead of the first.'''
 
@@ -104,11 +105,12 @@ class Config:
     class EmptyFileWarning(Exception):
         '''May wish to ignore blank config files'''
 
-    class MissingSubstitutionKeyError(Exception):
+    class SubstitutionKeyNotFoundError(Exception):
         '''expression token contained a key whose value could not be found during regex substitution'''
 
-    class InvalidTokenUseError(Exception):
+    class TokenExpressionError(Exception):
         '''$ tokens are scalar substitutions, @ tokens are sequence extensions'''
+
 
     ####################
     def __init__( self, tree=None ) :
@@ -558,7 +560,10 @@ class ConfigSectionView :
             result = getdeepitem(node, section_keys)
             # print(out.cyan("subn result:"), result, out.cyan('|'), key, out.cyan( '|' ), matchobj.group(0))
             if isinstance(result, OrderedDict) and len(result) == 0:
-                raise Config.MissingSubstitutionKeyError(''.join(str(s) for s in ['Could not find ', target_sections,':', target_key,'@', target_configpath,' for inserting into ', self.section_keys,':', key, '@',self.config.filepath ]))
+                raise Config.SubstitutionKeyNotFoundError(''.join(str(s) for s in [
+                    'Could not find ', target_sections,':', target_key,'@', target_configpath,
+                    ' for inserting into ', self.section_keys,':', key, '@',self.config.filepath
+                ]))
             elif isinstance(result, list) and matchobj.group(0) == matchobj.string and listeval and token == '@':
                 ### WARNING: use a hack to return a list out from the regex substitute
                 ### so we can later use it to extend a list we're substituting into
@@ -574,7 +579,7 @@ class ConfigSectionView :
                                             (self.section_keys, key, matchobj.string)
                 ]))
             elif token == '@':
-                raise Config.InvalidTokenUseError('@ tokens may only be used to extend other sequences')
+                raise Config.TokenExpressionError('@ tokens may only be used to extend other sequences')
             return str(result)
 
         ###
