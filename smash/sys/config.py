@@ -107,6 +107,9 @@ class Config:
     class MissingSubstitutionKeyError(Exception):
         '''expression token contained a key whose value could not be found during regex substitution'''
 
+    class InvalidTokenUseError(Exception):
+        '''$ tokens are scalar substitutions, @ tokens are sequence extensions'''
+
     ####################
     def __init__( self, tree=None ) :
 
@@ -455,7 +458,7 @@ class ConfigSectionView :
                 new_value = self.evaluate( key, value, listeval=True )
                 try :
                     resultlist = self.resultlist.pop( )
-                    print( "RESULTLIST:", resultlist )
+                    # print( "RESULTLIST:", resultlist )
                     parsed_list.extend(resultlist)
                     continue
                 except IndexError as e :
@@ -528,6 +531,7 @@ class ConfigSectionView :
 
         def expression_replacer( matchobj ) :
 
+            token = matchobj.group('token')
             target_configpath   = matchobj.group( 'configpath' ) \
                 if (matchobj.group( 'configpath' ) is not None) \
                 else self.config.filepath
@@ -552,10 +556,10 @@ class ConfigSectionView :
                 node = node.parents[0]
 
             result = getdeepitem(node, section_keys)
-            print(out.cyan("subn result:"), result, out.cyan('|'), key, out.cyan( '|' ), matchobj.group(0))
+            # print(out.cyan("subn result:"), result, out.cyan('|'), key, out.cyan( '|' ), matchobj.group(0))
             if isinstance(result, OrderedDict) and len(result) == 0:
                 raise Config.MissingSubstitutionKeyError(''.join(str(s) for s in ['Could not find ', target_sections,':', target_key,'@', target_configpath,' for inserting into ', self.section_keys,':', key, '@',self.config.filepath ]))
-            elif isinstance(result, list) and matchobj.group(0) == matchobj.string and listeval:
+            elif isinstance(result, list) and matchobj.group(0) == matchobj.string and listeval and token == '@':
                 ### WARNING: use a hack to return a list out from the regex substitute
                 ### so we can later use it to extend a list we're substituting into
                 self.resultlist.append(result)
@@ -569,6 +573,8 @@ class ConfigSectionView :
                     '\n\tin', namedtuple( '_', ['section', 'key', 'value'] )
                                             (self.section_keys, key, matchobj.string)
                 ]))
+            elif token == '@':
+                raise Config.InvalidTokenUseError('@ tokens may only be used to extend other sequences')
             return str(result)
 
         ###
@@ -581,7 +587,8 @@ class ConfigSectionView :
 
 #todo: delayed key evaluation syntax -- causes a parent value to have its token expressions evaluated from the child's point of view
 token_expression_regex = re.compile(
-    r"""(\${                                  # ${
+    r"""(   (?P<token>[$@])
+          {                                  # ${
             ((?P<configpath>[^${}]+?)@)?     #   configpath@         [optional]
             ((?P<sections>[^${}]+):)?        #   sections:           [optional]
             (?P<key>[^$:{}]+?)               #   key                 -required-
