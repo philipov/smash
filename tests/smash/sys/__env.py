@@ -6,15 +6,16 @@ unit tests
 
 #----------------------------------------------------------------------#
 
-def test__runtime_context(path_env00 ):
-    from smash.sys.env import runtime_context
+def test__context(path_env00 ):
+    from smash.sys.env import ContextEnvironment
 
     # assert False
 
 
 ################################
 def test__subenv( path_env00 ) :
-    from smash.sys.env import subenv
+    from smash.sys.env import ContextEnvironment
+    from smash.sys.env import VirtualEnvironment
 
     # assert False
 

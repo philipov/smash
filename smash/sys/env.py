@@ -3,17 +3,16 @@
 """
 """
 
+__all__ = []
 
 import logging
-log = logging.getLogger( name=__name__ )
-logging.basicConfig( level=logging.DEBUG )
-log.debug = print
+logging.basicConfig( level=logging.INFO )
+from ..utils.out import loggers_for
+(debug, info, warning, error, critical) = loggers_for( __name__ )
 
 from pathlib import Path
 from contextlib import contextmanager
 from collections import OrderedDict
-
-__all__ = []
 
 import sys
 import os
@@ -21,19 +20,25 @@ import subprocess
 import psutil
 import time
 
-class MissingShellExportError(Exception):
+from .config import ConfigTree
+
+#----------------------------------------------------------------------#
+
+class MissingShellExportError( Exception ) :
     '''Neither Config nor its parents defined any exporter for shell variables'''
+
 
 #----------------------------------------------------------------------#
 
 class Environment:
-    def __init__( self, workdir, configs, pure=False ) :
+
+    def __init__( self, workdir, pure, parent=None ) :
         self.cwd            = workdir
-        self.configtree     = configs
+
         self.processes      = list()
         self.pure           = pure
-        self.parent         = None
-        assert configs.final
+        self.parent         = parent
+
 
     def build(self):
         ''' prepare artifacts necessary for running the environment'''
@@ -51,14 +56,33 @@ class Environment:
         ''' clean up the environment when it's no longer needed'''
         raise NotImplementedError
 
-    def run(self, command):
-        ''' execute a command within the environment'''
-        raise NotImplementedError
+    ####################
+    def __enter__( self ) :
+        self.build( )
+        self.validate( )
+        self.initialize( )
+        return self
 
+    def __exit__( self, exc_type, exc_value, traceback) :
+        self.teardown( )
+
+
+    ####################
     @property
     def variables( self ) :
         ''' access to shell state variables'''
         raise NotImplementedError
+
+
+    ####################
+    def run(self, command):
+        ''' execute a command within the environment'''
+        raise NotImplementedError
+
+
+
+#----------------------------------------------------------------------#
+
 
 
 #----------------------------------------------------------------------#
@@ -68,6 +92,15 @@ class ContextEnvironment( Environment ) :
         could be an explicit smash instance,
         or some implicit unmanaged system environment
     '''
+
+    def __init__( self, workdir, *, pure = False ) :
+        super( ).__init__( workdir, pure)
+        self.configtree = ConfigTree.from_path( workdir )
+
+        debug( 'CONFIGS:  ', self.configtree )
+        debug( '' )
+        assert self.configtree.final
+
     def build( self ) :
         pass
 
@@ -96,6 +129,11 @@ class VirtualEnvironment(Environment):
     ''' Environment that is launched as a child of the smash process
         shell variables are supplied by evaluating the 'Environment' __export__ process in the configtree
     '''
+
+    def __init__( self, context:ContextEnvironment, *, pure = True ):
+        super().__init__(context.cwd, pure)
+        self.config= context.configtree.env
+
     def build( self ) :
         pass
 
@@ -103,12 +141,36 @@ class VirtualEnvironment(Environment):
         pass
 
     def initialize( self ) :
-        self.pure = True
+        pass
 
     def teardown( self ) :
         pass
 
-    def run( self, command:list ) :
+
+    ####################
+    @property
+    def variables( self ) :
+        from ..sys.plugins import exporters
+
+        try : # todo: refactor how environment export works. subenv should be the export sink key, and Exporters should push values into it. The virtual environment should just check that sink after exporters have been ran.
+            export_subtrees = self.config.exports['Shell']['subenv']
+        except KeyError :
+            if self.config.is_pure :
+                raise MissingShellExportError( str(
+                    self.config.filepath ) + ' and its parents did not define any Exporters for pure virtual environment.' )
+            else :
+                print( "Warning: No Shell Exporter defined. Will use only exterior environment variables." )
+                return OrderedDict( )
+        exporter = exporters['Shell']
+        result = exporter( self.config, export_subtrees, 'subenv' ).result
+
+        if not self.config.is_pure or not self.pure :
+            result.update( os.environ )
+        return result
+
+
+    ####################
+    def run( self, command:tuple) :
         proc        = subprocess.Popen( ' '.join(command), env=self.variables, shell=True )
         pid_shell   = proc.pid
 
@@ -123,52 +185,8 @@ class VirtualEnvironment(Environment):
         return pid_shell
 
 
-    @property
-    def variables( self ) :
-        from ..sys.plugins import exporters
-
-        try: # todo: refactor how environment export works. subenv should be the export sink key, and Exporters should push values into it. The virtual environment should just check that sink after exporters have been ran.
-            export_subtrees = self.configtree.env.exports['Shell']['subenv']
-        except KeyError:
-            if self.configtree.env.is_pure:
-                raise MissingShellExportError(str(self.configtree.env.filepath)+' and its parents did not define any Exporters for pure virtual environment.')
-            else:
-                print("Warning: No Shell Exporter defined. Will use only exterior environment variables.")
-                return OrderedDict()
-        exporter        = exporters['Shell']
-        result          = exporter( self.configtree.env, export_subtrees, 'subenv' ).result
-
-        if not self.configtree.env.is_pure or not self.pure:
-            result.update( os.environ )
-        return result
 
 
-#----------------------------------------------------------------------#
-
-@contextmanager
-def environment( *args, envclass_=Environment, **kwargs ) -> Environment:
-    '''virtual context manager'''
-    env = envclass_( *args, **kwargs )
-    env.build( )
-    env.validate( )
-    env.initialize( )
-    yield env
-
-    env.teardown( )
-
-
-@contextmanager
-def subenv(*args, **kwargs) -> VirtualEnvironment:
-    '''run a subordinate environment within python'''
-    with environment( *args, envclass_=VirtualEnvironment, **kwargs ) as e:
-        yield e
-
-
-@contextmanager
-def runtime_context( *args, **kwargs ) -> ContextEnvironment:
-    '''control the exterior python environment'''
-    with environment( *args, envclass_=ContextEnvironment, **kwargs ) as e:
-        yield e
 
 
 #----------------------------------------------------------------------#

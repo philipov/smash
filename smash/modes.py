@@ -15,8 +15,8 @@ from pathlib import Path
 
 #todo: use coroutines that yield for user input
 
-from .sys.config import ConfigTree
-from .sys.env import subenv
+from .sys.env import ContextEnvironment
+from .sys.env import VirtualEnvironment
 
 #----------------------------------------------------------------------#
 
@@ -32,9 +32,9 @@ def export( obj ) :
 #----------------------------------------------------------------------#
 
 @export
-def do_run(*command, workdir:Path, configs:ConfigTree, verbose=False):
+def do_run(*command, context:ContextEnvironment, verbose=False):
     info( "Execute target shell command inside an environment" )
-    with subenv(workdir, configs) as interior:
+    with VirtualEnvironment(context) as interior:
         shell = interior.run(command)
         print("interior.processes", interior.processes)
     print('interior.run:', shell)
@@ -42,22 +42,22 @@ def do_run(*command, workdir:Path, configs:ConfigTree, verbose=False):
 
 
 @export
-def do_open( *target, workdir, configs, verbose=False ):
+def do_open( *target, context: ContextEnvironment, verbose=False ):
     info( "Run target file using associated command inside an environent" )
 
 
 @export
-def do_test( *target, workdir, configs, verbose=False ):
+def do_test( *target, context:ContextEnvironment, verbose=False ):
     info( "Run tests for a target package" )
 
 
 @export
-def do_build( *target, workdir, configs, verbose=False ):
+def do_build( *target, context:ContextEnvironment, verbose=False ):
     info( "Build executable distribution archive" )
 
 
 @export
-def do_install( *target, workdir, configs, verbose=False ):
+def do_install( *target, context:ContextEnvironment, verbose=False ):
     info( "Create new system root in target directory" )
     from .boot.install import install_configsystem
     install_root = Path(target[0])
@@ -65,16 +65,16 @@ def do_install( *target, workdir, configs, verbose=False ):
 
 
 @export
-def do_pkg( *target, workdir, configs, verbose=False ):
+def do_pkg( *target, context:ContextEnvironment, verbose=False ):
     info( "Package Manager" )
 
 
 @export
-def do_env( *target, workdir, configs, verbose=False ):
+def do_env( *target, context:ContextEnvironment, verbose=False ):
     info( "Environment Manager" )
 
 @export
-def __default__( *target, workdir, configs, verbose=False ):
+def __default__( *target, context:ContextEnvironment, verbose=False ):
     info( "Unknown Command", )
 
 
