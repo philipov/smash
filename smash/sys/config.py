@@ -27,7 +27,7 @@ from ordered_set import OrderedSet
 from functools import reduce
 from itertools import chain
 from contextlib import suppress
-from glob import iglob
+
 
 from pathlib import Path
 
@@ -192,7 +192,9 @@ class Config:
 
     @property
     def is_pure( self ) :
-        return bool(self._yaml_data['__pure__'])
+        with suppress(KeyError):
+            return bool(self._yaml_data['__pure__'])
+        return True
 
     ####################
     @property
@@ -305,6 +307,7 @@ class Config:
 
 #----------------------------------------------------------------------#
 
+#----------------------------------------------------------------------#
 
 class ConfigSectionView :
     ''' dictionary view of a config section that provides alternate indexing logic
@@ -601,11 +604,7 @@ token_expression_regex = re.compile(
     """, re.VERBOSE )
 
 
-
-
 #----------------------------------------------------------------------#
-
-
 
 #----------------------------------------------------------------------#
 
@@ -847,6 +846,7 @@ class ConfigTree :
             pass
         config.write( self.out_file )
         config.write( self.raw_file, raw=True )
+
 
 #----------------------------------------------------------------------#
 

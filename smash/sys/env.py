@@ -138,7 +138,7 @@ class VirtualEnvironment(Environment):
         exporter        = exporters['Shell']
         result          = exporter( self.configtree.env, export_subtrees, 'subenv' ).result
 
-        if not self.pure :
+        if not self.configtree.env.is_pure or not self.pure:
             result.update( os.environ )
         return result
 
