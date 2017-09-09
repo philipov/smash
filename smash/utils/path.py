@@ -97,11 +97,10 @@ def temporary_working_directory( path: Path ) :
 
     old_working_dir = Path( os.getcwd( ) )
 
-    # log.debug( "dir ->", str( path ) )
-    os.chdir( str( path ) )
+    if path is not None:
+        os.chdir( str( path ) )
     yield old_working_dir
 
-    # log.debug( "dir <-", str( old_working_dir ) )
     os.chdir( str( old_working_dir ) )
 
 
