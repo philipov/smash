@@ -16,6 +16,7 @@ import sys
 
 from collections import OrderedDict
 from collections import namedtuple
+from collections import defaultdict
 from pathlib import Path
 
 from .config import Config
@@ -39,7 +40,7 @@ def export( obj ) :
 
 
 #----------------------------------------------------------------------#
-
+#todo: refactor so that subclasses are providing init methods
 @export
 class Exporter:
     ''' methods for writing contents of configtree to an output file'''
@@ -66,8 +67,6 @@ class Exporter:
 ################################
 
 
-
-
 #----------------------------------------------------------------------#
 
 @export
@@ -83,7 +82,8 @@ class ExportShell( Exporter ):
 
     pathlist_delimiter = ';' if sys.platform=='win32' else ':'
 
-    def pathlist2string(self, paths:list) -> str:
+    @classmethod
+    def pathlist2string(cls, paths:list) -> str:
         pathlist = list()
         for value in paths:
             if isinstance(value, str):
@@ -94,7 +94,7 @@ class ExportShell( Exporter ):
                 continue
             raise TypeError("Can't append to pathlist: "+str(value)+" | "+str(type(value)))
 
-        return self.pathlist_delimiter.join(pathlist)
+        return cls.pathlist_delimiter.join(pathlist)
 
     def write( self, config: Config, sections:list, destination:None ) -> OrderedDict:
         subenv      = OrderedDict()
@@ -119,20 +119,26 @@ class ExportShell( Exporter ):
         return subenv
 
 
+#----------------------------------------------------------------------#
+
+################################
 @export
 class ExportShellScript( Exporter ) :
     def write( self, config: Config, sections, destination ) -> None :
         raise NotImplementedError
 
+################################
 @export
 class ExportShellScriptCMD( ExportShellScript) :
     def write( self, config: Config, sections, destination ) -> None :
         raise NotImplementedError
 
+################################
 @export
 class ExportShellScriptBASH( ExportShellScript ) :
     def write( self, config: Config, sections, destination ) -> None :
         raise NotImplementedError
+
 
 #----------------------------------------------------------------------#
 
@@ -161,39 +167,28 @@ class ExportXML( Exporter ) :
 #----------------------------------------------------------------------#
 
 @export
-class ExportINI( Exporter ) :
+class ExportINI( ExportShell ) :
+
     pathlist_delimiter = ','
 
-    def pathlist2string( self, paths: list ) -> str :
-        pathlist = list( )
-        for value in paths :
-            if isinstance( value, str ) :
-                pathlist.append( value )
-                continue
-            raise TypeError( "Can't append to pathlist: " + str( value ) + " | " + str( type( value ) ) )
+    def write( self, config: Config, sections: list, destination: str ) -> OrderedDict :
+        from configparser import ConfigParser
 
-        return self.pathlist_delimiter.join( pathlist )
-
-    def write( self, config: Config, sections: list, destination: None ) -> OrderedDict :
-        subenv = OrderedDict( )
-        keysources = OrderedDict( )
+        inidata      = ConfigParser( )
         for section in sections :
             for key, value in config[section].allitems( ) :
-                if key not in subenv :
-                    if isinstance( value, str ) :
-                        subenv[key] = str( value )
-                        keysources[key] = section
-                    elif isinstance( value, list ) :
-                        subenv[key] = self.pathlist2string( value )
-                        keysources[key] = section
-                    else :
-                        raise TypeError( 'Invalid environment value',
-                                         namedtuple( '_', ['section', 'key', 'value', 'type'] )
-                                         ( section, key, str( value ), str( type( value ) ) ) )
-                    info( out.red( 'ExportEnvironment' ), " {:<20} = {:64}".format( str( key ), subenv[key] ) )
+                if isinstance( value, str ) :
+                    inidata[key] = "'"+str( value )+ "'"
+                elif isinstance( value, list ) :
+                    inidata[key] = "'"+self.pathlist2string( value )+"'"
                 else :
-                    raise self.AmbiguousKeyError( (section, keysources[key]), key, (value, subenv[key]), str( config ),
-                                                  destination )
+                    raise TypeError( 'Invalid environment value',
+                                     namedtuple( '_', ['section', 'key', 'value', 'type'] )
+                                     ( section, key, str( value ), str( type( value ) ) ) )
+                info( out.red( 'ExportINI' ), " {:<20} = {:64}".format( str( key ), inidata[key] ) )
+
+        with open( destination, 'w' ) as outfile :
+            inidata.write( outfile)
 
 
 

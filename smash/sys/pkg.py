@@ -16,7 +16,7 @@ __all__ = []
 
 import conda
 from .env import VirtualEnvironment
-from .env import environment
+
 
 #----------------------------------------------------------------------#
 

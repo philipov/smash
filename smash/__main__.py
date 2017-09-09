@@ -43,18 +43,16 @@ def main( args: cmdline.Arguments ) :
     # ToDo: manage package list
 
     info( '~~~~~~~~~~~~~~~~~~~~ SMASH')
-    debug( 'SCRIPT:  ', __file__ )
-    debug( 'VERBOSE: ', args.verbose )
-
-    workdir = Path( os.getcwd( ) )
-    debug( 'CWD:     ', workdir )
-    debug( '' )
-
+    debug('SCRIPT:  ', __file__ )
     info( 'MODE:    ', args.mode )
     info( 'TARGET:  ', args.target )
     info( '' )
 
-    with ContextEnvironment(workdir) as context:
+    cwd = Path( os.getcwd() )
+    debug( 'IWD:     ', cwd )
+    debug( '' )
+
+    with ContextEnvironment(cwd) as context:
         do_func = getattr( modes
                          , 'do_'+args.mode
                          , modes.__default__

@@ -489,7 +489,8 @@ class ConfigSectionView :
             (new_value, count) = self.substitute( key, str(new_value), listeval=listeval )
             total_count += count
 
-        final_value = try_resolve(new_value, self.config.path)
+        with temporary_working_directory(self.config.path):
+            final_value = try_resolve(new_value, self.config.path)
 
         return final_value  # todo: DifferedPath
 

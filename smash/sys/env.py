@@ -32,16 +32,16 @@ class MissingShellExportError( Exception ) :
 
 class Environment:
 
-    def __init__( self, workdir, pure, parent=None ) :
-        self.cwd            = workdir
+    def __init__( self, path, pure, *, parent=None ) :
 
-        self.processes      = list()
+        self.path           = path
         self.pure           = pure
         self.parent         = parent
+        self.processes      = list()
 
 
     def build(self):
-        ''' prepare artifacts necessary for running the environment'''
+        ''' run all the exporters '''
         raise NotImplementedError
 
     def validate( self ) :
@@ -93,23 +93,24 @@ class ContextEnvironment( Environment ) :
         or some implicit unmanaged system environment
     '''
 
-    def __init__( self, workdir, *, pure = False ) :
-        super( ).__init__( workdir, pure)
-        self.configtree = ConfigTree.from_path( workdir )
+    def __init__( self, cwd, *, pure = False ) :
+        self.configtree = ConfigTree.from_path( cwd )
+        super( ).__init__( cwd, pure)
 
         debug( 'CONFIGS:  ', self.configtree )
         debug( '' )
         assert self.configtree.final
 
     def build( self ) :
+
         pass
 
     def validate( self ) :
         pass
 
     def initialize( self ) :
-        sys.path.append( str( self.cwd ) )
-        os.chdir( str( self.cwd ) )
+        sys.path.append( str( self.path ) )
+        os.chdir( str( self.path ) )
 
     def teardown( self ) :
         pass
@@ -131,10 +132,11 @@ class VirtualEnvironment(Environment):
     '''
 
     def __init__( self, context:ContextEnvironment, *, pure = True ):
-        super().__init__(context.cwd, pure)
         self.config= context.configtree.env
+        super().__init__(self.config.path, pure, parent=context)
 
     def build( self ) :
+        '''create config files'''
         pass
 
     def validate( self ) :
@@ -171,8 +173,17 @@ class VirtualEnvironment(Environment):
 
     ####################
     def run( self, command:tuple) :
-        proc        = subprocess.Popen( ' '.join(command), env=self.variables, shell=True )
-        pid_shell   = proc.pid
+
+        debug( 'CWD:     ', self.path )
+        debug( '' )
+
+        proc = subprocess.Popen(
+            ' '.join(command),
+            env     = self.variables,
+            cwd     = str( self.path ),
+            shell   = True
+        )
+        pid_shell = proc.pid
 
         ### collect child pids so they can be stored for later termination
         pids_children = [process.pid for process in psutil.Process( pid_shell ).children( recursive=True )]
