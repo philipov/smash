@@ -1,4 +1,4 @@
-#-- smash.sys.manager
+#-- smash.tools.master
 
 """
 daemon to coordinate requests to modify state on an instance

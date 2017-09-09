@@ -21,7 +21,7 @@ from .sys.config import ConfigTree
 
 from .sys.export import Exporter
 from .sys.export import ExportDebug
-from .sys.export import ExportEnvironment
+from .sys.export import ExportShell
 
 from .utils.out import debuglog
 from .utils.out import loggers_for

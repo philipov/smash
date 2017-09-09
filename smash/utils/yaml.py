@@ -77,6 +77,7 @@ class OrderedDictYAMLLoader( Loader ) :
 def load( filename:Path ) :
     result = None
     with filename.open( ) as file:
+        print("LOADING", filename)
         result = yaml.load(file, Loader=OrderedDictYAMLLoader )
 
     return result

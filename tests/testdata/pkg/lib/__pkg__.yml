@@ -9,7 +9,7 @@ __inherit__:
   - ${pkg:DATA}/__pkg__.yml
 
 __export__:
-  __env__:        [Environment, settings]
+  subenv:         [Shell, settings]
   ./test.ini:     [INI, "${settings:EXPORT_SECTION}", main]
 
 

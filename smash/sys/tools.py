@@ -1,9 +1,8 @@
 #-- smash.sys.tools
 
 """
-wrappers for subprocesses
+isolate changes to the state of an environment so they can be tracked and versioned
 """
-
 
 import logging
 log     = logging.getLogger( name=__name__ )

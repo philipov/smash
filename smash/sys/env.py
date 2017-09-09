@@ -21,6 +21,8 @@ import subprocess
 import psutil
 import time
 
+class MissingShellExportError(Exception):
+    '''Neither Config nor its parents defined any exporter for shell variables'''
 
 #----------------------------------------------------------------------#
 
@@ -37,12 +39,12 @@ class Environment:
         ''' prepare artifacts necessary for running the environment'''
         raise NotImplementedError
 
-    def initialize(self):
-        ''' finalize preparation of the environment'''
+    def validate( self ) :
+        ''' check if the environment state satisfies constraints'''
         raise NotImplementedError
 
-    def validate(self):
-        ''' check if the environment state satisfies constraints'''
+    def initialize(self):
+        ''' finalize preparation of the environment'''
         raise NotImplementedError
 
     def teardown(self):
@@ -69,13 +71,12 @@ class ContextEnvironment( Environment ) :
     def build( self ) :
         pass
 
+    def validate( self ) :
+        pass
+
     def initialize( self ) :
         sys.path.append( str( self.cwd ) )
         os.chdir( str( self.cwd ) )
-
-
-    def validate( self ) :
-        pass
 
     def teardown( self ) :
         pass
@@ -85,7 +86,7 @@ class ContextEnvironment( Environment ) :
 
     @property
     def variables( self ) :
-        raise NotImplementedError
+        raise OrderedDict(os.environ)
 
 
 #----------------------------------------------------------------------#
@@ -102,7 +103,7 @@ class VirtualEnvironment(Environment):
         pass
 
     def initialize( self ) :
-        self.pure=True
+        self.pure = True
 
     def teardown( self ) :
         pass
@@ -111,9 +112,10 @@ class VirtualEnvironment(Environment):
         proc        = subprocess.Popen( ' '.join(command), env=self.variables, shell=True )
         pid_shell   = proc.pid
 
-        # collect child pids so they can be stored for later termination
+        ### collect child pids so they can be stored for later termination
         pids_children = [process.pid for process in psutil.Process( pid_shell ).children( recursive=True )]
         self.processes.extend(pids_children)
+        # todo: detect and report when command is not found, or exits with nonzero return
 
         time.sleep( SUBPROCESS_DELAY )
         proc.terminate( ) #terminate exterior shell
@@ -124,9 +126,16 @@ class VirtualEnvironment(Environment):
     def variables( self ) :
         from ..sys.plugins import exporters
 
-        export_subtrees = self.configtree.env.exports['Environment']['__env__']
-        exporter        = exporters['Environment']
-        result          = exporter( self.configtree.env, export_subtrees, '__env__' ).result
+        try: # todo: refactor how environment export works. subenv should be the export sink key, and Exporters should push values into it. The virtual environment should just check that sink after exporters have been ran.
+            export_subtrees = self.configtree.env.exports['Shell']['subenv']
+        except KeyError:
+            if self.configtree.env.is_pure:
+                raise MissingShellExportError(str(self.configtree.env.filepath)+' and its parents did not define any Exporters for pure virtual environment.')
+            else:
+                print("Warning: No Shell Exporter defined. Will use only exterior environment variables.")
+                return OrderedDict()
+        exporter        = exporters['Shell']
+        result          = exporter( self.configtree.env, export_subtrees, 'subenv' ).result
 
         if not self.pure :
             result.update( os.environ )
@@ -140,6 +149,7 @@ def environment( *args, envclass_=Environment, **kwargs ) -> Environment:
     env = envclass_( *args, **kwargs )
     env.build( )
     env.validate( )
+    env.initialize( )
     yield env
 
     env.teardown( )

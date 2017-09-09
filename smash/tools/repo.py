@@ -1,4 +1,4 @@
-#-- smash.sys.repo
+#-- smash.tools.repo
 
 """
 methods for manipulating repositories using choice of backend (github, gitlab, bare git)

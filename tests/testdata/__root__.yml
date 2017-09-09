@@ -8,7 +8,7 @@ __name__:         smash
 __type__:         II
 
 __export__:
-  __env__:        [Environment, path, shell]
+  subenv:         [Shell, path, shell]
 
 
 ##########################################################

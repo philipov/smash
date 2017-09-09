@@ -18,8 +18,6 @@ info  = lambda *a, **b : print( "".join( str( arg ) for arg in a ) )
 import os
 import re
 
-from termcolor import colored
-
 from collections import defaultdict
 from collections import ChainMap
 from collections import OrderedDict
@@ -187,6 +185,10 @@ class Config:
     def version( self ) :
         return self._yaml_data['__version__']
 
+    @property
+    def is_pure( self ) :
+        return bool(self._yaml_data['__pure__'])
+
     ####################
     @property
     def __inherit__( self ) -> list :
@@ -310,7 +312,7 @@ class ConfigSectionView :
         self.config = config
         self.section_keys = names
         self.parse_counter = 0
-
+        self.resultlist = list()
 
     ####################
     def __str__( self ) :
@@ -450,13 +452,21 @@ class ConfigSectionView :
             if isinstance( value, list ) or isinstance( value, dict ) :
                 new_value = ConfigSectionView( self.config, *self.section_keys, key, i )
             else :
-                new_value = self.evaluate( key, value )
+                new_value = self.evaluate( key, value, listeval=True )
+                try :
+                    resultlist = self.resultlist.pop( )
+                    print( "RESULTLIST:", resultlist )
+                    parsed_list.extend(resultlist)
+                    continue
+                except IndexError as e :
+                    pass
+
             parsed_list.append( new_value )
         return parsed_list
 
 
     ####################
-    def evaluate(self, key, value) -> str:
+    def evaluate(self, key, value, listeval=False) -> str:
         ''' parse a raw value
             perform regex substitution on ${} token expressions until there are none left
             then attempt to resolve the result relative to the config file's path
@@ -468,7 +478,7 @@ class ConfigSectionView :
 
         while total_count > 0 :
             total_count = 0
-            (new_value, count) = self.substitute( key, str(new_value) )
+            (new_value, count) = self.substitute( key, str(new_value), listeval=listeval )
             total_count += count
 
         final_value = try_resolve(new_value, self.config.path)
@@ -477,27 +487,29 @@ class ConfigSectionView :
 
 
     ####################
-    def substitute( self, key, value: str ) :
-
+    def substitute( self, key, value: str, listeval=False ) :
+        ''' responsible for running a single regex substitute
+        '''
         total_count = 0
         count = None
 
         # debug( 'VALUE --- ', colored( value, 'red', attrs=['bold'] ) )
-        expression_replacer = self.expression_parser( key)
+        expression_replacer = self.expression_parser( key, listeval=listeval)
         try:
             (result, count)     = token_expression_regex.subn( expression_replacer, value )
-        except TypeError as e:
+        except TypeError as e: # todo: handle this TypeError inside expression_replacer
             print(out.red('SUBSTITUTE'), key, value, self)
             raise e
         # debug( "After re.subn:  ", result, " | ", count, "|", expression_replacer.counter[0] )
 
         total_count += expression_replacer.counter[0] + count# ToDo: Replace monkey patch with class
         # debug( "Subn Result: ", result, ' after ',total_count )
+
         return result, total_count
 
 
     ####################
-    def expression_parser( self, key ) :
+    def expression_parser( self, key, listeval=False ) :
         ''' factory that creates a replacement function to be used by regex subn
             process ${configpath@section:key} token expressions:
             -    key:        look up value in target node
@@ -513,6 +525,7 @@ class ConfigSectionView :
         '''
 
         counter = [0]
+
         def expression_replacer( matchobj ) :
 
             target_configpath   = matchobj.group( 'configpath' ) \
@@ -539,15 +552,20 @@ class ConfigSectionView :
                 node = node.parents[0]
 
             result = getdeepitem(node, section_keys)
-            # print(out.cyan("subn result:"), result, out.cyan('|'),key)
+            print(out.cyan("subn result:"), result, out.cyan('|'), key, out.cyan( '|' ), matchobj.group(0))
             if isinstance(result, OrderedDict) and len(result) == 0:
                 raise Config.MissingSubstitutionKeyError(''.join(str(s) for s in ['Could not find ', target_sections,':', target_key,'@', target_configpath,' for inserting into ', self.section_keys,':', key, '@',self.config.filepath ]))
-            if not isinstance(result, str):
+            elif isinstance(result, list) and matchobj.group(0) == matchobj.string and listeval:
+                ### WARNING: use a hack to return a list out from the regex substitute
+                ### so we can later use it to extend a list we're substituting into
+                self.resultlist.append(result)
+            elif not isinstance(result, str):
                 raise TypeError("Can't substitute non-scalar value", self.keys, key, result, self.config,)
-            return result
+            return str(result)
 
         ###
         expression_replacer.counter = counter
+
         return expression_replacer
 
 
@@ -555,11 +573,11 @@ class ConfigSectionView :
 
 #todo: delayed key evaluation syntax -- causes a parent value to have its token expressions evaluated from the child's point of view
 token_expression_regex = re.compile(
-    r"""\${                                  # ${
+    r"""(\${                                  # ${
             ((?P<configpath>[^${}]+?)@)?     #   configpath@         [optional]
             ((?P<sections>[^${}]+):)?        #   sections:           [optional]
             (?P<key>[^$:{}]+?)               #   key                 -required-
-          }                                  #  }
+          })                                  #  }
     """, re.VERBOSE )
 
 
@@ -601,8 +619,11 @@ class ConfigTree :
     @classmethod
     def from_path( cls, target_path: Path ) :
         """Find the root file for a target path, load it and its children"""
-        root_file = stack_of_files( target_path, '__root__.yml' )[0]
-        root_path = root_file.parents[0]
+        try:
+            root_file = stack_of_files( target_path, '__root__.yml' )[0]
+            root_path = root_file.parents[0]
+        except IndexError as e:
+            raise FileNotFoundError("Could not find '__root__.yml' file in <" +str(target_path)+ ">, or inside any parent directory")
 
         try :
             env_path = stack_of_files( target_path, '__env__.yml' )[0].parents[0]

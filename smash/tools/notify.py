@@ -1,4 +1,4 @@
-#-- smash.sys.notify
+#-- smash.tools.notify
 
 """
 send emails
