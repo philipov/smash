@@ -560,7 +560,15 @@ class ConfigSectionView :
                 ### so we can later use it to extend a list we're substituting into
                 self.resultlist.append(result)
             elif not isinstance(result, str):
-                raise TypeError("Can't substitute non-scalar value", self.keys, key, result, self.config,)
+                raise TypeError(' '.join(str(s) for s in [
+                    "Can't substitute non-scalar result", namedtuple('_', ['section', 'key', 'result'
+
+
+                                                                           ])
+                                                            (target_sections, target_key, result),
+                    '\n\tin', namedtuple( '_', ['section', 'key', 'value'] )
+                                            (self.section_keys, key, matchobj.string)
+                ]))
             return str(result)
 
         ###
