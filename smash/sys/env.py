@@ -258,6 +258,7 @@ class CondaEnvironment( VirtualEnvironment ) :
     def run( self, command ) :
         raise NotImplementedError
 
+
 #----------------------------------------------------------------------#
 
 ################################
@@ -281,8 +282,10 @@ class DockerEnvironment( Environment ) :
     def initialize( self ) :
         ''' boot the docker image'''
 
+
     def teardown( self ) :
         ''' destroy the docker image'''
+
 
     ####################
     @property
@@ -292,6 +295,7 @@ class DockerEnvironment( Environment ) :
     ####################
     def run( self, command ) :
         raise NotImplementedError
+
 
 #----------------------------------------------------------------------#
 class RemoteEnvironment( Environment ):
@@ -323,6 +327,7 @@ class RemoteEnvironment( Environment ):
     ####################
     def run( self, command ) :
         raise NotImplementedError
+
 
 #----------------------------------------------------------------------#
 

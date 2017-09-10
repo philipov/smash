@@ -23,7 +23,7 @@ def test__PackageType(conftree):
 #----------------------------------------------------------------------#
 def test__Package(conftree):
     from smash.sys.pkg import Package, builtin_packages
-    
+
     # assert False
 
 

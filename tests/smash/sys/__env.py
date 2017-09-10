@@ -6,14 +6,14 @@ unit tests
 
 #----------------------------------------------------------------------#
 
-def test__context(path_env00 ):
+def test__ContextEnvironment(path_env00 ):
     from smash.sys.env import ContextEnvironment
 
     # assert False
 
 
 ################################
-def test__subenv( path_env00 ) :
+def test__VirtualEnvironment( path_env00 ) :
     from smash.sys.env import ContextEnvironment
     from smash.sys.env import VirtualEnvironment
 
@@ -21,7 +21,7 @@ def test__subenv( path_env00 ) :
 
 
 ################################
-def test__conda( path_env00 ) :
+def test__CondaEnvironment( path_env00 ) :
     from smash.sys.env import ContextEnvironment
     from smash.sys.env import CondaEnvironment
 
@@ -29,7 +29,7 @@ def test__conda( path_env00 ) :
 
 
 ################################
-def test__docker( path_env00 ) :
+def test__DockerEnvironment( path_env00 ) :
     from smash.sys.env import ContextEnvironment
     from smash.sys.env import DockerEnvironment
 
@@ -37,7 +37,7 @@ def test__docker( path_env00 ) :
 
 
 ################################
-def test__remote( path_env00 ) :
+def test__RemoteEnvironment( path_env00 ) :
     from smash.sys.env import ContextEnvironment
     from smash.sys.env import RemoteEnvironment
 
