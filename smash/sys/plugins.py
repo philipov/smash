@@ -49,9 +49,9 @@ def _select_class( cls, base ):
 
 #----------------------------------------------------------------------#
 
-from .export import Exporter, builtin_exporters
-from .handle import Handler, builtin_handlers
-from .tools import Tool, builtin_tools
+from .exporter import Exporter, builtin_exporters
+from .handler import Handler, builtin_handlers
+from .tool import Tool, builtin_tools
 
 from .instance import InstanceTemplate, builtin_templates
 from .pkg import PackageType, builtin_package_types
@@ -106,6 +106,9 @@ def report_plugins():
 
     print( out.green( '~~~~~~~~~~~' ) + out.pink(' handlers:' ))
     rprint( handlers )
+    print( out.green( '~~~~~~~~~~~\n' ) )
 
 
 #----------------------------------------------------------------------#
+
+print('plugins')

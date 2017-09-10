@@ -19,24 +19,14 @@ from ..utils.out import rprint
 from pprint import pprint, pformat
 
 from ..utils.meta import classproperty
-#----------------------------------------------------------------------#
-
-__all__ = []
-
-def export( obj ) :
-    try :
-        __all__.append( obj.__name__ )
-    except AttributeError :
-        __all__.append( obj.__main__.__name__ )
-    return obj
-
+from powertools import export
 
 
 #----------------------------------------------------------------------#
 
 @export
 class Tool:
-    ''' figure out what to do with a file'''
+    ''' Base class for creating wrappers to keep track of state manipulation '''
 
     def __init__( self, config:Config, filename:str, refname:str ) :
         self.config = config
@@ -48,31 +38,31 @@ class Tool:
 
 @export
 class Task( Tool ) :
-    '''perform an action once'''
-    pass
+    ''' perform an action once '''
+
 
 @export
 class Loader( Task ) :
-    pass
+    ''' batch job for writing to a data store '''
 
 @export
 class Validator( Task ) :
-    pass
+    ''' a task that checks whether a previous task succeeded and records the result '''
 
 
 ################################
 @export
 class Daemon( Tool ) :
     '''keep repeating an action until killed'''
+
+@export
+class Service( Daemon ) :
     pass
 
 @export
 class Monitor( Daemon ) :
     pass
 
-@export
-class Service( Daemon ) :
-    pass
 
 #----------------------------------------------------------------------#
 
@@ -80,6 +70,8 @@ builtin_tools = {
     'Task'      : Task,
     'Loader'    : Loader,
     'Validator' : Validator,
+
+    'Daemon'    : Daemon,
     'Monitor'   : Monitor,
     'Service'   : Service,
 }

@@ -41,17 +41,7 @@ from ..utils import out
 
 from smash.sys.constants import config_protocol
 
-#----------------------------------------------------------------------#
-
-__all__ = []
-
-def export( obj ) :
-    try :
-        __all__.append( obj.__name__ )
-    except AttributeError :
-        __all__.append( obj.__main__.__name__ )
-    return obj
-
+from powertools import export
 
 #----------------------------------------------------------------------#
 
@@ -197,6 +187,7 @@ class Config:
     @property
     def __inherit__( self ) -> list :
         ''' this node's immediate parents, a list of keys (paths) to find them in the configtree'''
+
         try :
             parent_paths = self._yaml_data['__inherit__']
             parsed_paths = ConfigSectionView( self.tree.root ).evaluate_list( '__inherit__', parent_paths )
@@ -233,6 +224,7 @@ class Config:
     ####################
     def setdefault( self, key, default ) :
         ''' support for getdeepitem on Config object'''
+
         try :
             return self[key]
         except KeyError :
@@ -267,6 +259,7 @@ class Config:
     @property
     def __export__( self ):
         ''' parse the export dictionary for this node and return it'''
+
         # todo: BUG! why does 'pkg' or 'env' in the sections list evaluate to a path?
         try :
             export_items    = self['__export__'].items()
@@ -333,6 +326,7 @@ class ConfigSectionView :
     ####################
     def keys( self ) :
         '''list of keys for the current subtree of the config'''
+
         key_union = set( )
         for key in getdeepitem( self.config._yaml_data, self.section_keys ).keys( ) :
             # print( out.green( 'key:' ), key )
@@ -341,6 +335,7 @@ class ConfigSectionView :
 
     def items( self ) :
         '''key-value tuples for the current subtree only, with values resolved'''
+
         # print( out.blue( 'items' ), self.section_keys )
         return list( map(
             lambda key : (
@@ -353,6 +348,7 @@ class ConfigSectionView :
     ####################
     def allkeys( self ) :
         '''get the union of keys for all nodes in the key resolution order'''
+
         key_union = set()
         for node in self.config.key_resolution_order :
             # print(out.cyan('node:'), node, self.section_keys, '\n',
@@ -366,6 +362,7 @@ class ConfigSectionView :
 
     def allitems( self ) :
         '''same as items, but uses allkeys method'''
+
         # print( out.blue( 'allitems' ), self.section_keys )
         return list( map(
             lambda key : (
@@ -379,6 +376,7 @@ class ConfigSectionView :
     ####################
     def setdefault( self, key, default ) :
         ''' support for getdeepitem on Config object'''
+
         try :
             return self[key]
         except KeyError :
@@ -453,6 +451,7 @@ class ConfigSectionView :
 
     ####################
     def evaluate_list(self, key, raw_list):
+        ''' evaluate each element of the list, and return the list of parsed values '''
         parsed_list = []
         # print(out.yellow('------------'), 'EVALUATE LIST', raw_list)
         for (i, value) in enumerate( raw_list ) :
@@ -610,7 +609,7 @@ token_expression_regex = re.compile(
 
 @export
 class ConfigTree :
-    """ Non-mutating (append-only) iterator over a network of configuration files with cross-tree references."""
+    """ Non-mutating (append-only) iterator over a network of configuration files with cross-tree references. """
 
     #----------------------------------------------------------------#
     #----------------------------------------------------------------#
@@ -637,7 +636,7 @@ class ConfigTree :
     ####################
     @classmethod
     def from_path( cls, target_path: Path ) :
-        """Find the root file for a target path, load it and its children"""
+        """ Find the root file for a target path, load it and its children. """
         try:
             root_file = stack_of_files( target_path, '__root__.yml' )[0]
             root_path = root_file.parents[0]

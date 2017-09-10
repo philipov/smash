@@ -14,14 +14,16 @@ def conftree( path_env00 ) :
 
 
 #----------------------------------------------------------------------#
-def test__InstanceTemplate( conftree ) :
-    from smash.sys.instance import InstanceTemplate
+def test__PackageType(conftree):
+    from smash.sys.pkg import PackageType, builtin_package_types
+
     # assert False
 
 
 #----------------------------------------------------------------------#
-def test__SmashTemplate( conftree ) :
-    from smash.sys.instance import SmashTemplate
+def test__Package(conftree):
+    from smash.sys.pkg import Package, builtin_packages
+    
     # assert False
 
 

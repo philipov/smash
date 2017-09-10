@@ -35,7 +35,7 @@ class Environment:
 
     def __init__( self, path, pure, *, parent=None ) :
 
-        self.path           = path
+        self.homepath           = path
         self.pure           = pure
         self.parent         = parent
         self.processes      = list()
@@ -118,8 +118,8 @@ class ContextEnvironment( Environment ) :
         pass
 
     def initialize( self ) :
-        sys.path.append( str( self.path ) )
-        os.chdir( str( self.path ) )
+        sys.path.append( str( self.homepath ) )
+        os.chdir( str( self.homepath ) )
 
     def teardown( self ) :
         pass
@@ -198,13 +198,14 @@ class VirtualEnvironment(Environment):
     ####################
     def run( self, command:tuple) :
 
-        debug( 'CWD:     ', self.path )
+        debug( 'CWD:     ', self.homepath )
         debug( '' )
-
+        variables = self.variables
+        debug( '' )
         proc = subprocess.Popen(
             ' '.join(command),
-            env     = self.variables,
-            cwd     = str( self.path ),
+            env     = variables,
+            cwd     = str( self.homepath ),
             shell   = True
         )
         pid_shell = proc.pid
@@ -229,16 +230,39 @@ from conda.cli import python_api
 
 ################################
 class CondaEnvironment( VirtualEnvironment ) :
-    def manage(self, command, *arguments, **kwargs):
+    '''construct a conda environment, and run commands inside it'''
+
+    def _manage(self, command, *arguments, **kwargs):
         print('manage', self.config)
         python_api.run_command( command, *arguments, **kwargs )
 
+    ####################
+    def build( self ) :
+        ''' construct a conda environment'''
+
+    def validate( self ) :
+        ''' defer to instance template '''
+
+    def initialize( self ) :
+        ''' '''
+
+    def teardown( self ) :
+        ''' '''
+
+    ####################
+    @property
+    def variables( self ) :
+        raise NotImplementedError
+
+    ####################
+    def run( self, command ) :
+        raise NotImplementedError
 
 #----------------------------------------------------------------------#
 
 ################################
 class DockerEnvironment( Environment ) :
-    ''
+    '''construct an environment inside a docker container, and run commands inside it'''
     def __init__( self, cwd, *, pure=False ) :
         super( ).__init__( cwd, pure )
 
@@ -270,12 +294,44 @@ class DockerEnvironment( Environment ) :
         raise NotImplementedError
 
 #----------------------------------------------------------------------#
+class RemoteEnvironment( Environment ):
+    ''' connect to a remote environment using ssh'''
+
+    def __init__( self, remote:Environment, *, pure=False ) :
+        super( ).__init__( remote.homepath, pure )
+
+        raise NotImplementedError
+
+    ####################
+    def build( self ) :
+        ''' '''
+
+    def validate( self ) :
+        ''' '''
+
+    def initialize( self ) :
+        ''' '''
+
+    def teardown( self ) :
+        ''' '''
+
+    ####################
+    @property
+    def variables( self ) :
+        raise NotImplementedError
+
+    ####################
+    def run( self, command ) :
+        raise NotImplementedError
+
+#----------------------------------------------------------------------#
 
 builtin_environments = {
     'context'   : ContextEnvironment,
     'subenv'    : VirtualEnvironment,
     'conda'     : CondaEnvironment,
-    'docker'    : DockerEnvironment
+    'docker'    : DockerEnvironment,
+    'remote'    : RemoteEnvironment
 }
 
 #----------------------------------------------------------------------#

@@ -12,25 +12,17 @@ info = lambda *a, **b : print( "".join( str( arg ) for arg in a ) )
 
 ################################
 
-from pathlib import Path
-from .config import Config
 
 from ..utils import out
 from ..utils.out import rprint
 from pprint import pprint, pformat
 
+from pathlib import Path
+
 from ..utils.meta import classproperty
+from powertools import export
+from .config import Config
 
-#----------------------------------------------------------------------#
-
-__all__ = []
-
-def export( obj ) :
-    try :
-        __all__.append( obj.__name__ )
-    except AttributeError :
-        __all__.append( obj.__main__.__name__ )
-    return obj
 
 #----------------------------------------------------------------------#
 

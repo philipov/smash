@@ -21,6 +21,8 @@ from pprint import pprint, pformat
 
 from ..utils.meta import classproperty
 
+from collections import OrderedDict
+
 #----------------------------------------------------------------------#
 
 __all__ = []
@@ -45,10 +47,11 @@ class Handler:
         self.filename = filename
         self.refname = refname
 
-
+#----------------------------------------------------------------------#
 @export
 class FileHandler(Handler):
     pass
+
 
 #----------------------------------------------------------------------#
 
@@ -56,23 +59,43 @@ class FileHandler(Handler):
 class YAMLHandler( FileHandler ) :
     pass
 
+
+#----------------------------------------------------------------------#
 @export
 class EXEHandler( FileHandler ) :
     pass
 
+
+#----------------------------------------------------------------------#
 @export
 class ScriptHandler( FileHandler ) :
     pass
 
 
 #----------------------------------------------------------------------#
+@export
+class BashHandler( ScriptHandler ) :
+    pass
 
-builtin_handlers = {
-    '.*'     : FileHandler,
-    'yml'    : YAMLHandler,
-    'yaml'   : YAMLHandler,
-    'exe'    : EXEHandler,
-    'sh'     : ScriptHandler
-}
+
+#----------------------------------------------------------------------#
+@export
+class BatchHandler( ScriptHandler ) :
+    pass
+
+
+#----------------------------------------------------------------------#
+
+### last in first out; use the first handler whose key regex matches the filename
+builtin_handlers            = OrderedDict()
+builtin_handlers['.*']      = FileHandler
+
+builtin_handlers['\.yml']   = YAMLHandler
+builtin_handlers['\.yaml']  = YAMLHandler
+
+builtin_handlers['\.exe']   = EXEHandler
+builtin_handlers['\.sh']    = BashHandler
+builtin_handlers['\.bat']   = BatchHandler
+
 
 #----------------------------------------------------------------------#

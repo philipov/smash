@@ -26,7 +26,7 @@ from pprint import pprint, pformat
 
 from ..utils.meta import classproperty
 
-#----------------------------------------------------------------------#
+#-------------------------------------------------------------------------------------------------#
 
 __all__ = []
 
@@ -38,8 +38,8 @@ def export( obj ) :
     return obj
 
 
+#-------------------------------------------------------------------------------------------------#
 
-#----------------------------------------------------------------------#
 #todo: refactor so that subclasses are providing init methods
 @export
 class Exporter:
@@ -67,17 +67,14 @@ class Exporter:
 ################################
 
 
-#----------------------------------------------------------------------#
+#-------------------------------------------------------------------------------------------------#
 
 @export
 class ExportShell( Exporter ):
 
     class AmbiguousKeyError( Exception ) :
         ''' two sections exported to the same destination have matching keys'''
-        def __init__( self, *args, **kwargs ) :
-            super( ).__init__(
-                namedtuple( '_', ['conflicting_sections', 'key', 'values', 'config', 'destination'] )( *args ), **kwargs )
-    #####
+
 
     pathlist_delimiter = ';' if sys.platform=='win32' else ':'
 
@@ -114,12 +111,19 @@ class ExportShell( Exporter ):
                                                     (section, key, str(value), str(type(value))))
                     info( out.red( 'ExportEnvironment' ), " {:<20} = {:64}".format(str(key), subenv[key])  )
                 else:
-                    raise self.AmbiguousKeyError((section, keysources[key]), key, (value, subenv[key]) ,str(config), destination)
-
+                    raise self.AmbiguousKeyError(
+                        namedtuple( '_', ['conflicting_sections', 'key', 'values', 'config', 'destination'] )(
+                            (section, keysources[key]),
+                            key,
+                            (value, subenv[key]),
+                            str( config ),
+                            destination
+                        )
+                    )
         return subenv
 
 
-#----------------------------------------------------------------------#
+#-------------------------------------------------------------------------------------------------#
 
 ################################
 @export
@@ -140,32 +144,28 @@ class ExportShellScriptBASH( ExportShellScript ) :
         raise NotImplementedError
 
 
-#----------------------------------------------------------------------#
-
+#-------------------------------------------------------------------------------------------------#
 @export
 class ExportDebug( Exporter ) :
     def write( self, config: Config, sections, destination ) -> None:
         raise NotImplementedError
 
 
-#----------------------------------------------------------------------#
-
+#-------------------------------------------------------------------------------------------------#
 @export
 class ExportYAML( Exporter ) :
     def write( self, config: Config, sections, destination ) -> None:
         raise NotImplementedError
 
 
-#----------------------------------------------------------------------#
-
+#-------------------------------------------------------------------------------------------------#
 @export
 class ExportXML( Exporter ) :
     def write( self, config: Config, sections, destination ) -> None:
         raise NotImplementedError
 
 
-#----------------------------------------------------------------------#
-
+#-------------------------------------------------------------------------------------------------#
 @export
 class ExportINI( ExportShell ) :
 
@@ -191,9 +191,7 @@ class ExportINI( ExportShell ) :
             inidata.write( outfile)
 
 
-
-#----------------------------------------------------------------------#
-
+#-------------------------------------------------------------------------------------------------#
 builtin_exporters = {
     'Shell'         : ExportShell,
     'ShellScript'   : ExportShellScriptCMD if sys.platform=='win32'
@@ -204,4 +202,4 @@ builtin_exporters = {
     'INI'           : ExportINI
 }
 
-#----------------------------------------------------------------------#
+#-------------------------------------------------------------------------------------------------#

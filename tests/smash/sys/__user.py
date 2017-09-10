@@ -1,12 +1,15 @@
-#-- smash.constants
 
-"""
-global constants
-"""
+
+'''
+unit tests
+'''
+
+import pytest
 
 #----------------------------------------------------------------------#
 
-config_protocol = 0
+def test__User():
+    from smash.sys.user import User
 
 
 #----------------------------------------------------------------------#

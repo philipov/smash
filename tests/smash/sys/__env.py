@@ -19,10 +19,29 @@ def test__subenv( path_env00 ) :
 
     # assert False
 
+
 ################################
-def test__runtime_conda( path_env00 ) :
+def test__conda( path_env00 ) :
     from smash.sys.env import ContextEnvironment
     from smash.sys.env import CondaEnvironment
+
+    # assert False
+
+
+################################
+def test__docker( path_env00 ) :
+    from smash.sys.env import ContextEnvironment
+    from smash.sys.env import DockerEnvironment
+
+    # assert False
+
+
+################################
+def test__remote( path_env00 ) :
+    from smash.sys.env import ContextEnvironment
+    from smash.sys.env import RemoteEnvironment
+
+    # assert False
 
 
 #----------------------------------------------------------------------#

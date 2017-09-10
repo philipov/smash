@@ -36,7 +36,7 @@ def do_run(*command, context:ContextEnvironment, verbose=False):
     with VirtualEnvironment(context) as interior:
         info( "\nExecute target shell command inside an environment" )
         shell = interior.run(command)
-        print("interior.processes", interior.processes)
+        print("\ninterior.processes", interior.processes)
 
     print('interior.run:', shell)
     return True

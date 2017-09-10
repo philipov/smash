@@ -7,10 +7,8 @@ application entry point
 __all__ = []
 
 ###
-import logging
-logging.basicConfig( level=logging.INFO )
-from .utils.out import loggers_for
-(debug, info, warning, error, critical) = loggers_for( __name__ )
+import powertools
+log = powertools.AutoLogger()
 
 ###
 import colorama
@@ -42,14 +40,14 @@ def main( args: cmdline.Arguments ) :
     # ToDo: manage env list
     # ToDo: manage package list
 
-    info( '~~~~~~~~~~~~~~~~~~~~ SMASH')
-    debug('SCRIPT:  ', __file__ )
-    info( 'MODE:    ', args.mode )
-    info( 'TARGET:  ', args.target )
+    log.print( '~~~~~~~~~~~~~~~~~~~~ SMASH')
+    log.print('SCRIPT:  ', __file__ )
+    log.print( 'MODE:    ', args.mode )
+    log.print( 'TARGET:  ', args.target )
 
     cwd = Path( os.getcwd() )
-    debug( 'IWD:     ', cwd )
-    debug( '' )
+    log.print( 'IWD:     ', cwd )
+    log.print( '' )
 
     from .sys.plugins import report_plugins
     report_plugins()
@@ -65,8 +63,8 @@ def main( args: cmdline.Arguments ) :
                          , verbose=args.verbose
                          )
 
-    debug( '' )
-    info( 'SMASH DONE...' )
+    log.print( '' )
+    log.print( 'SMASH DONE...' )
     return result
 
 
