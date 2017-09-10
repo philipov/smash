@@ -76,7 +76,7 @@ class Service( Daemon ) :
 
 #----------------------------------------------------------------------#
 
-base_tools = {
+builtin_tools = {
     'Task'      : Task,
     'Loader'    : Loader,
     'Validator' : Validator,

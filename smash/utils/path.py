@@ -110,27 +110,30 @@ def temporary_working_directory( path: Path ) :
 def try_resolve( value, path:Path ) -> str:
     """"""
 
-    #debug( "TRY RESOLVE--------", type( value ), value )
+    # debug( "TRY RESOLVE--------", type( value ), value )
     if isinstance( value, list ):
         return value
+    # debug("~~~ BEGIN")
 
-    value = str( value )
+    # parent = value_as_path.parents[0]
+    # print('parent',parent)
+
     ### attempt to resolve paths
-    result = value
+    result = str(value)
+    value_as_path = Path( str( value ) )
     try :
-    #    debug("~~~ BEGIN")
-        value_as_path = Path( str(value) )
-        if value_as_path.exists( ) :
+        if value_as_path.exists( ) : #todo: recursively check each parent path for existance
             with temporary_working_directory( path ) as old_working_dir :
                 result      = str( value_as_path.resolve( ) )
 
     except FileNotFoundError as e :
-    #    debug( "File Not Found", value )
+        # debug( "File Not Found", value )
         raise FileNotFoundError( e )
     except OSError as e:
+        # raise e
         pass
 
-    #debug("RESOLVED", result)
+    # debug("RESOLVED", result)
     return result
 
 

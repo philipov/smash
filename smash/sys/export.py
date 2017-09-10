@@ -73,8 +73,7 @@ class Exporter:
 class ExportShell( Exporter ):
 
     class AmbiguousKeyError( Exception ) :
-        '''two sections exported to the same destination have matching keys'''
-
+        ''' two sections exported to the same destination have matching keys'''
         def __init__( self, *args, **kwargs ) :
             super( ).__init__(
                 namedtuple( '_', ['conflicting_sections', 'key', 'values', 'config', 'destination'] )( *args ), **kwargs )
@@ -95,6 +94,7 @@ class ExportShell( Exporter ):
             raise TypeError("Can't append to pathlist: "+str(value)+" | "+str(type(value)))
 
         return cls.pathlist_delimiter.join(pathlist)
+
 
     def write( self, config: Config, sections:list, destination:None ) -> OrderedDict:
         subenv      = OrderedDict()
@@ -194,7 +194,7 @@ class ExportINI( ExportShell ) :
 
 #----------------------------------------------------------------------#
 
-base_exporters = {
+builtin_exporters = {
     'Shell'         : ExportShell,
     'ShellScript'   : ExportShellScriptCMD if sys.platform=='win32'
                  else ExportShellScriptBASH,

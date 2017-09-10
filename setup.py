@@ -4,7 +4,7 @@
 #----------------------------------------------------------------------#
 
 from setuptools import setup
-from smash.constants import __setup__
+from smash.sys.constants import __setup__
 setup(**__setup__)
 
 

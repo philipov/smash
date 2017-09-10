@@ -38,11 +38,8 @@ from ..utils.path import try_resolve
 from ..utils.path import find_yamls
 
 from ..utils import out
-from ..utils.out import debuglog
-from ..utils.out import rprint, listprint, dictprint
-from pprint import pprint, pformat
 
-from ..constants import config_protocol
+from smash.sys.constants import config_protocol
 
 #----------------------------------------------------------------------#
 
@@ -270,12 +267,13 @@ class Config:
     @property
     def __export__( self ):
         ''' parse the export dictionary for this node and return it'''
+        # todo: BUG! why does 'pkg' or 'env' in the sections list evaluate to a path?
         try :
             export_items    = self['__export__'].items()
             parsed_dict     = export_items #OrderedDict()
             #parsed_paths    = ConfigSectionView( self.tree.root, '__export__' ).evaluate_list( '__exports__', export_dict )
             #todo: this means that ConfigSectionView needs refactoring
-            # print( 'PARSED~~~~~', parsed_paths )
+            # print( out.green('PARSED~~~~~'), parsed_dict )
         except KeyError as e :
             parsed_dict = OrderedDict()
 
@@ -290,6 +288,7 @@ class Config:
         for node in self.key_resolution_order :
             #print( out.cyan( 'node:' ), node)
             for destination, speclist in node.__export__:
+                parsed_destination = ConfigSectionView(self, 'path').evaluate('__destination__', destination)
                 assert len(speclist) > 1
                 exporter_name   = speclist[0]
                 export_subtrees = OrderedSet(speclist[1:])
@@ -297,10 +296,10 @@ class Config:
 
                 if exporter_name not in result:
                     result[exporter_name] = OrderedDict()
-                if destination not in result[exporter_name]:
-                    result[exporter_name][destination] = export_subtrees
+                if parsed_destination not in result[exporter_name]:
+                    result[exporter_name][parsed_destination] = export_subtrees
                 else:
-                    result[exporter_name][destination] |= export_subtrees
+                    result[exporter_name][parsed_destination] |= export_subtrees
 
         return result
 

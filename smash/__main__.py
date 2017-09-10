@@ -46,11 +46,13 @@ def main( args: cmdline.Arguments ) :
     debug('SCRIPT:  ', __file__ )
     info( 'MODE:    ', args.mode )
     info( 'TARGET:  ', args.target )
-    info( '' )
 
     cwd = Path( os.getcwd() )
     debug( 'IWD:     ', cwd )
     debug( '' )
+
+    from .sys.plugins import report_plugins
+    report_plugins()
 
     with ContextEnvironment(cwd) as context:
         do_func = getattr( modes
@@ -66,6 +68,8 @@ def main( args: cmdline.Arguments ) :
     debug( '' )
     info( 'SMASH DONE...' )
     return result
+
+
 
 
 ##############################

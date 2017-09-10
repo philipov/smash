@@ -54,7 +54,7 @@ class SmashTemplate( InstanceTemplate ) :
 
 #----------------------------------------------------------------------#
 
-base_handlers = {
+builtin_templates = {
     'smash' : SmashTemplate,
 }
 

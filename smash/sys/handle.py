@@ -37,7 +37,7 @@ def export( obj ) :
 #----------------------------------------------------------------------#
 
 @export
-class FileHandler:
+class Handler:
     ''' figure out what to do with a file'''
 
     def __init__( self, config:Config, filename:str, refname:str ) :
@@ -45,6 +45,10 @@ class FileHandler:
         self.filename = filename
         self.refname = refname
 
+
+@export
+class FileHandler(Handler):
+    pass
 
 #----------------------------------------------------------------------#
 
@@ -63,7 +67,8 @@ class ScriptHandler( FileHandler ) :
 
 #----------------------------------------------------------------------#
 
-base_handlers = {
+builtin_handlers = {
+    '.*'     : FileHandler,
     'yml'    : YAMLHandler,
     'yaml'   : YAMLHandler,
     'exe'    : EXEHandler,

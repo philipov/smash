@@ -25,11 +25,12 @@ from .config import ConfigTree
 #----------------------------------------------------------------------#
 
 class MissingShellExportError( Exception ) :
-    '''Neither Config nor its parents defined any exporter for shell variables'''
+    ''' Neither Config nor its parents defined any exporter for shell variables '''
 
 
 #----------------------------------------------------------------------#
 
+################################
 class Environment:
 
     def __init__( self, path, pure, *, parent=None ) :
@@ -40,21 +41,23 @@ class Environment:
         self.processes      = list()
 
 
+    ####################
     def build(self):
         ''' run all the exporters '''
         raise NotImplementedError
 
     def validate( self ) :
-        ''' check if the environment state satisfies constraints'''
+        ''' check if the environment state satisfies constraints '''
         raise NotImplementedError
 
     def initialize(self):
-        ''' finalize preparation of the environment'''
+        ''' finalize preparation of the environment '''
         raise NotImplementedError
 
     def teardown(self):
-        ''' clean up the environment when it's no longer needed'''
+        ''' clean up the environment when it's no longer needed '''
         raise NotImplementedError
+
 
     ####################
     def __enter__( self ) :
@@ -70,19 +73,17 @@ class Environment:
     ####################
     @property
     def variables( self ) :
-        ''' access to shell state variables'''
+        ''' access to shell state variables '''
         raise NotImplementedError
 
 
     ####################
     def run(self, command):
-        ''' execute a command within the environment'''
+        ''' execute a command within the environment '''
         raise NotImplementedError
 
 
-
 #----------------------------------------------------------------------#
-
 
 
 #----------------------------------------------------------------------#
@@ -94,18 +95,26 @@ class ContextEnvironment( Environment ) :
     '''
 
     def __init__( self, cwd, *, pure = False ) :
-        self.configtree = ConfigTree.from_path( cwd )
         super( ).__init__( cwd, pure)
 
-        debug( 'CONFIGS:  ', self.configtree )
-        debug( '' )
+        self.configtree = ConfigTree.from_path(cwd)
+        debug( 'CONFIGS:  ', self.configtree, '\n' )
         assert self.configtree.final
 
-    def build( self ) :
 
+    @property
+    def instance_template( self ) :
+        ''' determine whether the context is an instance, and retrieve its template '''
+        return None
+
+
+    ####################
+    def build( self ) :
+        ''' do what? '''
         pass
 
     def validate( self ) :
+        ''' defer to instance template '''
         pass
 
     def initialize( self ) :
@@ -115,29 +124,44 @@ class ContextEnvironment( Environment ) :
     def teardown( self ) :
         pass
 
-    def run( self, command ) :
-        raise NotImplementedError
 
+    ####################
     @property
     def variables( self ) :
-        raise OrderedDict(os.environ)
+        return OrderedDict( os.environ )
+
+
+    ####################
+    def run( self, command ) :
+        raise NotImplementedError
 
 
 #----------------------------------------------------------------------#
 
 SUBPROCESS_DELAY = 0.01
+
+################################
 class VirtualEnvironment(Environment):
     ''' Environment that is launched as a child of the smash process
         shell variables are supplied by evaluating the 'Environment' __export__ process in the configtree
     '''
 
     def __init__( self, context:ContextEnvironment, *, pure = True ):
-        self.config= context.configtree.env
+        self.config = context.configtree.env
         super().__init__(self.config.path, pure, parent=context)
 
+
+    ####################
     def build( self ) :
-        '''create config files'''
-        pass
+        ''' create config files '''
+        from .plugins import exporters
+        for name, target in self.config.exports.items():
+            exporter = exporters[name]
+            for destination, sections in target.items():
+                print('EXPORT {:<10} {:<50} {:<10}'.format(str(name), str(destination), str(sections)))
+                result = exporter(self.config, sections, destination)
+
+
 
     def validate( self ) :
         pass
@@ -196,8 +220,62 @@ class VirtualEnvironment(Environment):
         return pid_shell
 
 
+#----------------------------------------------------------------------#
+
+#----------------------------------------------------------------------#
+
+import conda
+from conda.cli import python_api
+
+################################
+class CondaEnvironment( VirtualEnvironment ) :
+    def manage(self, command, *arguments, **kwargs):
+        print('manage', self.config)
+        python_api.run_command( command, *arguments, **kwargs )
 
 
+#----------------------------------------------------------------------#
 
+################################
+class DockerEnvironment( Environment ) :
+    ''
+    def __init__( self, cwd, *, pure=False ) :
+        super( ).__init__( cwd, pure )
+
+        raise NotImplementedError
+
+
+    ####################
+    def build( self ) :
+        ''' construct the docker image '''
+
+
+    def validate( self ) :
+        ''' defer to instance template '''
+
+
+    def initialize( self ) :
+        ''' boot the docker image'''
+
+    def teardown( self ) :
+        ''' destroy the docker image'''
+
+    ####################
+    @property
+    def variables( self ) :
+        raise NotImplementedError
+
+    ####################
+    def run( self, command ) :
+        raise NotImplementedError
+
+#----------------------------------------------------------------------#
+
+builtin_environments = {
+    'context'   : ContextEnvironment,
+    'subenv'    : VirtualEnvironment,
+    'conda'     : CondaEnvironment,
+    'docker'    : DockerEnvironment
+}
 
 #----------------------------------------------------------------------#

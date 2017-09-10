@@ -1,6 +1,7 @@
-#-- smash.env.docker
+#-- smash.sys.user
 
 """
+keep track of user-specific information, including authentication details
 """
 
 
@@ -15,11 +16,11 @@ __all__ = []
 
 #----------------------------------------------------------------------#
 
-def shell(target_path:Path):
-    '''create '''
 
-    yield
-    #teardown
+class User:
+    '''nothing here yet'''
+
+    NotImplemented
 
 
 #----------------------------------------------------------------------#
