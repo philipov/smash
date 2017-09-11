@@ -19,7 +19,7 @@ path:
   APP:            ${pkg:APP}
   SECTION:        pkg
   APP2:           ${${SECTION}:APP}
-  HOST1:          ${${pkg:HOST}@path:SECRETS}
+  HOST1:          ${${pkg:HOST}::path:SECRETS}
   LIST1:          ["${APP}","${ENVS}"]
 
 extra:

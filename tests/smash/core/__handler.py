@@ -14,44 +14,51 @@ def conftree( path_env00 ) :
 
 
 #----------------------------------------------------------------------#
-def test__Tool( conftree ) :
-    from smash.sys.tool import Tool
+def test__Handler( conftree ) :
+    from smash.core.handler import Handler
+
     # assert False
 
 
 #----------------------------------------------------------------------#
-def test__Task( conftree ) :
-    from smash.sys.tool import Task
+def test__FileHandler( conftree ) :
+    from smash.core.handler import FileHandler
+
     # assert False
 
 
 #----------------------------------------------------------------------#
-def test__Loader( conftree ) :
-    from smash.sys.tool import Loader
+def test__YAMLHandler( conftree ) :
+    from smash.core.handler import YAMLHandler
+
     # assert False
 
 
 #----------------------------------------------------------------------#
-def test__Validator( conftree ) :
-    from smash.sys.tool import Validator
+def test__EXEHandler( conftree ) :
+    from smash.core.handler import EXEHandler
+
     # assert False
 
 
 #----------------------------------------------------------------------#
-def test__Daemon( conftree ) :
-    from smash.sys.tool import Daemon
+def test__ScriptHandler( conftree ) :
+    from smash.core.handler import ScriptHandler
+
     # assert False
 
 
 #----------------------------------------------------------------------#
-def test__Monitor( conftree ) :
-    from smash.sys.tool import Monitor
+def test__BashHandler( conftree ) :
+    from smash.core.handler import BashHandler
+
     # assert False
 
 
 #----------------------------------------------------------------------#
-def test__Service( conftree ) :
-    from smash.sys.tool import Service
+def test__BatchHandler( conftree ) :
+    from smash.core.handler import BatchHandler
+
     # assert False
 
 

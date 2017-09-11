@@ -15,14 +15,14 @@ def conftree( path_env00 ) :
 
 #----------------------------------------------------------------------#
 def test__PackageType(conftree):
-    from smash.sys.pkg import PackageType, builtin_package_types
+    from smash.core.pkg import PackageType, builtin_package_types
 
     # assert False
 
 
 #----------------------------------------------------------------------#
 def test__Package(conftree):
-    from smash.sys.pkg import Package, builtin_packages
+    from smash.core.pkg import Package, builtin_packages
 
     # assert False
 

@@ -1,4 +1,4 @@
-#-- smash.sys.pkg
+#-- smash.core.pkg
 
 """
 package types,
@@ -59,15 +59,17 @@ class Network( Resource ):
     ''' abstract remote network resource
     '''
 
-
-################################
 class NetworkIndex( Network ) :
     ''' remote service that can be used to register and discover other remote resources
     '''
 
+
+################################
+
+
 class PackageIndex( Network ) :
     ''' configuration for obtaining smash packages
-        package index could be on filesystem or network, depending on host
+        package index could be on the local filesystem or the network, depending on host
     '''
 
 class PipPackageIndex( PackageIndex) :
@@ -76,6 +78,10 @@ class PipPackageIndex( PackageIndex) :
 
 class CondaPackageIndex( PackageIndex ) :
     ''' configuration for obtaining conda packages
+    '''
+
+class FTPPackageIndex( PackageIndex ) :
+    ''' Source of packages on a remote ftp server
     '''
 
 
@@ -164,6 +170,7 @@ builtin_package_types = {
     'idx-pkg'   : PackageIndex,
     'idx-pip'   : PipPackageIndex,
     'idx-conda' : CondaPackageIndex,
+    'idx-ftp'   : FTPPackageIndex,
 
     'data'      : Data,
     'store'     : DataStore

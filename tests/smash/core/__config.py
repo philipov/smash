@@ -9,13 +9,13 @@ import os
 from pathlib import Path
 
 from pprint import pprint, pformat
-from smash.utils.out import rprint, listprint, dictprint #ToDo: move these functions outside the package under test
+from smash.util.out import rprint, listprint, dictprint #ToDo: move these functions outside the package under test
 
 
 #----------------------------------------------------------------------#
 
 def test__Config( ) :
-    from smash.sys.config import Config
+    from smash.core.config import Config
 
     config = Config()
 
@@ -24,8 +24,8 @@ def test__Config( ) :
 #----------------------------------------------------------------------#
 
 def test__ConfigSectionView( conftree ) :
-    from smash.sys.config import Config
-    from smash.sys.config import getdeepitem
+    from smash.core.config import Config
+    from smash.core.config import getdeepitem
     from collections import OrderedDict
     config = Config( tree=conftree )
     config._yaml_data = OrderedDict( )
@@ -59,7 +59,7 @@ def conftree( path_root_config ) :
 
 ####################
 def try_Config( config ) :
-    from smash.utils import out
+    from smash.util import out
 
     print( config )
     pprint( config._yaml_data )
@@ -81,7 +81,7 @@ def try_Config( config ) :
 
 ####################
 def test__Config_from_root( path_root_config, conftree ):
-    from smash.sys.config import Config
+    from smash.core.config import Config
 
     config = Config.from_yaml( path_root_config, tree=conftree )
     conftree.root = config
@@ -93,42 +93,42 @@ def test__Config_from_root( path_root_config, conftree ):
 #todo: these can be parametrized
 
 def test__Config_from_net( path_network_config, conftree ) :
-    from smash.sys.config import Config
+    from smash.core.config import Config
 
     config = Config.from_yaml( path_network_config, tree=conftree )
     config = try_Config( config )
     # assert False
 
 def test__Config_from_data( path_data_config, conftree ) :
-    from smash.sys.config import Config
+    from smash.core.config import Config
 
     config = Config.from_yaml( path_data_config, tree=conftree )
     config = try_Config( config )
     # assert False
 
 def test__Config_from_lib( path_lib_config, conftree ) :
-    from smash.sys.config import Config
+    from smash.core.config import Config
 
     config = Config.from_yaml( path_lib_config, tree=conftree )
     config = try_Config( config )
     # assert False
 
 def test__Config_from_app( path_app_config, conftree ) :
-    from smash.sys.config import Config
+    from smash.core.config import Config
 
     config = Config.from_yaml( path_app_config, tree=conftree )
     config = try_Config( config )
     # assert False
 
 def test__Config_from_host( path_host_config, conftree ) :
-    from smash.sys.config import Config
+    from smash.core.config import Config
 
     config = Config.from_yaml( path_host_config, tree=conftree )
     config = try_Config( config )
     # assert False
 
 def test__Config_from_env( path_env00_config, conftree ) :
-    from smash.sys.config import Config
+    from smash.core.config import Config
 
     config = Config.from_yaml( path_env00_config, tree=conftree )
     conftree.env_path =config.path
@@ -137,7 +137,7 @@ def test__Config_from_env( path_env00_config, conftree ) :
 
 ####################
 def test__Config_protocol_check( path_bad_protocol, conftree  ) :
-    from smash.sys.config import Config
+    from smash.core.config import Config
 
     with pytest.raises(Config.ProtocolError):
         config = Config.from_yaml( path_bad_protocol, tree=conftree )
@@ -148,7 +148,7 @@ def test__Config_protocol_check( path_bad_protocol, conftree  ) :
 ####################
 
 def test__Config_env_fields( path_env00_config, conftree ) :
-    from smash.utils import out
+    from smash.util import out
     config = conftree[path_env00_config]
 
     print( '\n${path:PATH1}   ', out.pink( config['path']['PATH1'] ))
@@ -178,7 +178,7 @@ def test__Config_env_fields( path_env00_config, conftree ) :
 
 
 def test__Config_env_parents( path_env00_config, conftree ) :
-    from smash.utils import out
+    from smash.util import out
     config = conftree[path_env00_config]
     print( '\nconfig.magic' )
     first_parent = config['__inherit__'][0]
@@ -199,7 +199,7 @@ def test__Config_env_parents( path_env00_config, conftree ) :
 
 
 def test__Config_env_fields2( path_env00_config, conftree ) :
-    from smash.utils import out
+    from smash.util import out
     config = conftree[path_env00_config]
 
     print( '\n${shell:REMOTE_URL}   ', out.pink( config['shell']['REMOTE_URL'] ) )
@@ -215,7 +215,7 @@ def test__Config_env_fields2( path_env00_config, conftree ) :
 
 
 def try_ConfigTree_from_path( target_path ) :
-    from smash.sys.config import ConfigTree
+    from smash.core.config import ConfigTree
 
     print( '' )
     workdir = Path( os.getcwd() )
@@ -294,7 +294,7 @@ def test__ConfigTree_from_tasks( path_tasks ) :
 #----------------------------------------------------------------------#
 
 def try_export( conftree ) :
-    from smash.utils import out
+    from smash.util import out
 
     # print( out.pink( '\n>>>>>>>>> PATH/ROOT' ), conftree.env['path']['ROOT'] )
 
@@ -349,7 +349,7 @@ def test__Config_env_export( path_env00_config, path_lib_config, conftree ) :
 
 
 def test__ConfigTree_env_export( path_env00 ) :
-    from smash.sys.config import ConfigTree
+    from smash.core.config import ConfigTree
     conftree = ConfigTree.from_path( path_env00 )
 
     try_export( conftree )

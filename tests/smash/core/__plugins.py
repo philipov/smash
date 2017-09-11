@@ -8,8 +8,14 @@ import pytest
 
 #----------------------------------------------------------------------#
 
-def test__User():
-    from smash.sys.user import User
+def test__plugins():
+    from smash.core.plugins import plugins, report_plugins
+
+    report_plugins()
+
+    # assert False
+
+
 
 
 #----------------------------------------------------------------------#

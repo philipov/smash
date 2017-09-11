@@ -34,34 +34,30 @@ _parser     = argparse.ArgumentParser(
     description="Smart Shell"
 )
 
-def _add_argument(name, *args, **kwargs):
-    _parser.add_argument(*args, **kwargs)
-    _argnames.append(kwargs['dest'])
+def _add_argument(name, options=(), **kwargs):
+    print('add argument', name, options, kwargs)
+    _parser.add_argument(*options, dest=name, **kwargs)
+    _argnames.append(name)
 
 
 #################### main
-_add_argument(
-    'mode',
-    dest='mode',
-    type=str,
-    help='execution mode',
+_add_argument('mode',
+    type    = str,
+    help    = 'execution mode',
 )
 
-_add_argument(
-    'target',
-    dest='target',
-    type=str,
-    nargs=argparse.REMAINDER,
-    help='what is to be executed',
+_add_argument('target',
+    type    = str,
+    nargs   = argparse.REMAINDER,
+    help    = 'what is to be executed',
 )
 
 #################### flags
 
-_add_argument(
-    '-v', '--verbose',
-    dest='verbose',
-    action='store_true',
-    help='print extra information'
+_add_argument('verbose',
+    options = ('-v', '--verbose'),
+    action  = 'store_true',
+    help    = 'print extra information'
 )
 
 ####################

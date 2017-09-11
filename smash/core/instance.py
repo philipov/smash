@@ -1,4 +1,4 @@
-#-- smash.sys.instance
+#-- smash.core.instance
 
 """
 
@@ -13,13 +13,13 @@ info = lambda *a, **b : print( "".join( str( arg ) for arg in a ) )
 ################################
 
 
-from ..utils import out
-from ..utils.out import rprint
+from ..util import out
+from ..util.out import rprint
 from pprint import pprint, pformat
 
 from pathlib import Path
 
-from ..utils.meta import classproperty
+from ..util.meta import classproperty
 from powertools import export
 from .config import Config
 
@@ -27,6 +27,8 @@ from .config import Config
 #----------------------------------------------------------------------#
 
 # this is where I can begin to flesh out the idea of config files being actual classes.
+
+# todo: use cookiecutter to deploy an instance
 
 @export
 class InstanceTemplate :
@@ -37,12 +39,14 @@ class InstanceTemplate :
         self.filename = filename
         self.refname = refname
 
+
 #----------------------------------------------------------------------#
 
 @export
 class SmashTemplate( InstanceTemplate ) :
     ''''a default template for smash instance'''
     pass
+
 
 #----------------------------------------------------------------------#
 

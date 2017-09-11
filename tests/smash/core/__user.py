@@ -8,12 +8,8 @@ import pytest
 
 #----------------------------------------------------------------------#
 
-def test__load_plugins():
-    from smash.sys.plugins import plugins
-
-def test__load_exporters( ) :
-    from smash.sys.plugins import exporters
-
+def test__User():
+    from smash.core.user import User
 
 
 #----------------------------------------------------------------------#

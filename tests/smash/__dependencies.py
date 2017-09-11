@@ -19,7 +19,7 @@ def test__OrderedSet():
     assert s == (3,2,1)
 
 def test__GreedyOrderedSet( ) :
-    from smash.sys.config import GreedyOrderedSet
+    from smash.core.config import GreedyOrderedSet
 
     s = GreedyOrderedSet( )
     s.add( 3 )

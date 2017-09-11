@@ -14,11 +14,11 @@ info  = lambda *a, **b : print( "".join( str( arg ) for arg in a ) )
 
 from pathlib import Path
 
-from ..utils import out
-from ..utils.out import rprint
+from ..util import out
+from ..util.out import rprint
 from pprint import pprint, pformat
 
-from ..utils.meta import classproperty
+from ..util.meta import classproperty
 
 
 #----------------------------------------------------------------------#

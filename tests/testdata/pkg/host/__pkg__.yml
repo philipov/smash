@@ -28,7 +28,7 @@ shell:
   INPUT_DIR:                input_dir
   TEST2:                    [path, ., "${INPUT_DIR}"]
   RECVAL:                   HELLO
-  PYTHONHOME:               ${pkg:LIB}/python/${ENV@PYTHON}
+  PYTHONHOME:               ${pkg:LIB}/python/${ENV::PYTHON}
 
   PATH:
     - ~~path~~

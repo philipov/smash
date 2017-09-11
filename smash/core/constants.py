@@ -1,4 +1,4 @@
-#-- smash.constants
+#-- smash.core.constants
 
 """
 global constants

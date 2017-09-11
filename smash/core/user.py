@@ -1,4 +1,4 @@
-#-- smash.sys.user
+#-- smash.core.user
 
 """
 keep track of user-specific information, including authentication details

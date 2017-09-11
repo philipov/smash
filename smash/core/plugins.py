@@ -1,4 +1,4 @@
-#-- smash.sys.plugins
+#-- smash.core.plugins
 
 """
 load plugins
@@ -15,9 +15,9 @@ import pkg_resources
 from contextlib import suppress
 from copy import copy
 
-from ..utils import out
-from ..utils.out import rprint
-
+from ..util import out
+from powertools.print import rprint
+from powertools import export
 
 #----------------------------------------------------------------------#
 
@@ -56,47 +56,50 @@ from .tool import Tool, builtin_tools
 from .instance import InstanceTemplate, builtin_templates
 from .pkg import PackageType, builtin_package_types
 from .pkg import Package, builtin_packages
-from .env import Environment, builtin_environments
+from .env import Environment, builtin_environment_types
 
 
-__all__     = ['plugins',
+__all__     = [
+    'plugins',
 
-               'exporters',
-               'environments',
-               'templates',
+    'exporters',
+    'environment_types',
+    'templates',
 
-               'package_types',
-               'packages',
-               'tools',
-               'handlers']
+    'package_types',
+    'packages',
+    'tools',
+    'handlers',
+]
 
 
 plugins         = _load_plugins( )
 
-exporters       = _select_class( Exporter, builtin_exporters )
-environments    = _select_class( Environment, builtin_environments )
-templates       = _select_class( InstanceTemplate, builtin_templates )
+environment_types   = _select_class( Environment,       builtin_environment_types )
+templates           = _select_class( InstanceTemplate,  builtin_templates )
+package_types       = _select_class( PackageType,       builtin_package_types )
 
-package_types   = _select_class( PackageType, builtin_package_types )
-packages        = _select_class( Package, builtin_packages )
-tools           = _select_class( Tool, builtin_tools )
-handlers        = _select_class( Handler, builtin_handlers )
+packages            = _select_class( Package,           builtin_packages )
+tools               = _select_class( Tool,              builtin_tools )
+exporters           = _select_class( Exporter,          builtin_exporters )
+handlers            = _select_class( Handler,           builtin_handlers )
 
 
 #----------------------------------------------------------------------#
 
+@export
 def report_plugins():
     print(  out.green('~~~~~~~~~~~'), out.pink(__name__ ))
     rprint( plugins )
 
-    print(  out.green('~~~~~~~~~~~') + out.pink(' exporters:'))
-    rprint( exporters )
+    print( out.green( '~~~~~~~~~~~' ) + out.pink(' environment types:' ))
+    rprint( environment_types )
 
-    print( out.green( '~~~~~~~~~~~' ) + out.pink(' environments:' ))
-    rprint( environments )
-
-    print( out.green( '~~~~~~~~~~~' ) + out.pink(' templates:' ))
+    print( out.green( '~~~~~~~~~~~' ) + out.pink(' instance templates:' ) )
     rprint( templates )
+
+    print( out.green( '~~~~~~~~~~~' ) + out.pink(' package types:' ) )
+    rprint( package_types )
 
     print( out.green( '~~~~~~~~~~~' ) + out.pink(' packages:' ))
     rprint( packages )
@@ -104,8 +107,12 @@ def report_plugins():
     print( out.green( '~~~~~~~~~~~' ) + out.pink(' tools:' ))
     rprint( tools )
 
+    print( out.green( '~~~~~~~~~~~' ) + out.pink(' exporters:' ) )
+    rprint( exporters )
+
     print( out.green( '~~~~~~~~~~~' ) + out.pink(' handlers:' ))
     rprint( handlers )
+
     print( out.green( '~~~~~~~~~~~\n' ) )
 
 

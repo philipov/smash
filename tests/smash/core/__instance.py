@@ -15,13 +15,13 @@ def conftree( path_env00 ) :
 
 #----------------------------------------------------------------------#
 def test__InstanceTemplate( conftree ) :
-    from smash.sys.instance import InstanceTemplate
+    from smash.core.instance import InstanceTemplate
     # assert False
 
 
 #----------------------------------------------------------------------#
 def test__SmashTemplate( conftree ) :
-    from smash.sys.instance import SmashTemplate
+    from smash.core.instance import SmashTemplate
     # assert False
 
 

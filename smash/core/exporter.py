@@ -1,4 +1,4 @@
-#-- smash.sys.export
+#-- smash.core.exporter
 
 """
 write output files from compiled configtree node
@@ -20,11 +20,11 @@ from collections import defaultdict
 from pathlib import Path
 
 from .config import Config
-from ..utils import out
-from ..utils.out import rprint
+from ..util import out
+from ..util.out import rprint
 from pprint import pprint, pformat
 
-from ..utils.meta import classproperty
+from ..util.meta import classproperty
 
 #-------------------------------------------------------------------------------------------------#
 
@@ -59,8 +59,7 @@ class Exporter:
         raise NotImplementedError
 
 
-    @property
-    def result( self, ) :
+    def export( self, ) :
         return self.write(self.config, self.sections, self.destination)
 
 
@@ -176,22 +175,34 @@ class ExportINI( ExportShell ) :
 
         inidata      = ConfigParser( )
         for section in sections :
+            inidata.setdefault(section,OrderedDict())
+            info( out.red( 'ExportINI Section [' ), "{}".format( str( section )), out.red(']') )
             for key, value in config[section].allitems( ) :
                 if isinstance( value, str ) :
-                    inidata[key] = "'"+str( value )+ "'"
+                    inidata[section][key] = "'"+str( value )+ "'"
                 elif isinstance( value, list ) :
-                    inidata[key] = "'"+self.pathlist2string( value )+"'"
+                    inidata[section][key] = "'"+self.pathlist2string( value )+"'"
                 else :
                     raise TypeError( 'Invalid environment value',
                                      namedtuple( '_', ['section', 'key', 'value', 'type'] )
                                      ( section, key, str( value ), str( type( value ) ) ) )
-                info( out.red( 'ExportINI' ), " {:<20} = {:64}".format( str( key ), inidata[key] ) )
+                info( "    {:<20} = {:64}".format( str( key ), inidata[section][key] ) )
 
+        outpath = Path(destination)
+        print('outpath', outpath, outpath.parent)
+        for path in reversed(outpath.parents):
+            if not path.exists():
+                print("MKDIR", path)
+                path.mkdir()
         with open( destination, 'w' ) as outfile :
+            print("write to destination", destination, outfile)
             inidata.write( outfile)
 
 
 #-------------------------------------------------------------------------------------------------#
+
+# todo: change sys.platform checks to environment platform checks
+
 builtin_exporters = {
     'Shell'         : ExportShell,
     'ShellScript'   : ExportShellScriptCMD if sys.platform=='win32'

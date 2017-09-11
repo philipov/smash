@@ -1,4 +1,4 @@
-#-- smash.env.virtual
+#-- smash.core.env
 
 """
 """
@@ -7,12 +7,13 @@ __all__ = []
 
 import logging
 logging.basicConfig( level=logging.INFO )
-from ..utils.out import loggers_for
+from ..util.out import loggers_for
 (debug, info, warning, error, critical) = loggers_for( __name__ )
 
 from pathlib import Path
 from contextlib import contextmanager
 from collections import OrderedDict
+from collections import deque
 
 import sys
 import os
@@ -25,21 +26,23 @@ from .config import ConfigTree
 #----------------------------------------------------------------------#
 
 class MissingShellExportError( Exception ) :
-    ''' Neither Config nor its parents defined any exporter for shell variables '''
+    ''' not config nor its parents defined any exporter for shell variables '''
 
 
 #----------------------------------------------------------------------#
 
 ################################
 class Environment:
+    ''' represent the state of an environment where commands may be executed '''
 
     def __init__( self, path, pure, *, parent=None ) :
 
-        self.homepath           = path
+        self.homepath       = path
         self.pure           = pure
         self.parent         = parent
         self.processes      = list()
-
+        self.results        = deque()
+        self.closed         = False
 
     ####################
     def build(self):
@@ -82,6 +85,31 @@ class Environment:
         ''' execute a command within the environment '''
         raise NotImplementedError
 
+    #################### iterator/coroutine interfaces
+    #todo: can an environment be represented as a coroutine? send commands in, yield results back out
+
+    def __await__(self):
+        return self
+    def __iter__(self):
+        return self
+    def __next__(self):
+        if self.closed:
+            raise StopIteration(self.results)
+        try:
+            return self.results.popleft()
+        except IndexError as e:
+            return None
+
+    def send(self, value):
+        return self.run(value)
+
+    def close(self):
+        self.closed = True
+
+    def throw(self, exc_type, exc_value=None, traceback=None):
+        '''raise exception inside of the __exit__ method??'''
+        raise exc_type(self, exc_value, traceback)
+
 
 #----------------------------------------------------------------------#
 
@@ -111,18 +139,18 @@ class ContextEnvironment( Environment ) :
     ####################
     def build( self ) :
         ''' do what? '''
-        pass
+
 
     def validate( self ) :
         ''' defer to instance template '''
-        pass
+
 
     def initialize( self ) :
         sys.path.append( str( self.homepath ) )
         os.chdir( str( self.homepath ) )
 
     def teardown( self ) :
-        pass
+        ''' do what? '''
 
 
     ####################
@@ -155,11 +183,16 @@ class VirtualEnvironment(Environment):
     def build( self ) :
         ''' create config files '''
         from .plugins import exporters
+
         for name, target in self.config.exports.items():
+            if name == 'Shell': continue
             exporter = exporters[name]
+
             for destination, sections in target.items():
-                print('EXPORT {:<10} {:<50} {:<10}'.format(str(name), str(destination), str(sections)))
-                result = exporter(self.config, sections, destination)
+                print('EXPORT {:<10} {:<50} {:<10} {:<10}'.format(str(name), str(destination), str(sections), str(exporter)) )
+                result = exporter(self.config, sections, destination).export()
+
+
 
 
 
@@ -176,7 +209,7 @@ class VirtualEnvironment(Environment):
     ####################
     @property
     def variables( self ) :
-        from ..sys.plugins import exporters
+        from ..core.plugins import exporters
 
         try : # todo: refactor how environment export works. subenv should be the export sink key, and Exporters should push values into it. The virtual environment should just check that sink after exporters have been ran.
             export_subtrees = self.config.exports['Shell']['subenv']
@@ -187,8 +220,8 @@ class VirtualEnvironment(Environment):
             else :
                 print( "Warning: No Shell Exporter defined. Will use only exterior environment variables." )
                 return OrderedDict( )
-        exporter = exporters['Shell']
-        result = exporter( self.config, export_subtrees, 'subenv' ).result
+        exporter    = exporters['Shell']
+        result      = exporter( self.config, export_subtrees, 'subenv' ).export()
 
         if not self.config.is_pure or not self.pure :
             result.update( os.environ )
@@ -331,7 +364,7 @@ class RemoteEnvironment( Environment ):
 
 #----------------------------------------------------------------------#
 
-builtin_environments = {
+builtin_environment_types = {
     'context'   : ContextEnvironment,
     'subenv'    : VirtualEnvironment,
     'conda'     : CondaEnvironment,

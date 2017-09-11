@@ -7,11 +7,11 @@ test for list evaluation without using testing framework
 #----------------------------------------------------------------------#
 
 
-from smash.sys.config import ConfigTree
-from smash.sys.config import Config
-from smash.sys.config import getdeepitem
-from smash.utils.out import listprint
-from smash.utils import out
+from smash.core.config import ConfigTree
+from smash.core.config import Config
+from smash.core.config import getdeepitem
+from smash.util.out import listprint
+from smash.util import out
 from collections import OrderedDict
 from pathlib import Path
 

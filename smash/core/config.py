@@ -1,4 +1,4 @@
-#-- smash.sys.config
+#-- smash.core.config
 
 """
 manipulate configuration files
@@ -31,15 +31,15 @@ from contextlib import suppress
 
 from pathlib import Path
 
-from ..utils.yaml import load as load_yaml
-from ..utils.path import stack_of_files
-from ..utils.path import temporary_working_directory
-from ..utils.path import try_resolve
-from ..utils.path import find_yamls
+from ..util.yaml import load as load_yaml
+from ..util.path import stack_of_files
+from ..util.path import temporary_working_directory
+from ..util.path import try_resolve
+from ..util.path import find_yamls
 
-from ..utils import out
+from ..util import out
 
-from smash.sys.constants import config_protocol
+from smash.core.constants import config_protocol
 
 from powertools import export
 
@@ -517,8 +517,8 @@ class ConfigSectionView :
 
     ####################
     def expression_parser( self, key, listeval=False ) :
-        ''' factory that creates a replacement function to be used by regex subn
-            process ${configpath@section:key} token expressions:
+        ''' factory that creates a replace function to be used by regex subn
+            process ${configpath::section:key} token expressions:
             -    key:        look up value in target node
             -    sections:   [optional] key is in a sibling section
             -    configpath: [optional] key is in a different file
@@ -563,8 +563,8 @@ class ConfigSectionView :
             # print(out.cyan("subn result:"), result, out.cyan('|'), key, out.cyan( '|' ), matchobj.group(0))
             if isinstance(result, OrderedDict) and len(result) == 0:
                 raise Config.SubstitutionKeyNotFoundError(''.join(str(s) for s in [
-                    'Could not find ', target_sections,':', target_key,'@', target_configpath,
-                    ' for inserting into ', self.section_keys,':', key, '@',self.config.filepath
+                    'Could not find ', target_configpath, '::', target_sections,':', target_key,
+                    ' for inserting into ', self.config.filepath, '::', self.section_keys,':', key,
                 ]))
             elif isinstance(result, list) and matchobj.group(0) == matchobj.string and listeval and token == '@':
                 ### WARNING: use a hack to return a list out from the regex substitute
@@ -593,10 +593,12 @@ class ConfigSectionView :
 #----------------------------------------------------------------------#
 
 #todo: delayed key evaluation syntax -- causes a parent value to have its token expressions evaluated from the child's point of view
+    # ^ this is achieved in part by using the ENV configpath keyword
+
 token_expression_regex = re.compile(
     r"""(   (?P<token>[$@])
           {                                  # ${
-            ((?P<configpath>[^${}]+?)@)?     #   configpath@         [optional]
+            ((?P<configpath>[^${}]+?)::)?     #   configpath@         [optional]
             ((?P<sections>[^${}]+):)?        #   sections:           [optional]
             (?P<key>[^$:{}]+?)               #   key                 -required-
           })                                  #  }
@@ -609,7 +611,15 @@ token_expression_regex = re.compile(
 
 @export
 class ConfigTree :
-    """ Non-mutating (append-only) iterator over a network of configuration files with cross-tree references. """
+    """ container for a network of configuration files with chainmap-like behavior.
+        config files may have other config files as parents.
+        values may contain token expressions to be substituted with the value of a different key
+        if only the key is specified, the same section and the same file are assumed
+        if a section:key is not in the config file, look in the parents.
+        all config files implicitly use the root node of the config filesystem as a parent.
+        token expressions may refer to section:keys in any file in the configtree.
+        ENV is a keyword that may be used as the filename for a token to refer to the current virtual environment's config
+    """
 
     #----------------------------------------------------------------#
     #----------------------------------------------------------------#
@@ -632,6 +642,7 @@ class ConfigTree :
 
         if root_file is not None :
             self.__add_root( root_file )
+
 
     ####################
     @classmethod
@@ -662,11 +673,13 @@ class ConfigTree :
         self.finalize( )
         return self
 
+
     ####################
     @classmethod
     def from_root( cls, root_file: Path ) :
         self = cls( root_file=root_file )
         return self
+
 
     #----------------------------------------------------------------#
     #----------------------------------------------------------------#
@@ -695,6 +708,7 @@ class ConfigTree :
     @property
     def final( self ) :
         return self._final
+
 
     #----------------------------------------------------------------#
 
@@ -734,6 +748,7 @@ class ConfigTree :
 
     __pprint__ = __str__
     __repr__ = str
+
 
     #----------------------------------------------------------------#
 
@@ -794,6 +809,7 @@ class ConfigTree :
             debug( 'KeyError:', e )
             return self.root
 
+
     #----------------------------------------------------------------#
 
     def nearest_node( self, target_name: str, target_path: Path ) :
@@ -803,48 +819,6 @@ class ConfigTree :
             if filepath in self.nodes.keys( ) :
                 return filepath
 
-    ####################]
-    def subenv( self, name=None, pure=False ) :
-        if not pure :
-            subenv = os.environ.copy( )
-        else :
-            subenv = OrderedDict( )
-
-        try :
-            section_items = self.root_export.items( )
-        except KeyError :
-            section_items = list( )
-
-        env_sections = list( )
-        for (section_name, type) in section_items :
-            if type == 'environment' :
-                env_sections.append( section_name )
-
-        # print( 'sections', env_sections )
-
-        for section_name in env_sections :
-            try :
-                for (key, value) in self.env[section_name].items( ) :
-                    print( 'ENV', section_name, key, value )
-                    subenv[key] = value
-            except KeyError as e :
-                print( "KeyError:", e )
-
-        return subenv
-
-    ####################]
-    def write_child( self, child_name: Path ) :
-        # print( "BUILD CONFIG -----------" )
-
-        config = self.nodes[child_name]
-
-        path_config = config.rootpath / '.config' / 'smash'
-        try :
-            path_config.mkdir( )
-        except FileExistsError as e :
-            pass
-        config.write( self.out_file )
-        config.write( self.raw_file, raw=True )
 
 
 #----------------------------------------------------------------------#

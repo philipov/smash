@@ -7,9 +7,9 @@ test for getdeepitem without using testing framework
 #----------------------------------------------------------------------#
 
 
-from smash.sys.config import ConfigTree
-from smash.sys.config import Config
-from smash.sys.config import getdeepitem
+from smash.core.config import ConfigTree
+from smash.core.config import Config
+from smash.core.config import getdeepitem
 from collections import OrderedDict
 
 configtree = ConfigTree()

@@ -15,8 +15,8 @@ from pathlib import Path
 
 #todo: use coroutines that yield for user input
 
-from .sys.env import ContextEnvironment
-from .sys.env import VirtualEnvironment
+from .core.env import ContextEnvironment
+from .core.env import VirtualEnvironment
 
 #----------------------------------------------------------------------#
 

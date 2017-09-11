@@ -10,7 +10,7 @@ __inherit__:
 
 __export__:
   subenv:         [Shell, settings]
-  ./test.ini:     [INI, "${settings:EXPORT_SECTION}", main]
+  ./test.ini:     [INI, "${settings:EXPORT_SECTION}", main, pkg]
 
 
 ##########################################################

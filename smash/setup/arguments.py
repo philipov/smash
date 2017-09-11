@@ -9,7 +9,7 @@ store setup parameters inside namespace subpackage to avoid importing the librar
 from copy import deepcopy
 kwargs = dict(
     name='smash',
-    packages=['smash', 'smash.sys', 'smash.boot', 'smash.dash', 'smash.tools', 'smash.setup'],
+    packages=['smash', 'smash.setup', 'smash.core', 'smash.boot', 'smash.dash', 'smash.tool', 'smash.util'],
     version='0.0.2',
     description=__doc__,
 

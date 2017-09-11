@@ -28,9 +28,8 @@ from pathlib import Path
 from . import cmdline
 from . import modes
 
-from .sys.config import ConfigTree
-from .utils.out import debuglog
-from .sys.env import ContextEnvironment
+from .util.out import debuglog
+from .core.env import ContextEnvironment
 
 
 @debuglog(__name__)
@@ -41,7 +40,7 @@ def main( args: cmdline.Arguments ) :
     # ToDo: manage package list
 
     log.print( '~~~~~~~~~~~~~~~~~~~~ SMASH')
-    log.print('SCRIPT:  ', __file__ )
+    log.print( 'SCRIPT:  ', __file__ )
     log.print( 'MODE:    ', args.mode )
     log.print( 'TARGET:  ', args.target )
 
@@ -49,8 +48,9 @@ def main( args: cmdline.Arguments ) :
     log.print( 'IWD:     ', cwd )
     log.print( '' )
 
-    from .sys.plugins import report_plugins
-    report_plugins()
+    if args.verbose:
+        from .core.plugins import report_plugins
+        report_plugins()
 
     with ContextEnvironment(cwd) as context:
         do_func = getattr( modes
