@@ -18,6 +18,7 @@ from collections import OrderedDict
 from collections import namedtuple
 from collections import defaultdict
 from pathlib import Path
+from powertools import export
 
 from .config import Config
 from ..util import out
@@ -25,17 +26,6 @@ from ..util.out import rprint
 from pprint import pprint, pformat
 
 from ..util.meta import classproperty
-
-#-------------------------------------------------------------------------------------------------#
-
-__all__ = []
-
-def export( obj ) :
-    try :
-        __all__.append( obj.__name__ )
-    except AttributeError :
-        __all__.append( obj.__main__.__name__ )
-    return obj
 
 
 #-------------------------------------------------------------------------------------------------#

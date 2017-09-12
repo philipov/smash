@@ -5,9 +5,10 @@
 
 import sys
 from powertools import classproperty
+from powertools import export
 
 #----------------------------------------------------------------------#
-
+@export
 class Platform:
     ''' keep track of differences between platforms '''
 
@@ -19,6 +20,7 @@ class Platform:
 
 
 #----------------------------------------------------------------------#
+@export
 class Win32(Platform):
     ''' windows '''
 
@@ -28,6 +30,7 @@ class Win32(Platform):
 
 
 #----------------------------------------------------------------------#
+@export
 class Linux(Platform):
     ''' everything else '''
 
@@ -37,6 +40,7 @@ class Linux(Platform):
 
 
 #----------------------------------------------------------------------#
+@export
 class Mac(Platform):
     ''' another type of linux '''
 

@@ -1,15 +1,23 @@
-#-- smash.tools.repo
+#-- smash.tool.test
 
 """
-methods for manipulating repositories using choice of backend (github, gitlab, bare git)
+run tests for a smash package
 """
 
 from powertools import export
 from powertools import AutoLogger
-log = AutoLogger()
+log = AutoLogger( )
+
+################################
+from pathlib import Path
 
 
 #----------------------------------------------------------------------#
+
+def main():
+    log.info('SMASH.TEST')
+
+    log.info('Done...')
 
 
 #----------------------------------------------------------------------#

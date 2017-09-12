@@ -12,20 +12,20 @@ log.debug = print
 
 from pathlib import Path
 
-
-__all__ = []
+from powertools import export
 
 import conda
 
 
 
 #----------------------------------------------------------------------#
-
+@export
 class PackageType:
     '''abstract monad for defining packaging semantics'''
 
 
 ################################
+@export
 class Application( PackageType ):
     ''' non-reusable, end-user code
     '''
@@ -37,12 +37,14 @@ class Library( PackageType ):
 
 
 ################################
+@export
 class Account( PackageType ):
     ''' information for a unique client
         user definitions and permissions
     '''
 
 
+@export
 class Host( PackageType ):
     ''' configuration for a uniquely-identifyable node on the network
         define which abstract resources are available,
@@ -51,14 +53,17 @@ class Host( PackageType ):
 
 
 ################################
+@export
 class Resource( PackageType ):
     ''' abstract local system resource, which can be instantiated by the host
     '''
 
+@export
 class Network( Resource ):
     ''' abstract remote network resource
     '''
 
+@export
 class NetworkIndex( Network ) :
     ''' remote service that can be used to register and discover other remote resources
     '''
@@ -67,30 +72,38 @@ class NetworkIndex( Network ) :
 ################################
 
 
+
+@export
 class PackageIndex( Network ) :
     ''' configuration for obtaining smash packages
         package index could be on the local filesystem or the network, depending on host
     '''
 
+@export
 class PipPackageIndex( PackageIndex) :
     ''' configuration for obtaining pip-compatible packages
     '''
 
+@export
 class CondaPackageIndex( PackageIndex ) :
     ''' configuration for obtaining conda packages
     '''
 
+@export
 class FTPPackageIndex( PackageIndex ) :
     ''' Source of packages on a remote ftp server
     '''
 
 
 ################################
+
+@export
 class Data( Resource ) :
     ''' abstract database definitions
         associated loader tasks
     '''
 
+@export
 class DataStore( Data ) :
     ''' a specific instance of database state
     '''
@@ -101,6 +114,8 @@ class DataStore( Data ) :
 #----------------------------------------------------------------------#
 
 ################################
+
+@export
 class Package :
     ''' base class for managing version-controlled modules on a smash instance
         provides an additional hook for importing plugins
@@ -110,16 +125,19 @@ class Package :
 
 #----------------------------------------------------------------------#
 
+@export
 class Python( Package ):
     ''' install standard python
     '''
 
 ################################
+@export
 class Miniconda( Python ):
     ''' install miniconda
     '''
 
 ################################
+@export
 class Anaconda( Python ):
     ''' install anaconda
     '''
@@ -127,22 +145,26 @@ class Anaconda( Python ):
 
 #----------------------------------------------------------------------#
 
+@export
 class Shell( Package ) :
     ''' interface for controlling a shell program
         use this to provide a wrapper for shell commands to enable tracking and versioning of state
     '''
 
 ################################
+@export
 class BatchCMD( Shell ) :
     ''' implement wrappers for windows batch script
     '''
 
 ################################
+@export
 class Bash( Shell ) :
     ''' implement wrappers for bash shell
     '''
 
 ################################
+@export
 class Xonsh( Shell ) :
     ''' implement wrappers for xonsh shell
     '''
@@ -150,6 +172,7 @@ class Xonsh( Shell ) :
 
 #----------------------------------------------------------------------#
 
+@export
 class Git( Package ):
     pass
 

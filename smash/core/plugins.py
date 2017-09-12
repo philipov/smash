@@ -61,6 +61,7 @@ from .env import Environment, builtin_environment_types
 
 __all__     = [
     'plugins',
+    'report_plugins',
 
     'exporters',
     'environment_types',

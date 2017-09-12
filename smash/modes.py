@@ -32,6 +32,8 @@ def export( obj ) :
 
 #----------------------------------------------------------------------#
 
+# todo: get rid of subcommands. do_run is deprecated by do_open. the other commands can be options
+
 @export
 def do_run(*command, context:ContextEnvironment, verbose=False):
     ''' simply execute whatever command is passed in'''

@@ -4,11 +4,9 @@
 application entry point
 '''
 
-__all__ = []
-
-###
-import powertools
-log = powertools.AutoLogger()
+from powertools import export
+from powertools import AutoLogger
+log = AutoLogger()
 
 ###
 import colorama
@@ -28,11 +26,9 @@ from pathlib import Path
 from . import cmdline
 from . import modes
 
-from .util.out import debuglog
+
 from .core.env import ContextEnvironment
 
-
-@debuglog(__name__)
 def main( args: cmdline.Arguments ) :
     # ToDo: initialize logging: stdout/stderr redirect
     # ToDo: handle dev mode
@@ -81,7 +77,7 @@ def console( args=None ) :
 
     except Exception as err :
         traceback.print_tb( err.__traceback__ )
-        print( sys.exc_info( )[0].__name__ + ':', err )
+        log.print( sys.exc_info( )[0].__name__ + ':', err )
         input( '\nPress ENTER to continue...' )
 
 

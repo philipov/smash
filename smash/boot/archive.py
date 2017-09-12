@@ -1,17 +1,13 @@
-#-- smash.env.virtual
+#-- smash.boot.archive
 
 """
 """
 
-
-import logging
-log = logging.getLogger( name=__name__ )
-logging.basicConfig( level=logging.DEBUG )
-log.debug = print
+from powertools import export
+from powertools import AutoLogger
+log = AutoLogger( )
 
 from pathlib import Path
-
-__all__ = []
 
 #----------------------------------------------------------------------#
 

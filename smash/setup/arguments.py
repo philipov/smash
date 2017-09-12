@@ -7,27 +7,38 @@ store setup parameters inside namespace subpackage to avoid importing the librar
 #----------------------------------------------------------------------#
 
 kwargs = dict(
-    name        = 'smash',
-    packages    = [
+    name            = 'smash',
+    version         = '0.0.2',
+    description     = __doc__,
+
+    url             = 'https://github.com/philipov/smash',
+    author          = 'Philip Loguinov',
+    author_email    = 'philipov@gmail.com',
+
+    packages = [
         'smash',
         'smash.setup',
         'smash.core',
-        'smash.boot',
-        'smash.dash',
         'smash.tool',
-        'smash.util'
+        'smash.util',
+
+        'smash.boot',
+        #'smash.pkg',
+        #'smash.env',
+        #'smash.test',
+        'smash.dash',
     ],
-    version     = '0.0.2',
-    description = __doc__,
+    entry_points = {
+        'console_scripts': [
+            'smash      = smash:console',
 
-    url         = 'https://github.com/philipov/smash',
-    author      = 'Philip Loguinov',
-    author_email= 'philipov@gmail.com',
-
-    entry_points={
-        'console_scripts' : ['smash=smash:console'],
+            'smash.env  = smash.tool.test:main',
+            'smash.pkg  = smash.tool.test:main',
+            'smash.test = smash.tool.test:main',
+            'smash.boot = smash.tool.test:main'
+        ],
     },
-    install_requires=[
+    install_requires = [
         'psutil',
         'ruamel.yaml',
         'ordered_set',
@@ -40,7 +51,7 @@ kwargs = dict(
         'colorama',
         'termcolor'
     ],
-    classifiers=[
+    classifiers = [
         'Environment :: Console',
         'Environment :: Other Environment',
 

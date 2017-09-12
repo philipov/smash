@@ -12,11 +12,11 @@ log.debug = print
 
 from pathlib import Path
 
-__all__ = []
+from powertools import export
 
 #----------------------------------------------------------------------#
 
-
+@export
 class User:
     '''nothing here yet'''
 

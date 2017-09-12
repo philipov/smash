@@ -14,14 +14,18 @@ from .cmdline import parse as parse_cmdline
 from .core.config import Config
 from .core.config import ConfigTree
 
-from .core.exporter import *
-from .core.handler import *
 from .core.env import *
-from .core.tool import *
+from .core.instance import *
 from .core.pkg import *
 
+from .core.exporter import *
+from .core.handler import *
+from .core.tool import *
+from .core.user import *
 
+from .core.plugins import *
 
+from .core import platform
 
 
 #----------------------------------------------------------------------#
