@@ -3,18 +3,16 @@
 """
 """
 
-__all__ = []
 
-import logging
-logging.basicConfig( level=logging.INFO )
-from ..util.out import loggers_for
-(debug, info, warning, error, critical) = loggers_for( __name__ )
+from powertools import export
+from powertools import AutoLogger
+log = AutoLogger()
+from powertools.print import dictprint
 
 from pathlib import Path
 from contextlib import contextmanager
 from collections import OrderedDict
 from collections import deque
-from powertools import export
 
 import sys
 import os
@@ -37,7 +35,7 @@ class MissingShellExportError( Exception ) :
 class Environment:
     ''' represent the state of an environment where commands may be executed '''
 
-    def __init__( self, path, pure, *, parent=None ) :
+    def __init__( self, path, *, pure, parent=None ) :
 
         self.homepath       = path
         self.pure           = pure
@@ -125,10 +123,10 @@ class ContextEnvironment( Environment ) :
     '''
 
     def __init__( self, cwd, *, pure = False ) :
-        super( ).__init__( cwd, pure)
+        super( ).__init__( cwd, pure=pure)
 
         self.configtree = ConfigTree.from_path(cwd)
-        debug( 'CONFIGS:  ', self.configtree, '\n' )
+        log.debug( 'CONFIGS:  ', self.configtree, '\n' )
         assert self.configtree.final
 
 
@@ -179,7 +177,7 @@ class VirtualEnvironment(Environment):
 
     def __init__( self, context:ContextEnvironment, *, pure = True ):
         self.config = context.configtree.env
-        super().__init__(self.config.path, pure, parent=context)
+        super().__init__(self.config.path, pure=pure, parent=context)
 
 
     ####################
@@ -194,8 +192,6 @@ class VirtualEnvironment(Environment):
             for destination, sections in target.items():
                 print('EXPORT {:<10} {:<50} {:<10} {:<10}'.format(str(name), str(destination), str(sections), str(exporter)) )
                 result = exporter(self.config, sections, destination).export()
-
-
 
 
 
@@ -224,20 +220,24 @@ class VirtualEnvironment(Environment):
                 print( "Warning: No Shell Exporter defined. Will use only exterior environment variables." )
                 return OrderedDict( )
         exporter    = exporters['Shell']
-        result      = exporter( self.config, export_subtrees, 'subenv' ).export()
+        subenv      = exporter( self.config, export_subtrees, 'subenv' ).export()
 
-        if not self.config.is_pure or not self.pure :
+        result = OrderedDict()
+        if not self.pure :
             result.update( os.environ )
+        result.update( subenv )
+        log.info()
+        dictprint(result)
         return result
 
 
     ####################
     def run( self, *command:tuple) :
 
-        debug( 'CWD:     ', self.homepath )
-        debug( '' )
+        log.print( 'CWD:     ', self.homepath )
+        log.print( '' )
         variables = self.variables
-        debug( '' )
+        log.print( '' )
         proc = subprocess.Popen(
             ' '.join(str(c) for c in command),
             env     = variables,
@@ -341,7 +341,7 @@ class DockerEnvironment( Environment ) :
 class RemoteEnvironment( Environment ):
     ''' connect to a remote environment using ssh'''
 
-    def __init__( self, remote:Environment, *, pure=False ) :
+    def __init__( self, remote:Environment, *, pure=True ) :
         super( ).__init__( remote.homepath, pure )
 
         raise NotImplementedError

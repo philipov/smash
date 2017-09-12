@@ -268,6 +268,8 @@ def try_ConfigTree_from_path( target_path ) :
 
     print('\nsections     ', conftree.env.sections )
 
+    print('\ninherits',      conftree.env.__inherit__)
+
     # print('\nsubenv')
     # subenv = conftree.subenv(pure=True)
     # print('~~~')

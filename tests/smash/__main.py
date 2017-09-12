@@ -12,7 +12,7 @@ import os
 
 params_argv = list()
 params_argv.append(shlex.split('run echo import time; time.sleep(5) | python -'))
-params_argv.append( shlex.split( 'run echo >>>>>>>> HELLO WORLD <<<<<<<<' ) )
+params_argv.append( shlex.split( 'run echo ECHO ECHO ECHO ') )
 
 @pytest.mark.parametrize("argv", params_argv)
 def test__main( path_env00, argv ) :
@@ -24,7 +24,7 @@ def test__main( path_env00, argv ) :
     args    = parse(argv)
     result  = main( args )
 
-    # assert False
+    assert False
 
 
 #----------------------------------------------------------------------#

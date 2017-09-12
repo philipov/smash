@@ -4,11 +4,9 @@
 write output files from compiled configtree node
 """
 
-
-import logging
-log     = logging.getLogger( name=__name__ )
-debug = lambda *a, **b : print( "".join( str( arg ) for arg in a ) )
-info  = lambda *a, **b : print( "".join( str( arg ) for arg in a ) )
+from powertools import export
+from powertools import AutoLogger
+log = AutoLogger()
 
 ################################
 
@@ -17,8 +15,9 @@ import sys
 from collections import OrderedDict
 from collections import namedtuple
 from collections import defaultdict
+from ordered_set import OrderedSet
 from pathlib import Path
-from powertools import export
+
 
 from .config import Config
 from ..util import out
@@ -79,7 +78,7 @@ class ExportShell( Exporter ):
                 continue
             raise TypeError("Can't append to pathlist: "+str(value)+" | "+str(type(value)))
 
-        return cls.pathlist_delimiter.join(pathlist)
+        return cls.pathlist_delimiter.join(OrderedSet(pathlist))
 
 
     def write( self, config: Config, sections:list, destination:None ) -> OrderedDict:
@@ -98,7 +97,7 @@ class ExportShell( Exporter ):
                         raise TypeError('Invalid environment value',
                                     namedtuple('_',['section', 'key', 'value', 'type' ])
                                                     (section, key, str(value), str(type(value))))
-                    info( out.red( 'ExportEnvironment' ), " {:<20} = {:64}".format(str(key), subenv[key])  )
+                    log.info( out.red( 'ExportEnvironment' ), " {:<20} = {:64}".format(str(key), subenv[key])  )
                 else:
                     raise self.AmbiguousKeyError(
                         namedtuple( '_', ['conflicting_sections', 'key', 'values', 'config', 'destination'] )(
@@ -160,13 +159,13 @@ class ExportINI( ExportShell ) :
 
     pathlist_delimiter = ','
 
-    def write( self, config: Config, sections: list, destination: str ) -> OrderedDict :
+    def write( self, config: Config, sections: list, destination: str ) :
         from configparser import ConfigParser
 
         inidata      = ConfigParser( )
         for section in sections :
             inidata.setdefault(section,OrderedDict())
-            info( out.red( 'ExportINI Section [' ), "{}".format( str( section )), out.red(']') )
+            log.info( out.red( 'ExportINI Section [' ), "{}".format( str( section )), out.red(']') )
             for key, value in config[section].allitems( ) :
                 if isinstance( value, str ) :
                     inidata[section][key] = "'"+str( value )+ "'"
@@ -176,7 +175,7 @@ class ExportINI( ExportShell ) :
                     raise TypeError( 'Invalid environment value',
                                      namedtuple( '_', ['section', 'key', 'value', 'type'] )
                                      ( section, key, str( value ), str( type( value ) ) ) )
-                info( "    {:<20} = {:64}".format( str( key ), inidata[section][key] ) )
+                log.info( "    {:<20} = {:64}".format( str( key ), inidata[section][key] ) )
 
         outpath = Path(destination)
         print('outpath', outpath, outpath.parent)

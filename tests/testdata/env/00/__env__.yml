@@ -6,8 +6,8 @@ __protocol__:     0
 __version__:      0.0.0
 
 __inherit__:
-  - ${pkg:HOST}\__pkg__.yml
-  - ${pkg:APP}\__pkg__.yml
+  - ${pkg:HOST}/__pkg__.yml
+  - ${pkg:APP}/__pkg__.yml
 
 
 ##########################################################

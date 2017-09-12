@@ -7,13 +7,8 @@ yamlisp attempt #2
 
 #todo: separate out the yaml processing from the core config concepts; configtree should be a metaclass representing configs as classes
 
-import logging
-log     = logging.getLogger( name=__name__ )
-# debug   = lambda *a, **b : log.debug( "".join( str( arg ) for arg in a ) )
-# info    = lambda *a, **b : log.info(  "".join( str( arg ) for arg in a ) )
-debug = lambda *a, **b : print( "".join( str( arg ) for arg in a ) )
-info  = lambda *a, **b : print( "".join( str( arg ) for arg in a ) )
-# debug = lambda *a, **b : None
+from powertools import AutoLogger
+log     = AutoLogger()
 
 ################################
 
@@ -24,6 +19,7 @@ from collections import defaultdict
 from collections import ChainMap
 from collections import OrderedDict
 from collections import namedtuple
+from collections import deque
 from ordered_set import OrderedSet
 
 from functools import reduce
@@ -40,6 +36,7 @@ from ..util.path import try_resolve
 from ..util.path import find_yamls
 
 from ..util import out
+from powertools.print import listprint, dictprint, rprint, pprint, pformat
 
 from smash.core.constants import config_protocol
 
@@ -47,13 +44,16 @@ from powertools import export
 
 #----------------------------------------------------------------------#
 
+KEY_RESOLUTION_ORDER    = None
+CURRENT_NODE            = None
+
 ####################
-def getdeepitem( data, keys ) :
-    return reduce( lambda d, key : d.setdefault( key, OrderedDict( ) )
-        if
-            # print( out.pink( '------------------------------------' ), keys, key, out.pink('|'), d) or
-           not isinstance(d, list)
-            else d[key], keys, data )
+def getdeepitem( data, keys, kro=() ) :
+    return reduce( lambda d, key :
+                   d.setdefault( key, OrderedDict( ), kro=kro ) if isinstance(d, ConfigSectionView)
+              else d.setdefault( key, OrderedDict( ) )          if not isinstance(d, list)
+              else d[key], keys, data )
+
 
 
 ####################
@@ -129,6 +129,7 @@ class Config:
         self.path       = target.parents[0]
         self.filename   = target.name
 
+
         self._yaml_data  = load_yaml( target )
         # todo: validate magic keys and immediately raise exception if not a compatible format
 
@@ -145,7 +146,10 @@ class Config:
         except AssertionError as e:
             raise Config.ProtocolError('Protocol version mismatch')
 
-        debug( out.yellow( '*' * 20 ), ' load=', self.filepath )
+        log.print( out.yellow( '*' * 20 ), ' load=', self.filepath )
+
+        print('parents:',self.__inherit__)
+
 
         if self.tree is not None :
             self.tree.nodes[self.filepath] = self
@@ -193,10 +197,11 @@ class Config:
 
         try :
             parent_paths = self._yaml_data['__inherit__']
-            parsed_paths = ConfigSectionView( self.tree.root ).evaluate_list( '__inherit__', parent_paths )
+            # print( 'PARSED~~~~~', parent_paths )
+            parsed_paths = ConfigSectionView( self.tree.root ).evaluate_list( '__inherit__', parent_paths, (self.tree.root,) )
             #todo: this means that ConfigSectionView needs refactoring
-            # print( 'PARSED~~~~~', parsed_paths )
         except KeyError as e :
+            # print("KeyError",  e, self)
             parsed_paths = list( )
 
         return parsed_paths
@@ -228,7 +233,6 @@ class Config:
     ####################
     def setdefault( self, key, default ) :
         ''' support for getdeepitem on Config object'''
-
         try :
             return self[key]
         except KeyError :
@@ -374,23 +378,24 @@ class ConfigSectionView :
         return list( map(
             lambda key : (
                 key,
-                getdeepitem( self.config, [*self.section_keys, key] )
+                getdeepitem( self.config, [*self.section_keys, key], self.config.key_resolution_order )
             ),
             self.allkeys( )
         ) )
 
 
     ####################
-    def setdefault( self, key, default ) :
+    def setdefault( self, key, default, kro ) :
         ''' support for getdeepitem on Config object'''
+        # print( out.blue( "-----------------------------" ), 'begin setdefault', self.config, self.section_keys, out.white( key ) )
 
         try :
-            return self[key]
+            return self._getitem(key, kro)
         except KeyError :
-            return getdeepitem( self.config._yaml_data, self.section_keys ).setdefault( key, default )
+            return getdeepitem( self.config._yaml_data, self.section_keys, kro ).setdefault( key, default )
 
 
-    ####################
+    ###################
     def __getitem__( self, key ) :
         ''' obtain the 'flat' value of the key in the configtree, from the point of view of the current config
             if the current config contains the key, evaluate it and store it in a cache
@@ -399,6 +404,10 @@ class ConfigSectionView :
             paths are resolved relative to the path of the file they're defined in, so '.' means the current file's path.
             supports dictionaries inside dictionaries by returning nested ConfigSectionView objects
         '''
+        # print(out.blue("-----------------------------"), 'begin __getitem__', self.config, out.white(key))
+        return self._getitem(key, self.config.key_resolution_order)
+
+    def _getitem( self, key, kro) :
 
         ### check cache
         try :
@@ -409,8 +418,23 @@ class ConfigSectionView :
             # print('else', self.config.name)
             return final_value
 
+        if len(kro) == 0:
+            pruned_kro = self.config.parents
+        else:
+            # print(out.red("PRUNE KRO"))
+            # listprint(kro)
+            # print(out.red('---'), self.config)
+            pruned_kro = deque( kro )
+            try:
+                while pruned_kro.popleft( ) != self.config : pass
+            except IndexError:
+                pruned_kro = (self.config.tree.root,)
+            # listprint(pruned_kro)
+            # print( out.red( '--- pruned' ) )
+
+
         ### check current node
-        # print("find_item", self.section_keys, key)
+        # print( out.pink( 'CHECK SELF' ), self.config.filepath, 'keys', self.section_keys, out.white( key ) )
         try:
             raw_value = getdeepitem( self.config._yaml_data, self.section_keys )[key]
         except KeyError:
@@ -423,27 +447,32 @@ class ConfigSectionView :
 
             elif isinstance( raw_value, list ) :                                                # List Value Found
                 # print( 'list' )
-                parsed_list = self.evaluate_list(key, raw_value)
+                parsed_list = self.evaluate_list(key, raw_value, kro=pruned_kro)
 
-                # print( out.cyan('~~~Cache List Result'), self.section_keys, key, parsed_list )
-                getdeepitem( self.config._final_cache, self.section_keys )[key] = parsed_list   # CACHE LIST ###
+                # print( out.cyan('~~~Cache List Result'), self.section_keys, key, self.config , parsed_list)
+                getdeepitem( self.config._final_cache, self.section_keys)[key] = parsed_list   # CACHE LIST ###
                 return parsed_list
 
             else :                                                                              # Scalar Value Found
-                final_value = self.evaluate( key, raw_value )
+                final_value = self.evaluate( key, raw_value , kro=pruned_kro)
 
                 # print( out.cyan('~~~Cache Scalar Result'), self.section_keys, key, final_value )
                 getdeepitem( self.config._final_cache, self.section_keys )[key] = final_value   # CACHE VALUE ###
                 return final_value
 
+
         ### check parents
-        # print('MISSING IN', self.config.filepath, 'keys', self.section_keys)
+        # print(out.pink('CHECK PARENTS'), self.config.filepath, 'keys', self.section_keys, out.white(key))
+        # print('parents')
+        # listprint(self.config.parents)
+        # print('kro')
+        # listprint(pruned_kro )
         for node in self.config.parents:
             # print("look in parent:", node)
             if node is self.config:
                 continue
             try:
-                parent_value = getdeepitem( node, self.section_keys )[key]
+                parent_value = getdeepitem( node, self.section_keys, pruned_kro )._getitem( key, kro )
             except KeyError:
                 # print("MISSING IN ", node.filepath)
                 continue
@@ -457,15 +486,16 @@ class ConfigSectionView :
 
 
     ####################
-    def evaluate_list(self, key, raw_list):
+    def evaluate_list(self, key, raw_list, kro):
         ''' evaluate each element of the list, and return the list of parsed values '''
         parsed_list = []
         # print(out.yellow('------------'), 'EVALUATE LIST', raw_list)
+        # listprint(kro)
         for (i, value) in enumerate( raw_list ) :
             if isinstance( value, list ) or isinstance( value, dict ) :
                 new_value = ConfigSectionView( self.config, *self.section_keys, key, i )
             else :
-                new_value = self.evaluate( key, value, listeval=True )
+                new_value = self.evaluate( key, value, listeval=True, kro=kro )
                 try :
                     resultlist = self.resultlist.pop( )
                     # print( "RESULTLIST:", resultlist )
@@ -479,7 +509,7 @@ class ConfigSectionView :
 
 
     ####################
-    def evaluate(self, key, value, listeval=False) -> str:
+    def evaluate(self, key, value, listeval=False, kro=()) -> str:
         ''' parse a raw value
             perform regex substitution on ${} token expressions until there are none left
             then attempt to resolve the result relative to the config file's path
@@ -491,7 +521,7 @@ class ConfigSectionView :
 
         while total_count > 0 :
             total_count = 0
-            (new_value, count) = self.substitute( key, str(new_value), listeval=listeval )
+            (new_value, count) = self.substitute( key, str(new_value), listeval=listeval, kro=kro )
             total_count += count
 
         with temporary_working_directory(self.config.path):
@@ -501,29 +531,29 @@ class ConfigSectionView :
 
 
     ####################
-    def substitute( self, key, value: str, listeval=False ) :
+    def substitute( self, key, value: str, listeval=False, kro=() ) :
         ''' responsible for running a single regex substitute
         '''
         total_count = 0
         count = None
 
-        # debug( 'VALUE --- ', colored( value, 'red', attrs=['bold'] ) )
-        expression_replacer = self.expression_parser( key, listeval=listeval)
+        # log.debug( 'VALUE --- ', colored( value, 'red', attrs=['bold'] ) )
+        expression_replacer = self.expression_parser( key, listeval=listeval, kro=kro)
         try:
             (result, count)     = token_expression_regex.subn( expression_replacer, value )
         except TypeError as e: # todo: handle this TypeError inside expression_replacer
             print(out.red('SUBSTITUTE'), key, value, self)
             raise e
-        # debug( "After re.subn:  ", result, " | ", count, "|", expression_replacer.counter[0] )
+        # log.debug( "After re.subn:  ", result, " | ", count, "|", expression_replacer.counter[0] )
 
         total_count += expression_replacer.counter[0] + count# ToDo: Replace monkey patch with class
-        # debug( "Subn Result: ", result, ' after ',total_count )
+        # log.debug( "Subn Result: ", result, ' after ',total_count )
 
         return result, total_count
 
 
     ####################
-    def expression_parser( self, key, listeval=False ) :
+    def expression_parser( self, key, kro=(), listeval=False ) :
         ''' factory that creates a replace function to be used by regex subn
             process ${configpath::section:key} token expressions:
             -    key:        look up value in target node
@@ -554,19 +584,24 @@ class ConfigSectionView :
             target_key          = matchobj.group( 'key' )
 
             self.parse_counter += 1
-            # debug( '>'*20, " MATCH ", target_configpath, ' ', target_sections, ' ', target_key, ' | ', key, ' ',  self.section_keys )
-            # debug( matchobj.groups( ) )
+            # log.info( '>'*20, " MATCH ", target_configpath, ' ', target_sections, ' ', target_key, ' | ', key, ' ',  self.section_keys )
+            # listprint(kro)
+            # print("value", out.green(matchobj.group(0)))
+            # print('-----------')
+
+            # log.debug( matchobj.groups( ) )
 
             section_keys    = [*target_sections, target_key]
             node            = self.config.tree[target_configpath]
 
             ### self-key references begin the search from the config's immediate parent
             if key == target_key \
-                    and self.section_keys == target_sections \
-                    and self.config.filepath == target_configpath:
-                node = node.parents[0]
+            and self.section_keys == target_sections \
+            and self.config.filepath == target_configpath:
+                node = kro[0]
 
-            result = getdeepitem(node, section_keys)
+            result = getdeepitem(node, section_keys, kro)
+
             # print(out.cyan("subn result:"), result, out.cyan('|'), key, out.cyan( '|' ), matchobj.group(0))
             if isinstance(result, OrderedDict) and len(result) == 0:
                 raise Config.SubstitutionKeyNotFoundError(''.join(str(s) for s in [
@@ -576,6 +611,7 @@ class ConfigSectionView :
             elif isinstance(result, list) and matchobj.group(0) == matchobj.string and listeval and token == '@':
                 ### WARNING: use a hack to return a list out from the regex substitute
                 ### so we can later use it to extend a list we're substituting into
+                # log.info(out.blue('*'*30), 'LIST INSERT' )
                 self.resultlist.append(result)
             elif not isinstance(result, str):
                 raise TypeError(' '.join(str(s) for s in [
@@ -732,7 +768,7 @@ class ConfigTree :
             return self.nodes[Path( filepath )]
 
         with suppress( KeyError ) :
-            return self.nodes[Path( filepath ) / '__env__.yml']
+            return self.nodes[Path( filepath ) / '3.yml']
 
         with suppress( KeyError ) :
             return self.nodes[Path( filepath ) / '__pkg__.yml']
@@ -813,7 +849,7 @@ class ConfigTree :
         try :
             return self.nodes[self.env_path / self.envfile]
         except KeyError as e :
-            debug( 'KeyError:', e )
+            log.debug( 'KeyError:', e )
             return self.root
 
 
