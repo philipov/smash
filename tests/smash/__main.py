@@ -24,7 +24,7 @@ def test__main( path_env00, argv ) :
     args    = parse(argv)
     result  = main( args )
 
-    assert False
+    # assert False
 
 
 #----------------------------------------------------------------------#

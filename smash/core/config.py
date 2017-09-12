@@ -10,6 +10,7 @@ yamlisp attempt #2
 from powertools import AutoLogger
 log     = AutoLogger()
 
+
 ################################
 
 import os
@@ -38,7 +39,7 @@ from ..util.path import find_yamls
 from ..util import out
 from powertools.print import listprint, dictprint, rprint, pprint, pformat
 
-from smash.core.constants import config_protocol
+from smash.core.constants import CONFIG_PROTOCOL
 
 from powertools import export
 
@@ -112,8 +113,6 @@ class Config:
         self._final_cache   = OrderedDict( )
 
         self.tree       = tree
-        self._parents   = GreedyOrderedSet()    # 'inherit' parents; always inherit from tree.root
-
 
     ####################
     @classmethod
@@ -129,7 +128,6 @@ class Config:
         self.path       = target.parents[0]
         self.filename   = target.name
 
-
         self._yaml_data  = load_yaml( target )
         # todo: validate magic keys and immediately raise exception if not a compatible format
 
@@ -140,7 +138,7 @@ class Config:
             self._final_cache[section_name] = OrderedDict( )
 
         try:
-            assert self.protocol == config_protocol
+            assert self.protocol == CONFIG_PROTOCOL
         except KeyError as e:
             raise Config.ProtocolError('Missing __protocol__', str(self))
         except AssertionError as e:
@@ -149,7 +147,6 @@ class Config:
         log.print( out.yellow( '*' * 20 ), ' load=', self.filepath )
 
         print('parents:',self.__inherit__)
-
 
         if self.tree is not None :
             self.tree.nodes[self.filepath] = self
@@ -242,7 +239,7 @@ class Config:
     ####################
     @property
     def sections( self ) :
-        section_names = set( )
+        section_names = GreedyOrderedSet( )
         for node in self.key_resolution_order :
             for (key, section) in node.items( ) :
                 if not key.startswith( '__' ) and not key.endswith( '__' ) :
@@ -337,7 +334,7 @@ class ConfigSectionView :
     def keys( self ) :
         '''list of keys for the current subtree of the config'''
 
-        key_union = set( )
+        key_union = GreedyOrderedSet( )
         for key in getdeepitem( self.config._yaml_data, self.section_keys ).keys( ) :
             # print( out.green( 'key:' ), key )
             key_union.add( key )
@@ -360,7 +357,7 @@ class ConfigSectionView :
     def allkeys( self ) :
         '''get the union of keys for all nodes in the key resolution order'''
 
-        key_union = set()
+        key_union = GreedyOrderedSet()
         for node in self.config.key_resolution_order :
             # print(out.cyan('node:'), node, self.section_keys, '\n',
             #       getdeepitem( node._yaml_data, self.section_keys ))
