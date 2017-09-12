@@ -21,25 +21,24 @@ def test__Handler( conftree ) :
 
 
 #----------------------------------------------------------------------#
-def test__FileHandler( conftree ) :
-    from smash.core.handler import FileHandler
+def test__MashHandler( conftree ) :
+    from smash.core.handler import MashHandler
 
     # assert False
 
 
 #----------------------------------------------------------------------#
-def test__YAMLHandler( conftree ) :
-    from smash.core.handler import YAMLHandler
+def test__CommandHandler( conftree ) :
+    from smash.core.handler import CommandHandler
 
     # assert False
 
 
-#----------------------------------------------------------------------#
-def test__EXEHandler( conftree ) :
-    from smash.core.handler import EXEHandler
+################################
+def test__Daemonizer( conftree ) :
+    from smash.core.handler import CommandHandler
 
     # assert False
-
 
 #----------------------------------------------------------------------#
 def test__ScriptHandler( conftree ) :
@@ -48,16 +47,23 @@ def test__ScriptHandler( conftree ) :
     # assert False
 
 
-#----------------------------------------------------------------------#
+################################
 def test__BashHandler( conftree ) :
     from smash.core.handler import BashHandler
 
     # assert False
 
 
-#----------------------------------------------------------------------#
+################################
 def test__BatchHandler( conftree ) :
     from smash.core.handler import BatchHandler
+
+    # assert False
+
+
+################################
+def test__PythonHandler( conftree ) :
+    from smash.core.handler import PythonHandler
 
     # assert False
 

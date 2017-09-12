@@ -14,6 +14,7 @@ from pathlib import Path
 from contextlib import contextmanager
 from collections import OrderedDict
 from collections import deque
+from powertools import export
 
 import sys
 import os
@@ -32,6 +33,7 @@ class MissingShellExportError( Exception ) :
 #----------------------------------------------------------------------#
 
 ################################
+@export
 class Environment:
     ''' represent the state of an environment where commands may be executed '''
 
@@ -81,7 +83,7 @@ class Environment:
 
 
     ####################
-    def run(self, command):
+    def run(self, *command):
         ''' execute a command within the environment '''
         raise NotImplementedError
 
@@ -115,7 +117,7 @@ class Environment:
 
 
 #----------------------------------------------------------------------#
-
+@export
 class ContextEnvironment( Environment ) :
     ''' Environment within which smash is running,
         could be an explicit smash instance,
@@ -160,7 +162,7 @@ class ContextEnvironment( Environment ) :
 
 
     ####################
-    def run( self, command ) :
+    def run( self, *command ) :
         raise NotImplementedError
 
 
@@ -169,6 +171,7 @@ class ContextEnvironment( Environment ) :
 SUBPROCESS_DELAY = 0.01
 
 ################################
+@export
 class VirtualEnvironment(Environment):
     ''' Environment that is launched as a child of the smash process
         shell variables are supplied by evaluating the 'Environment' __export__ process in the configtree
@@ -229,14 +232,14 @@ class VirtualEnvironment(Environment):
 
 
     ####################
-    def run( self, command:tuple) :
+    def run( self, *command:tuple) :
 
         debug( 'CWD:     ', self.homepath )
         debug( '' )
         variables = self.variables
         debug( '' )
         proc = subprocess.Popen(
-            ' '.join(command),
+            ' '.join(str(c) for c in command),
             env     = variables,
             cwd     = str( self.homepath ),
             shell   = True
@@ -262,6 +265,7 @@ import conda
 from conda.cli import python_api
 
 ################################
+@export
 class CondaEnvironment( VirtualEnvironment ) :
     '''construct a conda environment, and run commands inside it'''
 
@@ -288,14 +292,16 @@ class CondaEnvironment( VirtualEnvironment ) :
         raise NotImplementedError
 
     ####################
-    def run( self, command ) :
+    def run( self, *command ) :
         raise NotImplementedError
 
 
 #----------------------------------------------------------------------#
 
 ################################
+@export
 class DockerEnvironment( Environment ) :
+
     '''construct an environment inside a docker container, and run commands inside it'''
     def __init__( self, cwd, *, pure=False ) :
         super( ).__init__( cwd, pure )
@@ -326,11 +332,12 @@ class DockerEnvironment( Environment ) :
         raise NotImplementedError
 
     ####################
-    def run( self, command ) :
+    def run( self, *command ) :
         raise NotImplementedError
 
 
 #----------------------------------------------------------------------#
+@export
 class RemoteEnvironment( Environment ):
     ''' connect to a remote environment using ssh'''
 
@@ -358,7 +365,7 @@ class RemoteEnvironment( Environment ):
         raise NotImplementedError
 
     ####################
-    def run( self, command ) :
+    def run( self, *command ) :
         raise NotImplementedError
 
 

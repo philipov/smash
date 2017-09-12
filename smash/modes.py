@@ -12,6 +12,7 @@ info = print
 
 
 from pathlib import Path
+from collections import deque
 
 #todo: use coroutines that yield for user input
 
@@ -33,9 +34,10 @@ def export( obj ) :
 
 @export
 def do_run(*command, context:ContextEnvironment, verbose=False):
+    ''' simply execute whatever command is passed in'''
     with VirtualEnvironment(context) as interior:
         info( "\nExecute target shell command inside an environment" )
-        shell = interior.run(command)
+        shell = interior.run(*command)
         print("\ninterior.processes", interior.processes)
 
     print('interior.run:', shell)
@@ -43,10 +45,29 @@ def do_run(*command, context:ContextEnvironment, verbose=False):
 
 
 @export
-def do_open( *target, context: ContextEnvironment, verbose=False ):
+def do_open( *command, context: ContextEnvironment, verbose=False ):
+    ''' use the handler system'''
+    import re
+    from smash.core.plugins import handlers
+    from smash.core.handler import NoHandlerMatchedError
 
-    info( "Run target file using associated command inside an environent" )
+    info( "\nRun target file using associated command inside an environent" )
+    arguments   = deque(command)
+    filepath    = Path(arguments.popleft())
 
+    with VirtualEnvironment( context ) as interior :
+        for pattern, Handler in handlers.items():
+            if re.match(pattern, filepath.name):
+                result = Handler(filepath, arguments, interior).run()
+                break
+        else:
+            raise NoHandlerMatchedError(filepath, handlers)
+
+        print( "\ninterior.processes", interior.processes )
+
+
+
+#----------------------------------------------------------------------#
 
 @export
 def do_test( *target, context:ContextEnvironment, verbose=False ):
@@ -69,6 +90,8 @@ def do_install( *target, context:ContextEnvironment, verbose=False ):
     return install_configsystem(install_root)
 
 
+#----------------------------------------------------------------------#
+
 @export
 def do_pkg( *target, context:ContextEnvironment, verbose=False ):
 
@@ -80,6 +103,8 @@ def do_env( *target, context:ContextEnvironment, verbose=False ):
 
     info( "Environment Manager" )
 
+
+#----------------------------------------------------------------------#
 
 @export
 def __default__( *target, context:ContextEnvironment, verbose=False ):

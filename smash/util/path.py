@@ -113,13 +113,19 @@ def try_resolve( value, path:Path ) -> str:
     # debug( "TRY RESOLVE--------", type( value ), value )
     if isinstance( value, list ):
         return value
-    # debug("~~~ BEGIN")
 
-    # parent = value_as_path.parents[0]
-    # print('parent',parent)
+    ### early exit - spot check obviously invalid valid paths
+    result = str( value )
+    if not(
+        result.startswith('./') or
+        result.startswith( '~' ) or
+        '/' in result or
+        '.' == result
+        ):
+        return result
+
 
     ### attempt to resolve paths
-    result = str(value)
     value_as_path = Path( str( value ) )
     try :
         if value_as_path.exists( ) : #todo: recursively check each parent path for existance

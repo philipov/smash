@@ -6,16 +6,23 @@ store setup parameters inside namespace subpackage to avoid importing the librar
 
 #----------------------------------------------------------------------#
 
-from copy import deepcopy
 kwargs = dict(
-    name='smash',
-    packages=['smash', 'smash.setup', 'smash.core', 'smash.boot', 'smash.dash', 'smash.tool', 'smash.util'],
-    version='0.0.2',
-    description=__doc__,
+    name        = 'smash',
+    packages    = [
+        'smash',
+        'smash.setup',
+        'smash.core',
+        'smash.boot',
+        'smash.dash',
+        'smash.tool',
+        'smash.util'
+    ],
+    version     = '0.0.2',
+    description = __doc__,
 
-    url='https://github.com/philipov/smash',
-    author='Philip Loguinov',
-    author_email='philipov@gmail.com',
+    url         = 'https://github.com/philipov/smash',
+    author      = 'Philip Loguinov',
+    author_email= 'philipov@gmail.com',
 
     entry_points={
         'console_scripts' : ['smash=smash:console'],
@@ -52,6 +59,7 @@ kwargs = dict(
     ]
 )
 
+from copy import deepcopy
 test_kwargs = deepcopy( kwargs )
 test_kwargs['install_requires'].append( 'pytest' )
 

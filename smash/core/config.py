@@ -2,8 +2,10 @@
 
 """
 manipulate configuration files
+yamlisp attempt #2
 """
 
+#todo: separate out the yaml processing from the core config concepts; configtree should be a metaclass representing configs as classes
 
 import logging
 log     = logging.getLogger( name=__name__ )
@@ -183,6 +185,7 @@ class Config:
             return bool(self._yaml_data['__pure__'])
         return True
 
+
     ####################
     @property
     def __inherit__( self ) -> list :
@@ -210,6 +213,7 @@ class Config:
             parents.extend( parent.parents )
 
         return GreedyOrderedSet( chain( parents, [self.tree.root] ) )
+
 
     ####################
     @property
@@ -314,6 +318,7 @@ class ConfigSectionView :
         self.parse_counter = 0
         self.resultlist = list()
 
+
     ####################
     def __str__( self ) :
         return "".join( str( s ) for s in [
@@ -322,6 +327,7 @@ class ConfigSectionView :
 
     __pprint__ = __str__
     __repr__ = str
+
 
     ####################
     def keys( self ) :
@@ -344,6 +350,7 @@ class ConfigSectionView :
             ),
             self.keys( )
         ) )
+
 
     ####################
     def allkeys( self ) :
