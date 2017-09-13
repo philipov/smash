@@ -21,10 +21,8 @@ import argparse
 
 from pathlib import Path
 from collections import namedtuple
-from collections import deque
 
-from .core.env import ContextEnvironment
-from .core.env import VirtualEnvironment
+from ..core.env import ContextEnvironment
 
 #----------------------------------------------------------------------#
 
@@ -38,10 +36,15 @@ def _add_argument( name, options=(), **kwargs ) :
     _argnames.append( name )
 
 #################### main
-_add_argument( 'command',
+_add_argument( 'mode',
+               type=str,
+               help='execution mode',
+               )
+
+_add_argument( 'target',
                type=str,
                nargs=argparse.REMAINDER,
-               help='executed inside subenvironment',
+               help='what is to be executed',
                )
 
 #################### flags
@@ -65,6 +68,30 @@ def parse( argv: list = None ) -> Arguments :
 
 #----------------------------------------------------------------------#
 
+class Main:
+
+    @staticmethod
+    def do_test( *target, context: ContextEnvironment, verbose=False ) :
+        log.info( "Run tests for a target package" )
+
+    @staticmethod
+    def do_build( *target, context: ContextEnvironment, verbose=False ) :
+        log.info( "Build executable distribution archive" )
+
+    @staticmethod
+    def do_install( *target, context: ContextEnvironment, verbose=False ) :
+        log.info( "Create new system root in target directory" )
+        from .strap import install_configsystem
+        install_root = Path( target[0] )
+        return install_configsystem( install_root )
+
+    @staticmethod
+    def __default__( *target, context: ContextEnvironment, verbose=False ) :
+        log.info( "Unknown Command", )
+
+
+#----------------------------------------------------------------------#
+
 
 def main( args: Arguments ) :
     # ToDo: initialize logging: stdout/stderr redirect
@@ -74,36 +101,27 @@ def main( args: Arguments ) :
 
     log.print( '~~~~~~~~~~~~~~~~~~~~ SMASH-BOOT')
     log.print( 'SCRIPT:  ', __file__ )
-    log.print( 'TARGET:  ', args.command )
+    log.print( 'MODE:    ', args.mode )
+    log.print( 'TARGET:  ', args.target )
 
     cwd = Path( os.getcwd() )
     log.print( 'IWD:     ', cwd )
     log.print( '' )
 
     if args.verbose:
-        from .core.plugins import report_plugins
+        from ..core.plugins import report_plugins
         report_plugins()
 
-    result = None
     with ContextEnvironment(cwd) as context:
-        import re
-        from smash.core.plugins import handlers
-        from smash.core.handler import NoHandlerMatchedError
+        do_func = getattr( Main
+                         , 'do_'+args.mode
+                         , Main.__default__
+                         )
 
-        log.info( "\nRun target file using associated command inside an environent" )
-        arguments   = deque( args.command )
-        filepath    = Path( arguments.popleft( ) )
-
-        with VirtualEnvironment( context ) as interior :
-            for pattern, Handler in handlers.items( ) :
-                if re.match( pattern, filepath.name ) :
-                    result = Handler( filepath, arguments, interior ).run( )
-                    break
-            else :
-                raise NoHandlerMatchedError( filepath, handlers )
-
-            print( "\ninterior.processes", interior.processes )
-
+        result  = do_func( *args.target
+                         , context=context
+                         , verbose=args.verbose
+                         )
 
     log.print( '' )
     log.print( 'SMASH DONE...' )

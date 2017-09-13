@@ -31,11 +31,10 @@ kwargs = dict(
     entry_points = {
         'console_scripts': [
             'smash      = smash:console',
-
-            'smash.env  = smash.tool.test:main',
-            'smash.pkg  = smash.tool.test:main',
-            'smash.test = smash.tool.test:main',
-            'smash.boot = smash.tool.test:main'
+            'smash.boot = smash.boot:console',
+            'smash.env  = smash.env:console',
+            'smash.pkg  = smash.pkg:console',
+            'smash.test = smash.test:console',
         ],
     },
     install_requires = [

@@ -18,7 +18,7 @@ params_argv.append( shlex.split( 'run echo ECHO ECHO ECHO ') )
 def test__main( path_env00, argv ) :
 
     from smash.__main__ import main
-    from smash.cmdline import parse
+    from smash.__main__ import parse
 
     os.chdir( str( path_env00) )
     args    = parse(argv)
