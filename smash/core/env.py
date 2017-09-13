@@ -8,6 +8,7 @@ from powertools import export
 from powertools import AutoLogger
 log = AutoLogger()
 from powertools.print import dictprint
+from powertools import term
 
 from pathlib import Path
 from contextlib import contextmanager
@@ -185,14 +186,15 @@ class VirtualEnvironment(Environment):
         ''' create config files '''
         from .plugins import exporters
 
+        print(term.white('\nBUILD VIRTUAL ENVIRONMENT'))
         for name, target in self.config.exports.items():
             if name == 'Shell': continue
             exporter = exporters[name]
 
             for destination, sections in target.items():
-                print('EXPORT {:<10} {:<50} {:<10} {:<10}'.format(str(name), str(destination), str(sections), str(exporter)) )
+                print(term.red('\nEXPORT'),' {:<10} {:<50} {:<10} {:<10}'.format(str(name), str(destination), str(sections), str(exporter)) )
                 result = exporter(self.config, sections, destination).export()
-
+        print(term.white('\n----------------'))
 
 
     def validate( self ) :
@@ -226,8 +228,8 @@ class VirtualEnvironment(Environment):
         if not self.pure :
             result.update( os.environ )
         result.update( subenv )
-        log.info()
-        dictprint(result)
+        # log.info()
+        # dictprint(result)
         return result
 
 

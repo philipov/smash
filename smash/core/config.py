@@ -53,7 +53,8 @@ def getdeepitem( data, keys, kro=() ) :
     return reduce( lambda d, key :
                    d.setdefault( key, OrderedDict( ), kro=kro ) if isinstance(d, ConfigSectionView)
               else d.setdefault( key, OrderedDict( ) )          if not isinstance(d, list)
-              else d[key], keys, data )
+              else d[key],
+                   keys, data )
 
 
 
@@ -385,7 +386,6 @@ class ConfigSectionView :
     def setdefault( self, key, default, kro ) :
         ''' support for getdeepitem on Config object'''
         # print( out.blue( "-----------------------------" ), 'begin setdefault', self.config, self.section_keys, out.white( key ) )
-
         try :
             return self._getitem(key, kro)
         except KeyError :
@@ -415,6 +415,7 @@ class ConfigSectionView :
             # print('else', self.config.name)
             return final_value
 
+        ### construct the current state of the inheritence chain
         if len(kro) == 0:
             pruned_kro = self.config.parents
         else:

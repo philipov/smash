@@ -4,41 +4,37 @@
 load plugins
 """
 
-
-import logging
-log = logging.getLogger( name=__name__ )
-logging.basicConfig( level=logging.DEBUG )
-log.debug = print
-# log.debug = lambda *a, **b : None
+from powertools import AutoLogger
+log = AutoLogger()
+from powertools import export
 
 import pkg_resources
-from contextlib import suppress
 from copy import copy
+from contextlib import suppress
 
 from ..util import out
 from powertools.print import rprint
-from powertools import export
 
 #----------------------------------------------------------------------#
 
 ################################
 def _load_plugins():
     ''' produce a dictionary of available plugin modules '''
-    plugins = {
+    plugin_modules = {
         entry_point.name : entry_point.load( )
         for entry_point
         in pkg_resources.iter_entry_points( 'smash.plugins' )
     }
-    return plugins
+    return plugin_modules
 
 ################################
 def _select_class( cls, base ):
     ''' scan all modules and pull out a name mapping of subclasses of the given type
         and adds it to the built-in subclasses
     '''
-    global plugins
+    global plugin_modules
     results = copy(base)
-    for module_name, module in plugins.items():
+    for module_name, module in plugin_modules.items( ):
         for attribute, value in module.__dict__.items():
             if not attribute.startswith('_'):
                 with suppress(TypeError):
@@ -60,21 +56,21 @@ from .env import Environment, builtin_environment_types
 
 
 __all__     = [
-    'plugins',
+    'plugin_modules',
     'report_plugins',
 
-    'exporters',
-    'environment_types',
-    'templates',
+    'exporter',
+    'environment_type',
+    'template',
 
-    'package_types',
-    'packages',
-    'tools',
-    'handlers',
+    'package_type',
+    'package',
+    'tool',
+    'handler',
 ]
 
 
-plugins         = _load_plugins( )
+plugin_modules      = _load_plugins()
 
 environment_types   = _select_class( Environment,       builtin_environment_types )
 templates           = _select_class( InstanceTemplate,  builtin_templates )
@@ -91,7 +87,7 @@ handlers            = _select_class( Handler,           builtin_handlers )
 @export
 def report_plugins():
     print(  out.green('~~~~~~~~~~~'), out.pink(__name__ ))
-    rprint( plugins )
+    rprint( plugin_modules )
 
     print( out.green( '~~~~~~~~~~~' ) + out.pink(' environment types:' ))
     rprint( environment_types )
@@ -116,7 +112,25 @@ def report_plugins():
 
     print( out.green( '~~~~~~~~~~~\n' ) )
 
-
 #----------------------------------------------------------------------#
 
-print('plugins')
+def plugin_decorator_template(cls, collection):
+    def plugin_decorator_factory(key):
+        '''decorator factory for registering plugins'''
+        def plugin_decorator(obj):
+            assert type(obj) == cls
+            collection[key] = obj
+            return obj
+        return plugin_decorator
+    return plugin_decorator_factory
+
+environment_type    = plugin_decorator_template( Environment,       environment_types )
+template            = plugin_decorator_template( InstanceTemplate,  templates )
+packages_type       = plugin_decorator_template( PackageType,       package_types )
+
+package             = plugin_decorator_template( Package,           packages )
+tool                = plugin_decorator_template( Tool,              tools )
+exporter            = plugin_decorator_template( Exporter,          exporters )
+handler             = plugin_decorator_template( Handler,           handlers )
+
+#----------------------------------------------------------------------#

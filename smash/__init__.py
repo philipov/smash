@@ -12,7 +12,11 @@ from .__main__ import main
 from .cmdline import parse as parse_cmdline
 
 from .core.config import Config
+from .core.config import ConfigSectionView
 from .core.config import ConfigTree
+
+from .core.config import getdeepitem
+from .core.config import GreedyOrderedSet
 
 from .core.env import *
 from .core.instance import *
@@ -23,7 +27,16 @@ from .core.handler import *
 from .core.tool import *
 from .core.user import *
 
-from .core.plugins import *
+# from .core import plugins
+
+from .core.plugins import environment_types
+from .core.plugins import templates
+from .core.plugins import package_types
+from .core.plugins import packages
+from .core.plugins import tools
+from .core.plugins import exporters
+from .core.plugins import handlers
+
 
 from .core import platform
 
