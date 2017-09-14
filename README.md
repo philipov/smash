@@ -43,10 +43,10 @@ modular reproducible research environment manager
 - a just-in-time build system for configuration files and virtual environments
 - map environments to subtrees of the filesystem
     - implicitly determine the environment based on the working directory
-- connect pcakage management with version control
-- a non-interactive shell with transactional environment manipulation
+- use repository working copies as development virtual environments within the package management system
+- a shell with transactional environment state manipulation
     - version control changes to the environment as they're made
-    - optional interactive mode
+    - interactive and non-interactive modes
 - support either monorepo or multirepo methodologies 
 - a natural end-user workflow for capturing and sharing experimental results, leading to productionization
 
