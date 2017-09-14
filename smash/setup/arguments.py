@@ -17,15 +17,16 @@ kwargs = dict(
 
     packages = [
         'smash',
+
         'smash.setup',
         'smash.core',
         'smash.tool',
         'smash.util',
 
         'smash.boot',
-        #'smash.pkg',
-        #'smash.env',
-        #'smash.test',
+        'smash.pkg',
+        'smash.env',
+        'smash.test',
         'smash.dash',
     ],
     entry_points = {

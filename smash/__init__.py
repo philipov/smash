@@ -7,7 +7,7 @@ An integrated environment for reproducible research and development: from idea t
 from smash.setup.arguments import __version__
 
 from .__main__ import console
-from .__main__ import main
+
 
 from .core.config import Config
 from .core.config import ConfigSectionView

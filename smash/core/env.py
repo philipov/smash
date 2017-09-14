@@ -263,6 +263,10 @@ class VirtualEnvironment(Environment):
 
 #----------------------------------------------------------------------#
 
+# todo: fix 'No cio_test package found.'
+# https://github.com/conda/conda/issues/5356
+
+
 import conda
 from conda.cli import python_api
 

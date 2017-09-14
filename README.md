@@ -5,7 +5,7 @@ modular reproducible research environment manager
 
 ### Table of Contents:
 
-- Purpose
+- Objectives
 - Installation
 - Getting Started
 - Modular Configuration System
@@ -40,7 +40,17 @@ modular reproducible research environment manager
 
 --------------------------------------------------------------------------
 
-### What Problem does this Solve?
+### Objectives
+- a just-in-time build system for configuration files and virtual environments
+- map environments to subtrees of the filesystem
+    - implicitly determine the environment based on the working directory
+- connect pcakage management with version control
+- a non-interactive shell with transactional environment manipulation
+    - version control changes to the environment as they're made
+    - optional interactive mode
+- support either monorepo or multirepo methodologies 
+- a natural end-user workflow for capturing and sharing experimental results, leading to productionization
+
 
 ---
 ### Installation
