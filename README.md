@@ -25,16 +25,15 @@ modular reproducible research environment manager
 ##### Components:
 
 - `smash`
-    - `smash.sys`
-    - `smash.env`
-    - `smash.git`
-    - `smash.dash`
+    - `smash.core`
     - `smash.boot`
+    - `smash.env`
+    - `smash.pkg`
+    - `smash.dash`
     - `smash.tools`
 
 
-- `power.tools`
-- `power.test`
+- `powertools`
 - `cogwright`
 
 
