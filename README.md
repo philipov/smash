@@ -28,7 +28,18 @@ modular reproducible research environment manager
 
 ##### configuration is code
 
+- databases constrain how configuration must be supplied 
+- clients know what data they want to use. 
+- libraries know how they can accept data.
+- hosts knows what data is actually available, and where to find it.
+- to construct my environment, I need to combine all these separate concerns
+- I need to validate environment state as a dependency of my packages
 - a user and a server both inherit common information about the functionality of a package, but their relationship to the resources is different.
+
+
+##### data is code
+- the same data set might get processed over and over again with different iterations of my analysis.
+    - which version of the data am I looking at? 
 
 
 ##### pip and conda don't seem to offer support for packaged environment variables
@@ -36,13 +47,6 @@ modular reproducible research environment manager
 - conda requires environments to be set up with shell scripts. 
     - managing shell scriptss for multiple platforms means repeating yourself
 - need a configuration build tool suitable for both research/development and deploying to production
-
-
-##### activating environments is lame
-
-- being in the subtree should imply using that environment.
-- map environments to subtrees of the filesystem
-    - implicitly determine the environment based on the working directory
 
 
 ##### better version control integration with the package manager
@@ -55,15 +59,11 @@ modular reproducible research environment manager
 - a natural end-user workflow for capturing and sharing experimental results, leading to productionization
 
 
-##### abstract data specifications vs real state
-- data packages define how to construct configuration for data. 
-- clients know what data they want to use. 
-- libraries how they can accept data
-- hosts knows what data is actually available, and where to find it.
-- to construct my configuration files, I need to combine all these separate concerns
-- I need to validate environment state as a dependency of my packages
-- the same data set might get processed over and over again with different iterations of my analysis. which version of the data am I looking at? 
+##### activating environments is lame
 
+- being in the subtree should imply using that environment.
+- map environments to subtrees of the filesystem
+    - implicitly determine the environment based on the working directory
 
 
 ---
