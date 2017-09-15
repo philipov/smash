@@ -67,7 +67,7 @@ modular reproducible research environment manager
 
 
 ---
-##### Components:
+### Components:
 
 - `smash`
     - `smash.core`  - main library provides abstraction classes and a plugin system
