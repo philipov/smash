@@ -4,72 +4,78 @@
 application entry point
 '''
 
-# from powertools import export
-# from powertools import AutoLogger
-# log = AutoLogger()
+from powertools import export
+from powertools import AutoLogger
+log = AutoLogger()
 
-###
-# import colorama
-# colorama.init( )
-# import colored_traceback
-# colored_traceback.add_hook( )
-
-# import os
-# import sys
-# import traceback
-# import argparse
-#
 from pathlib import Path
 from collections import namedtuple
-#
-# from ..core.env import ContextEnvironment
-#
+
+import os
+import sys
 import click
-
-#----------------------------------------------------------------------#
-
-
-
-
 
 #----------------------------------------------------------------------#
 
 @click.group()
 @click.option( '--verbose', '-v', default=False, is_flag=True )
+@click.option( '--simulation', '-S', default=False, is_flag=True )
 @click.pass_context
-def console( ctx , verbose ) :
-    '''root handler'''
-
+def console( ctx , verbose, simulation ) :
+    ''' basic utilities for managing smash instances on a host '''
+    from ..core.env import ContextEnvironment
+    context_env = ContextEnvironment( os.getcwd() )
+    ctx.obj     = namedtuple('Arguments', ['context_env', 'verbose', 'simulation'])(
+                                            context_env,   verbose,   simulation )
 
 
 ##############################
 @console.command()
-@click.argument('instance_name')
-def create( instance_name:str ) :
-    '''Create new system root in target directory'''
+@click.argument( 'instance_name' )
+@click.argument( 'template_name', default='smash' )
+@click.pass_context
+def create( ctx, instance_name:str, template_name:str ) :
+    ''' create new instance root in target directory using a registered template '''
+    from ..core.plugins import templates
+    try:
+        parent_args = ctx.obj
+        template    = templates[template_name]
+    except KeyError as e:
+        raise e
+    else:
+        install_root    = parent_args.context_env.homepath.resolve( ) / instance_name
+        instance        = template( install_root, simulation=parent_args.simulation, parent=parent_args.context_env ).instance
 
-    from .strap import install_configsystem
+        print('created', instance)
 
-    install_root = Path( '.' ).resolve() / instance_name
-    return install_configsystem( install_root, instance_name )
 
-#
-# ##############################
-# def build( *command, context: ContextEnvironment, verbose=False ) :
-#     """Build executable distribution archive"""
-#
-# ##############################
-# def test( *command, context: ContextEnvironment, verbose=False ) :
-#     """"Run instance-wide deployment tests"""
-#
-# ##############################
-# def push( *command, context: ContextEnvironment, verbose=False ) :
-#     """Send archive to deployment registry"""
+##############################
+@console.command()
+def build() :
+    '''build executable distribution archive'''
+
+
+##############################
+@console.command()
+def test() :
+    '''run deployment tests on an instance or an archive'''
+
+
+##############################
+@console.command()
+def push() :
+    '''upload archive to deployment registry'''
+
+
+##############################
+@console.command()
+def clone() :
+    '''pull an instance archive from the deployment registry and extract it to a new directory'''
 
 
 ##############################
 if __name__ == '__main__' :
-    console(ctx=dict())
+    console()
 
 
 #----------------------------------------------------------------------#

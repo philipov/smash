@@ -7,22 +7,24 @@ integration tests for main program
 import shlex
 import pytest
 import os
+from click.testing import CliRunner
 
 #----------------------------------------------------------------------#
 
 params_argv = list()
-params_argv.append(shlex.split('run echo import time; time.sleep(5) | python -'))
-params_argv.append( shlex.split( 'run echo ECHO ECHO ECHO ') )
+params_argv.append( shlex.split('echo import time; time.sleep(5) | python -') )
+params_argv.append( shlex.split('echo ECHO ECHO ECHO') )
 
 @pytest.mark.parametrize("argv", params_argv)
 def test__main( path_env00, argv ) :
 
-    from smash.__main__ import main
-    from smash.__main__ import parse
+    from smash.__main__ import console
 
     os.chdir( str( path_env00) )
-    args    = parse(argv)
-    result  = main( args )
+
+    runner = CliRunner( )
+    result = runner.invoke( console, argv )
+
 
     # assert False
 

@@ -22,7 +22,7 @@ from pathlib import Path
 from ..util.meta import classproperty
 from powertools import export
 from .config import Config
-
+from .env import InstanceEnvironment
 
 #----------------------------------------------------------------------#
 
@@ -30,14 +30,29 @@ from .config import Config
 
 # todo: use cookiecutter to deploy an instance
 
+class InstanceTemplateBase :
+    def prepare_pathsystem(self):
+        pass
+
 @export
-class InstanceTemplate :
+class InstanceTemplate(InstanceTemplateBase) :
     '''template specifying an instance structure'''
 
-    def __init__( self, config: Config, filename: str, refname: str ) :
-        self.config = config
-        self.filename = filename
-        self.refname = refname
+    __slots__ = ('instance')
+    def __init__( self, homepath:Path, **kwargs ) :
+        if homepath.exists():
+            raise FileExistsError( ''.join( str(s) for s in [homepath,' already exists' ]) )
+        self.instance = InstanceEnvironment(homepath, **kwargs)
+
+        self.prepare_pathsystem( )
+
+
+    pathsystem = ['.']
+
+    def prepare_pathsystem( self ):
+        for path in map(Path, self.pathsystem):
+            self.instance.mkdir(path)
+        super().prepare_pathsystem()
 
 
 #----------------------------------------------------------------------#
@@ -45,7 +60,18 @@ class InstanceTemplate :
 @export
 class SmashTemplate( InstanceTemplate ) :
     ''''a default template for smash instance'''
-    pass
+
+    pathsystem = [
+        'env',
+        'pkg',
+        'dev',
+        'data',
+        'docs',
+        'sh',
+        'secrets',
+        *InstanceTemplate.pathsystem
+    ]
+
 
 
 #----------------------------------------------------------------------#

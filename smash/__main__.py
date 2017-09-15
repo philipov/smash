@@ -7,6 +7,7 @@ application entry point
 from powertools import export
 from powertools import AutoLogger
 log = AutoLogger()
+from powertools import term
 
 ###
 import colorama
@@ -23,6 +24,7 @@ import click
 from pathlib import Path
 from collections import namedtuple
 from collections import deque
+
 
 from .core.env import ContextEnvironment
 from .core.env import VirtualEnvironment
@@ -41,7 +43,7 @@ def console( command, verbose ) :
     # ToDo: manage env list
     # ToDo: manage package list
 
-    log.print( '~~~~~~~~~~~~~~~~~~~~ SMASH')
+    log.print( term.cyan('\n~~~~~~~~~~~~~~~~~~~~ '), term.pink('SMASH'))
     log.print( 'SCRIPT:  ', __file__ )
     log.print( 'TARGET:  ', command )
 
@@ -55,22 +57,28 @@ def console( command, verbose ) :
 
     result      = None
     arguments   = deque( command )
-    filepath    = Path( arguments.popleft( ) )
-    with ContextEnvironment(cwd) as context:
-        import re
-        from smash.core.plugins import handlers
-        from smash.core.handler import NoHandlerMatchedError
+    try:
+        filepath    = Path( arguments.popleft( ) )
+    except IndexError as e:
+        pass
+        # begin interactive mode using default shell
+        log.print(term.white(">>> "),"Do Nothing")
+    else:
+        with ContextEnvironment(cwd) as context:
+            import re
+            from smash.core.plugins import handlers
+            from smash.core.handler import NoHandlerMatchedError
 
-        with VirtualEnvironment( context ) as interior :
-            for pattern, Handler in handlers.items( ) :
-                if re.match( pattern, filepath.name ) :
-                    result = Handler( filepath, arguments, interior ).run( )
-                    break
-            else :
-                raise NoHandlerMatchedError( filepath, handlers )
+            with VirtualEnvironment( context ) as interior :
+                for pattern, Handler in reversed( handlers.items( ) ):
+                    print('match attempt', pattern, Handler, filepath.name)
+                    if re.match( pattern, filepath.name ) :
+                        result = Handler( filepath, list(arguments), interior ).run( )
+                        break
+                else :
+                    raise NoHandlerMatchedError( filepath, handlers )
 
-            print( "\ninterior.processes", interior.processes )
-
+                print( "\ninterior.processes", interior.children )
 
     log.print( '' )
     log.print( 'SMASH DONE...' )

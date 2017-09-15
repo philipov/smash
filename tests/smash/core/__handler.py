@@ -29,14 +29,14 @@ def test__MashHandler( conftree ) :
 
 #----------------------------------------------------------------------#
 def test__CommandHandler( conftree ) :
-    from smash.core.handler import CommandHandler
+    from smash.core.handler import SubprocessHandler
 
     # assert False
 
 
 ################################
 def test__Daemonizer( conftree ) :
-    from smash.core.handler import CommandHandler
+    from smash.core.handler import SubprocessHandler
 
     # assert False
 

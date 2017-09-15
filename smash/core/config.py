@@ -665,6 +665,9 @@ class ConfigTree :
     #----------------------------------------------------------------#
     #----------------------------------------------------------------#
 
+    class NotFinalizedError(Exception):
+        '''configtree should be finalized for writing before being used'''
+
     ####################
     def __init__( self, *
                   , root_file: Path = None
@@ -709,7 +712,6 @@ class ConfigTree :
                 if file != self.root.filepath :
                     # todo: skip files that throw an invalid config exception
                     self.add_node( Path( file ) )
-
 
         self.finalize( )
         return self
@@ -784,7 +786,7 @@ class ConfigTree :
     def __str__( self ) :
         return "".join( str( s ) for s in [
                 '<', self.__class__.__name__, ' of ', self.root.__class__.__name__,
-                ': [', len( self ), '], root=', self.root.path, '>'
+                ': [', len( self ), '], root=', self.root.path if self.root is not None else 'None', '>'
             ] )
 
     __pprint__ = __str__

@@ -49,7 +49,7 @@ def subdirectories_of( target_path: Path ) -> list :
 def stack_of_files( target_path: Path, file: str ) -> list :
     lists_of_files =[ path[0] for path in \
             [list(parent.glob( file ) )
-                for parent in [target_path, *target_path.parents]
+                for parent in [Path(target_path), *Path(target_path).parents]
             ]
             if len(path) > 0
         ]

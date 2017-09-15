@@ -40,7 +40,7 @@ class Handler:
 
     def __init__( self,
                   target:Path,
-                  arguments,
+                  arguments:list,
                   env:Environment
                   ) -> None:
         self.target     = target
@@ -69,18 +69,34 @@ class MashHandler( Handler ) :
 
 #----------------------------------------------------------------------#
 @export
-class CommandHandler( Handler ) :
+class SubprocessHandler( Handler ) :
     '''execute the target as-is'''
 
-    def __run__( self, target:Path, arguments, env: Environment ) :
-        env.run(target, *arguments)
+    def __run__( self, command, arguments, env: Environment ) :
+        env.run(command, *arguments)
 
 @export
-class Daemonizer( CommandHandler ):
-    def __run__( self, target: Path, arguments, env: Environment ) :
+class Daemonizer( SubprocessHandler ):
+    def __run__( self, command, arguments:list, env: Environment ) :
         while True:
-            task = super().__run__( Path(arguments[0]), arguments[1:], env )
+            print('subcommand', arguments)
+            subcommand = Path( arguments[0] )
+            subarguments = arguments[1:2]
+            task = super().__run__( subcommand, subarguments, env )
 
+@export
+class ToolHandler( Handler ) :
+    '''command is a tool invocation'''
+
+    def __run__( self, command, arguments, env: Environment ) :
+        env.run( command, *arguments )
+
+@export
+class MouthHandler( Handler ) :
+    '''print fortune'''
+
+    def __run__( self, command, arguments, env: Environment ) :
+        env.run( command, *arguments )
 
 #----------------------------------------------------------------------#
 @export
@@ -108,11 +124,15 @@ class PythonHandler( ScriptHandler ) :
 
 #----------------------------------------------------------------------#
 
+
 ### last in first out; use the first handler whose key regex matches the filename
 builtin_handlers            = OrderedDict()
+builtin_handlers['\.*']     = SubprocessHandler # default
 
-builtin_handlers['\.*']     = CommandHandler
-builtin_handlers['start']   = Daemonizer
+#todo: can these subcommands be integrated with click?
+builtin_handlers['begin']   = Daemonizer
+builtin_handlers['with']    = ToolHandler
+builtin_handlers['mouth']   = MouthHandler
 
 builtin_handlers['\.yml']   = MashHandler
 builtin_handlers['\.yaml']  = MashHandler

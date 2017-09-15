@@ -36,55 +36,62 @@ class MissingShellExportError( Exception ) :
 class Environment:
     ''' represent the state of an environment where commands may be executed '''
 
-    def __init__( self, path, *, pure, parent=None ) :
+    def __init__( self, homepath, *,
+                  pure          = True,
+                  parent        = None,
+                  simulation    = True,
+                  **kwargs ) :
+        ''' homepath is the root of relative paths in the environment
+            if
+            if simulation is True, don't actually do anything; just print.
+        '''
 
-        self.homepath       = path
+        self.homepath       = Path(homepath)
         self.pure           = pure
         self.parent         = parent
-        self.processes      = list()
+        self.simulation     = simulation
+
+        self.children       = list()
         self.results        = deque()
-        self.closed         = False
+        self.closed         = None
 
     ####################
     def build(self):
         ''' run all the exporters '''
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def validate( self ) :
         ''' check if the environment state satisfies constraints '''
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def initialize(self):
         ''' finalize preparation of the environment '''
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def teardown(self):
         ''' clean up the environment when it's no longer needed '''
-        raise NotImplementedError
-
+        raise NotImplementedError()
 
     ####################
+    @property
+    def variables( self ) :
+        ''' access to shell state variables '''
+        raise NotImplementedError()
+
+    def run(self, *command):
+        ''' execute a command within the environment '''
+        raise NotImplementedError()
+
+
+    #################### context manager interfaces
     def __enter__( self ) :
         self.build( )
         self.validate( )
         self.initialize( )
         return self
 
-    def __exit__( self, exc_type, exc_value, traceback) :
+    def __exit__( self, exc_type, exc_value, traceback ) :
         self.teardown( )
-
-
-    ####################
-    @property
-    def variables( self ) :
-        ''' access to shell state variables '''
-        raise NotImplementedError
-
-
-    ####################
-    def run(self, *command):
-        ''' execute a command within the environment '''
-        raise NotImplementedError
 
     #################### iterator/coroutine interfaces
     #todo: can an environment be represented as a coroutine? send commands in, yield results back out
@@ -111,11 +118,21 @@ class Environment:
         '''raise exception inside of the __exit__ method??'''
         raise exc_type(self, exc_value, traceback)
 
+    ####################
+
+    def mkdir(self, path:Path):
+        ''' recursively create path if it doesn't exist.
+            path must be relative, a branch of the homepath subtree.
+        '''
+        log.print(term.pink('MKDIR: '), path)
+
 
 #----------------------------------------------------------------------#
 
 
+
 #----------------------------------------------------------------------#
+
 @export
 class ContextEnvironment( Environment ) :
     ''' Environment within which smash is running,
@@ -123,12 +140,11 @@ class ContextEnvironment( Environment ) :
         or some implicit unmanaged system environment
     '''
 
-    def __init__( self, cwd, *, pure = False ) :
-        super( ).__init__( cwd, pure=pure)
+    def __init__( self, homepath=None, **kwargs ) :
+        if homepath is None:
+            homepath = os.getcwd()
+        super( ).__init__( homepath, **kwargs)
 
-        self.configtree = ConfigTree.from_path(cwd)
-        log.debug( 'CONFIGS:  ', self.configtree, '\n' )
-        assert self.configtree.final
 
 
     @property
@@ -162,8 +178,58 @@ class ContextEnvironment( Environment ) :
 
     ####################
     def run( self, *command ) :
-        raise NotImplementedError
+        raise NotImplementedError()
 
+#----------------------------------------------------------------------#
+@export
+class InstanceEnvironment( Environment ) :
+    ''' Environment within which smash is running,
+        could be an explicit smash instance,
+        or some implicit unmanaged system environment
+    '''
+
+    def __init__( self, homepath=None, **kwargs ) :
+        super( ).__init__( homepath, **kwargs )
+        if homepath is None :
+            homepath = self.parent.homepath
+
+        try :
+            self.configtree = ConfigTree.from_path( homepath )
+            assert self.configtree.final
+        except FileNotFoundError as e :
+            self.configtree = ConfigTree( )
+        except AssertionError as e :
+            raise ConfigTree.NotFinalizedError( e )
+
+        log.debug( 'CONFIGS:  ', self.configtree, '\n' )
+
+    @property
+    def instance_template( self ) :
+        ''' determine whether the context is an instance, and retrieve its template '''
+        return None
+
+    ####################
+    def build( self ) :
+        ''' do what? '''
+
+    def validate( self ) :
+        ''' defer to instance template '''
+
+    def initialize( self ) :
+        sys.path.append( str( self.homepath ) )
+        os.chdir( str( self.homepath ) )
+
+    def teardown( self ) :
+        ''' do what? '''
+
+    ####################
+    @property
+    def variables( self ) :
+        return self.parent.variables
+
+    ####################
+    def run( self, *command ) :
+        raise NotImplementedError()
 
 #----------------------------------------------------------------------#
 
@@ -176,9 +242,9 @@ class VirtualEnvironment(Environment):
         shell variables are supplied by evaluating the 'Environment' __export__ process in the configtree
     '''
 
-    def __init__( self, context:ContextEnvironment, *, pure = True ):
+    def __init__( self, context:ContextEnvironment, **kwargs ):
         self.config = context.configtree.env
-        super().__init__(self.config.path, pure=pure, parent=context)
+        super().__init__(self.config.path, **kwargs)
 
 
     ####################
@@ -250,7 +316,7 @@ class VirtualEnvironment(Environment):
 
         ### collect child pids so they can be stored for later termination
         pids_children = [process.pid for process in psutil.Process( pid_shell ).children( recursive=True )]
-        self.processes.extend(pids_children)
+        self.children.extend( pids_children )
         # todo: detect and report when command is not found, or exits with nonzero return
 
         time.sleep( SUBPROCESS_DELAY )
@@ -278,6 +344,8 @@ class CondaEnvironment( VirtualEnvironment ) :
     def _manage(self, command, *arguments, **kwargs):
         print('manage', self.config)
         python_api.run_command( command, *arguments, **kwargs )
+
+        raise NotImplementedError()
 
     ####################
     def build( self ) :
@@ -309,10 +377,10 @@ class CondaEnvironment( VirtualEnvironment ) :
 class DockerEnvironment( Environment ) :
 
     '''construct an environment inside a docker container, and run commands inside it'''
-    def __init__( self, cwd, *, pure=False ) :
-        super( ).__init__( cwd, pure )
+    def __init__( self, homepath, **kwargs ) :
+        super( ).__init__( homepath, **kwargs )
 
-        raise NotImplementedError
+        raise NotImplementedError()
 
 
     ####################
@@ -335,11 +403,11 @@ class DockerEnvironment( Environment ) :
     ####################
     @property
     def variables( self ) :
-        raise NotImplementedError
+        raise NotImplementedError()
 
     ####################
     def run( self, *command ) :
-        raise NotImplementedError
+        raise NotImplementedError()
 
 
 #----------------------------------------------------------------------#
@@ -347,10 +415,11 @@ class DockerEnvironment( Environment ) :
 class RemoteEnvironment( Environment ):
     ''' connect to a remote environment using ssh'''
 
-    def __init__( self, remote:Environment, *, pure=True ) :
-        super( ).__init__( remote.homepath, pure )
+    def __init__( self, url, remote:Environment, **kwargs ) :
+        super( ).__init__( remote.homepath, **kwargs )
+        self.url = url
 
-        raise NotImplementedError
+        raise NotImplementedError()
 
     ####################
     def build( self ) :
@@ -368,11 +437,11 @@ class RemoteEnvironment( Environment ):
     ####################
     @property
     def variables( self ) :
-        raise NotImplementedError
+        raise NotImplementedError()
 
     ####################
     def run( self, *command ) :
-        raise NotImplementedError
+        raise NotImplementedError()
 
 
 #----------------------------------------------------------------------#
