@@ -6,6 +6,7 @@ modular reproducible research environment manager
 ### Table of Contents:
 
 - Objectives
+- Components
 - Installation
 - Getting Started
 - Modular Configuration System
@@ -21,6 +22,21 @@ modular reproducible research environment manager
 - Documentation
     - nope
  
+
+--------------------------------------------------------------------------
+
+### Objectives
+- a just-in-time build system for configuration files and virtual environments
+- map environments to subtrees of the filesystem
+    - implicitly determine the environment based on the working directory
+- use repository working copies as development virtual environments within the package management system
+- a shell with transactional environment state manipulation
+    - version control changes to the environment as they're made
+    - interactive and non-interactive modes
+- support either monorepo or multirepo methodologies 
+- a natural end-user workflow for capturing and sharing experimental results, leading to productionization
+
+
 ---
 ##### Components:
 
@@ -35,22 +51,8 @@ modular reproducible research environment manager
     - `smash.setup` - smash package metadata used by setup.py. includes variations for testing and development.
 
 
-- `powertools`
-- `cogwright`
-
-
---------------------------------------------------------------------------
-
-### Objectives
-- a just-in-time build system for configuration files and virtual environments
-- map environments to subtrees of the filesystem
-    - implicitly determine the environment based on the working directory
-- use repository working copies as development virtual environments within the package management system
-- a shell with transactional environment state manipulation
-    - version control changes to the environment as they're made
-    - interactive and non-interactive modes
-- support either monorepo or multirepo methodologies 
-- a natural end-user workflow for capturing and sharing experimental results, leading to productionization
+- `powertools` - basic utilities library
+- `cogwright` - wheel construction utility
 
 
 ---
