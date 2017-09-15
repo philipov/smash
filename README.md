@@ -5,7 +5,7 @@ modular reproducible research environment manager
 
 ### Table of Contents:
 
-- Objectives
+- Motivation and Objectives
 - Components
 - Installation
 - Getting Started
@@ -24,17 +24,46 @@ modular reproducible research environment manager
  
 
 --------------------------------------------------------------------------
+### Motivation and Objectives
 
-### Objectives
-- a just-in-time build system for configuration files and virtual environments
+##### configuration is code
+
+- a user and a server both inherit common information about the functionality of a package, but their relationship to the resources is different.
+
+
+##### pip and conda don't seem to offer support for packaged environment variables
+
+- conda requires environments to be set up with shell scripts. 
+    - managing shell scriptss for multiple platforms means repeating yourself
+- need a configuration build tool suitable for both research/development and deploying to production
+
+
+##### activating environments is lame
+
+- being in the subtree should imply using that environment.
 - map environments to subtrees of the filesystem
     - implicitly determine the environment based on the working directory
+
+
+##### better version control integration with the package manager
+
 - use repository working copies as development virtual environments within the package management system
 - a shell with transactional environment state manipulation
     - version control changes to the environment as they're made
     - interactive and non-interactive modes
-- support either monorepo or multirepo methodologies 
+- support either monorepo or repository per package 
 - a natural end-user workflow for capturing and sharing experimental results, leading to productionization
+
+
+##### abstract data specifications vs real state
+- data packages define how to construct configuration for data. 
+- clients know what data they want to use. 
+- libraries how they can accept data
+- hosts knows what data is actually available, and where to find it.
+- to construct my configuration files, I need to combine all these separate concerns
+- I need to validate environment state as a dependency of my packages
+- the same data set might get processed over and over again with different iterations of my analysis. which version of the data am I looking at? 
+
 
 
 ---
@@ -167,15 +196,7 @@ modular reproducible research environment manager
 - lib
 - data
 
-##### factor out the difference between the user and the server
 
-##### separate the general solution and the client's application
-
-##### separate the resources on a host from the resources on a network/cluster
-
-##### data specifications vs state
-
-##### version controlling data
 
 
 --------------------------------------------------------------------------
