@@ -4,11 +4,8 @@
 
 """
 
-import logging
-
-log = logging.getLogger( name=__name__ )
-debug = lambda *a, **b : print( "".join( str( arg ) for arg in a ) )
-info = lambda *a, **b : print( "".join( str( arg ) for arg in a ) )
+from powertools import AutoLogger
+log = AutoLogger()
 
 ################################
 
@@ -16,13 +13,17 @@ info = lambda *a, **b : print( "".join( str( arg ) for arg in a ) )
 from ..util import out
 from ..util.out import rprint
 from pprint import pprint, pformat
+from contextlib import suppress
 
 from pathlib import Path
+from inspect import getmro
+from powertools import term
 
 from ..util.meta import classproperty
 from powertools import export
 from .config import Config
 from .env import InstanceEnvironment
+from ..util.path import temporary_working_directory
 
 #----------------------------------------------------------------------#
 
@@ -30,30 +31,30 @@ from .env import InstanceEnvironment
 
 # todo: use cookiecutter to deploy an instance
 
-class InstanceTemplateBase :
-    def prepare_pathsystem(self):
-        pass
 
 @export
-class InstanceTemplate(InstanceTemplateBase) :
+class InstanceTemplate :
     '''template specifying an instance structure'''
 
-    __slots__ = ('instance')
+    __slots__ = ('instance',)
     def __init__( self, homepath:Path, **kwargs ) :
-        if homepath.exists():
-            raise FileExistsError( ''.join( str(s) for s in [homepath,' already exists' ]) )
-        self.instance = InstanceEnvironment(homepath, **kwargs)
 
+        self.instance = InstanceEnvironment(homepath, **kwargs)
         self.prepare_pathsystem( )
 
 
     pathsystem = ['.']
 
     def prepare_pathsystem( self ):
-        for path in map(Path, self.pathsystem):
-            self.instance.mkdir(path)
-        super().prepare_pathsystem()
+        '''create directories in the pathsystem list for subclass and parents'''
 
+        for cls in filter(  lambda x: x is not object,
+                            reversed(getmro(type(self)))
+                            ):
+            for path in map(Path, cls.pathsystem):
+                with suppress(FileExistsError):
+                    absolute_path = self.instance.mkdir(path)
+                    log.print( term.pink( 'MKDIR: ' ), f"{str(path):<16}", term.pink( ' | ' ), absolute_path )
 
 #----------------------------------------------------------------------#
 
@@ -68,16 +69,22 @@ class SmashTemplate( InstanceTemplate ) :
         'data',
         'docs',
         'sh',
-        'secrets',
-        *InstanceTemplate.pathsystem
+        'secrets'
     ]
 
+
+#----------------------------------------------------------------------#
+
+@export
+class YAMLTemplate( InstanceTemplate ) :
+    ''' load a template from a YAML file'''
 
 
 #----------------------------------------------------------------------#
 
 builtin_templates = {
     'smash' : SmashTemplate,
+    'yaml'  : YAMLTemplate
 }
 
 #----------------------------------------------------------------------#

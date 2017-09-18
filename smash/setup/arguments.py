@@ -39,13 +39,14 @@ kwargs = dict(
         ],
     },
     install_requires = [
-        'psutil',
-        'ruamel.yaml',
-        'ordered_set',
+        'psutil',           # process utils
+        'ruamel.yaml',      # yaml parser
+        'ordered_set',      # ...
 
-        'click',
-        'cookiecutter',
-        'conda',
+        'click',            # command-line parser
+        'cookiecutter',     # filesystem templater
+        'conda',            # package manager
+        'dulwich',          # git
 
         'colored_traceback',
         'colorama',

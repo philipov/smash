@@ -1,0 +1,33 @@
+# __root__.yml -- define config system
+##########################################################
+
+__protocol__:     0
+__version__:      0.0.0
+
+__name__:         smash
+__type__:         II
+
+__export__:
+  subenv:         [Shell, path, shell]
+
+
+##########################################################
+path:
+  ROOT:           .
+  ENV:            ${ROOT}/env
+  PKG:            ${ROOT}/pkg
+
+
+git:
+  BASE_URL:       github.com
+
+##########################################################
+pkg:
+  APP:            ${path:PKGS}/app
+  LIB:            ${path:PKGS}/lib
+  DATA:           ${path:PKGS}/data
+  HOST:           ${path:PKGS}/host
+  NET:            ${path:PKGS}/net
+
+
+##########################################################

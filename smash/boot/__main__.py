@@ -32,7 +32,7 @@ def console( ctx , verbose, simulation ) :
 ##############################
 @console.command()
 @click.argument( 'instance_name' )
-@click.argument( 'template_name', default='smash' )
+@click.argument( 'template_name', default = 'smash' )
 @click.pass_context
 def create( ctx, instance_name:str, template_name:str ) :
     ''' create new instance root in target directory using a registered template '''

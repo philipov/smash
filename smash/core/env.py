@@ -120,11 +120,15 @@ class Environment:
 
     ####################
 
-    def mkdir(self, path:Path):
+    def mkdir(self, path:Path) -> Path:
         ''' recursively create path if it doesn't exist.
             path must be relative, a branch of the homepath subtree.
+            returns the absolute path that was created
         '''
-        log.print(term.pink('MKDIR: '), path)
+        absolute_path = (self.homepath/path).resolve()
+
+        absolute_path.mkdir(0o700)
+        return absolute_path
 
 
 #----------------------------------------------------------------------#
