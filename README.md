@@ -45,13 +45,14 @@ modular reproducible research environment manager
 - clients know what data they want to use.
 - libraries know how they can accept data.
 - hosts knows what data is actually available, and where to find it.
+- similar applies to the specific hosts and ports where network resources are available
 - a user and a server both inherit common information about the functionality of a package, but their relationship to the resources is different.
 - to construct my environment, I need to combine all these separate concerns
 - I also need to validate environment state as a dependency of my packages
 
 ##### configuration is data
 
-##### data is code
+##### data needs to be verssioned
 - the same data set might get processed over and over again with different iterations of my analysis.
     - which version of the data am I looking at?
 

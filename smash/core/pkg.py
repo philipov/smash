@@ -23,6 +23,10 @@ import conda
 class PackageType:
     '''abstract monad for defining packaging semantics'''
 
+    __slots__ = ('instance',)
+    def __init__(self, instance):
+        self.instance = instance
+
 
 ################################
 @export

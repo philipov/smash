@@ -1,8 +1,26 @@
 #-- smash.setup.arguments
 
+'''--- Smart Shell
+    An integrated environment for reproducible research, development, testing, and production
 '''
-store setup parameters inside namespace subpackage to avoid importing the library during setup.
-'''
+
+#----------------------------------------------------------------------#
+
+from pathlib import Path
+import os
+from pprint import pprint
+
+def collect_package_data( package_path ) :
+    root_path = Path( __file__ ).parents[2].resolve() / package_path
+    package_data = list()
+
+    for root, _, _ in os.walk( str( root_path ) ) :
+        package_data.append( str( Path( root ) / '*' ) )
+
+    print('package data')
+    pprint(package_data)
+    return package_data
+
 
 #----------------------------------------------------------------------#
 
@@ -18,17 +36,25 @@ kwargs = dict(
     packages = [
         'smash',
 
-        'smash.setup',
-        'smash.core',
-        'smash.tool',
-        'smash.util',
+        'smash.core',       # fundamental abstractions
+        'smash.tool',       # extensive subapplications
 
-        'smash.boot',
-        'smash.pkg',
-        'smash.env',
-        'smash.test',
-        'smash.dash',
+        'smash.boot',       # instance manager
+        'smash.pkg',        # package manager
+        'smash.env',        # environment manager
+        'smash.test',       # testing manager
+        'smash.dash',       # graphical user interface
+
+        'smash.util',       # low-level utilities
+        'smash.setup',      # arguments for setup.py
+        'smash.templates'   # library of default files
     ],
+
+    zip_safe                = True,
+    include_package_data    = True,
+    package_data = {
+        'smash.templates' : collect_package_data( Path('smash')/'templates' )
+    },
     entry_points = {
         'console_scripts': [
             'smash      = smash:console',
@@ -39,6 +65,7 @@ kwargs = dict(
         ],
     },
     install_requires = [
+        'powertools',       # std lib extension
         'psutil',           # process utils
         'ruamel.yaml',      # yaml parser
         'ordered_set',      # ...
@@ -47,11 +74,15 @@ kwargs = dict(
         'cookiecutter',     # filesystem templater
         'conda',            # package manager
         'dulwich',          # git
+        'wget',             # downloader
 
         'colored_traceback',
         'colorama',
-        'termcolor'
+        'termcolor',
+
     ],
+
+
     classifiers = [
         'Environment :: Console',
         'Environment :: Other Environment',

@@ -1,0 +1,23 @@
+# __pkg__.yml -- python setup
+##########################################################
+
+__name__:         pkg/python
+__protocol__:     0
+__version__:      0.0.0
+
+
+##########################################################
+path:
+  PYTHONHOME:   ./${ENV::shell:PYTHON}
+
+shell:
+  PYTHON:        mconda36
+  PATH:
+    - .
+    - ${ENV::path:PYTHONHOME}
+    - ${ENV::path:PYTHONHOME}/Scripts
+    - ${ENV::path:PYTHONHOME}/Library/bin
+    - '@{PATH}'
+
+
+##########################################################

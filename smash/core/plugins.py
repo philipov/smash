@@ -47,7 +47,7 @@ def _select_class( cls, base ):
 
 from .exporter import Exporter, builtin_exporters
 from .handler import Handler, builtin_handlers
-from .tool import Tool, builtin_tools
+from .tool import Subprocess, builtin_tools
 
 from .instance import InstanceTemplate, builtin_templates
 from .pkg import PackageType, builtin_package_types
@@ -77,7 +77,7 @@ templates           = _select_class( InstanceTemplate,  builtin_templates )
 package_types       = _select_class( PackageType,       builtin_package_types )
 
 packages            = _select_class( Package,           builtin_packages )
-tools               = _select_class( Tool,              builtin_tools )
+tools               = _select_class( Subprocess, builtin_tools )
 exporters           = _select_class( Exporter,          builtin_exporters )
 handlers            = _select_class( Handler,           builtin_handlers )
 
@@ -129,7 +129,7 @@ template            = plugin_decorator_template( InstanceTemplate,  templates )
 packages_type       = plugin_decorator_template( PackageType,       package_types )
 
 package             = plugin_decorator_template( Package,           packages )
-tool                = plugin_decorator_template( Tool,              tools )
+tool                = plugin_decorator_template( Subprocess, tools )
 exporter            = plugin_decorator_template( Exporter,          exporters )
 handler             = plugin_decorator_template( Handler,           handlers )
 

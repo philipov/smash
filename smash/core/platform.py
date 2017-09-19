@@ -50,3 +50,19 @@ class Mac(Platform):
 
 
 #----------------------------------------------------------------------#
+
+class PlatformError(Exception):
+    '''unsupported or unknown platform'''
+
+@export
+def match() -> Platform:
+    if Win32.match:
+        return Win32
+    elif Linux.match:
+        return Linux
+    elif Mac.match:
+        return Mac
+    else:
+        raise PlatformError('unknown platform')
+
+#----------------------------------------------------------------------#

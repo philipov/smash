@@ -25,25 +25,66 @@ from powertools import export
 #----------------------------------------------------------------------#
 
 @export
-class Tool:
+class Subprocess:
     ''' Base class for creating wrappers to keep track of state manipulation '''
 
-    def __init__( self, config:Config, filename:str, refname:str ) :
-        self.config = config
-        self.filename = filename
-        self.refname = refname
+
+    def __init__( self, environment ) :
+        self.environment = environment
+
+    def command( self, platform ) :
+        return str( self )
+
+    def command_windows(self):
+        raise NotImplementedError
+
+    def command_linux(self):
+        raise NotImplementedError
+
+    def command_mac(self):
+        raise NotImplementedError
+
 
 
 #----------------------------------------------------------------------#
 
 @export
-class Task( Tool ) :
+class Task( Subprocess ) :
     ''' perform an action once '''
 
+
+
+    def command_windows( self ) :
+        raise NotImplementedError
+
+    def command_linux( self ) :
+        raise NotImplementedError
+
+    def command_mac( self ) :
+        raise NotImplementedError
+
+#----------------------------------------------------------------------#
+
+@export
+class Installer( Subprocess ) :
+    ''' install external dependencies using their own script '''
+
+@export
+class MinicondaInstaller( Installer ):
+    ''' python '''
+
+    def command_windows(self):
+        return ''
+
+    def command_linux( self ) :
+        return ''
+
+#----------------------------------------------------------------------#
 
 @export
 class Loader( Task ) :
     ''' batch job for writing to a data store '''
+
 
 @export
 class Validator( Task ) :
@@ -52,16 +93,16 @@ class Validator( Task ) :
 
 ################################
 @export
-class Daemon( Tool ) :
-    '''keep repeating an action until killed'''
+class Daemon( Subprocess ) :
+    ''' until killed: start a subprocess, block until it terminates, then repeat '''
 
 @export
 class Service( Daemon ) :
-    pass
+    ''' pass '''
 
 @export
 class Monitor( Daemon ) :
-    pass
+    ''' pass '''
 
 
 #----------------------------------------------------------------------#

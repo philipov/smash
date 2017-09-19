@@ -36,6 +36,7 @@ class MissingShellExportError( Exception ) :
 class Environment:
     ''' represent the state of an environment where commands may be executed '''
 
+    __slots__ = ('homepath', 'pure', 'parent', 'simulation', 'children', 'results', 'closed')
     def __init__( self, homepath, *,
                   pure          = True,
                   parent        = None,
@@ -127,7 +128,7 @@ class Environment:
         '''
         absolute_path = (self.homepath/path).resolve()
 
-        absolute_path.mkdir(0o700)
+        absolute_path.mkdir(0o600)
         return absolute_path
 
 
@@ -192,11 +193,12 @@ class InstanceEnvironment( Environment ) :
         or some implicit unmanaged system environment
     '''
 
-    def __init__( self, homepath=None, **kwargs ) :
-        super( ).__init__( homepath, **kwargs )
+    def __init__( self, homepath=None, parent=None, **kwargs ) :
+        ''' either homepath or parent.homepath '''
         if homepath is None :
-            homepath = self.parent.homepath
+            homepath = parent.homepath
 
+        super().__init__( homepath, **kwargs )
         try :
             self.configtree = ConfigTree.from_path( homepath )
             assert self.configtree.final
@@ -246,9 +248,10 @@ class VirtualEnvironment(Environment):
         shell variables are supplied by evaluating the 'Environment' __export__ process in the configtree
     '''
 
-    def __init__( self, context:ContextEnvironment, **kwargs ):
-        self.config = context.configtree.env
-        super().__init__(self.config.path, **kwargs)
+    def __init__( self, instance:InstanceEnvironment, **kwargs ):
+        self.config = instance.configtree.env
+        homepath    = self.config.path
+        super().__init__(homepath, **kwargs)
 
 
     ####################
@@ -310,8 +313,13 @@ class VirtualEnvironment(Environment):
         log.print( '' )
         variables = self.variables
         log.print( '' )
+
+        cmd_str = ' '.join( str( c ) for c in command )
+        # print("cmd_str", cmd_str)
+        cmd_str_parsed = self.config['shell'].evaluate( 'CMD', cmd_str, kro=self.config.parents )
+        # print("cmd_str_parsed", cmd_str_parsed)
         proc = subprocess.Popen(
-            ' '.join(str(c) for c in command),
+            cmd_str_parsed,
             env     = variables,
             cwd     = str( self.homepath ),
             shell   = True

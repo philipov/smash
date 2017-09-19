@@ -27,6 +27,7 @@ from collections import deque
 
 
 from .core.env import ContextEnvironment
+from .core.env import InstanceEnvironment
 from .core.env import VirtualEnvironment
 #
 # #----------------------------------------------------------------------#
@@ -65,20 +66,23 @@ def console( command, verbose ) :
         log.print(term.white(">>> "),"Do Nothing")
     else:
         with ContextEnvironment(cwd) as context:
-            import re
-            from smash.core.plugins import handlers
-            from smash.core.handler import NoHandlerMatchedError
+            with InstanceEnvironment(parent=context) as instance:
 
-            with VirtualEnvironment( context ) as interior :
-                for pattern, Handler in reversed( handlers.items( ) ):
-                    print('match attempt', pattern, Handler, filepath.name)
-                    if re.match( pattern, filepath.name ) :
-                        result = Handler( filepath, list(arguments), interior ).run( )
-                        break
-                else :
-                    raise NoHandlerMatchedError( filepath, handlers )
+                import re
+                from smash.core.plugins import handlers
+                from smash.core.handler import NoHandlerMatchedError
 
-                print( "\ninterior.processes", interior.children )
+                with VirtualEnvironment( instance ) as interior :
+                    for pattern, Handler in reversed( handlers.items( ) ):
+                        print('match attempt', pattern, Handler, filepath.name)
+                        if re.match( pattern, filepath.name ) :
+                            result = Handler( filepath, list(arguments), interior ).run( )
+                            break
+                    else :
+                        raise NoHandlerMatchedError( filepath, handlers )
+
+                    print( "\ninterior.processes", interior.children )
+
 
     log.print( '' )
     log.print( 'SMASH DONE...' )
