@@ -53,7 +53,6 @@ class Task( Subprocess ) :
     ''' perform an action once '''
 
 
-
     def command_windows( self ) :
         raise NotImplementedError
 

@@ -43,6 +43,68 @@ def execute( command_string: str, env=None ) -> (int, list) :
     proc.wait( )
     return pid_shell, pids_children
 
+@export
+def execute2( command: str, path: Path = None, env=None ) -> (int, list) :
+    proc = subprocess.Popen(
+        command,
+        env=env,
+        cwd=str( path ),
+        shell=True
+    )
+    pid_shell = proc.pid
+
+    ### collect child pids so they can be stored for later termination
+    pids_children = [process.pid for process in psutil.Process( pid_shell ).children( recursive=True )]
+
+    # todo: detect and report when command is not found, or exits with nonzero return
+
+    time.sleep( SUBPROCESS_DELAY )
+    proc.terminate() #terminate exterior shell
+    proc.wait()
+    return pid_shell
+
+class Subprocess:
+    '''coroutine for subprocesses'''
+    __slots__ = (
+        'proc',
+        'shell',
+        'children'
+    )
+
+    def __init__( self, command: str, path: Path = None, env=None ):
+        self.proc = subprocess.Popen(
+            command,
+            env=env,
+            cwd=str( path ),
+            shell=True
+        )
+        self.shell = self.proc.pid
+
+        ### collect child pids so they can be stored for later termination
+        self.children = [process.pid for process in psutil.Process( self.shell ).children( recursive=True )]
+
+    def orphan(self):
+        '''kill the shell'''
+        self.proc.terminate() #terminate exterior shell
+        self.proc.wait()
+
+    def close(self):
+        '''kill the shell and the children'''
+        self.orphan()
+        kill_all(self.children)
+        raise NotImplementedError
+
+    def send(self):
+        '''input to stdin'''
+        raise NotImplementedError
+
+    def __iter__(self):
+        '''iterator protocol'''
+        return self
+
+    def __next__(self):
+        '''block until output'''
+        return NotImplementedError
 
 @export
 def service( command_string: str, env=None ) -> (int, list) :

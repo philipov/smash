@@ -20,12 +20,15 @@ from powertools.print import rprint
 ################################
 def _load_plugins():
     ''' produce a dictionary of available plugin modules '''
-    plugin_modules = {
-        entry_point.name : entry_point.load( )
-        for entry_point
-        in pkg_resources.iter_entry_points( 'smash.plugins' )
-    }
-    return plugin_modules
+    try:
+        plugin_modules = {
+            entry_point.name : entry_point.load( )
+            for entry_point
+            in pkg_resources.iter_entry_points( 'smash.plugins' )
+        }
+        return plugin_modules
+    except pkg_resources.DistributionNotFound as e:
+        return dict()
 
 ################################
 def _select_class( cls, base ):
@@ -77,7 +80,7 @@ templates           = _select_class( InstanceTemplate,  builtin_templates )
 package_types       = _select_class( PackageType,       builtin_package_types )
 
 packages            = _select_class( Package,           builtin_packages )
-tools               = _select_class( Subprocess, builtin_tools )
+tools               = _select_class( Subprocess,        builtin_tools )
 exporters           = _select_class( Exporter,          builtin_exporters )
 handlers            = _select_class( Handler,           builtin_handlers )
 
