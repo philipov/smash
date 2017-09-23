@@ -25,6 +25,7 @@ from ordered_set import OrderedSet
 
 from functools import reduce
 from itertools import chain
+from itertools import starmap
 from contextlib import suppress
 
 
@@ -36,8 +37,8 @@ from ..util.path import temporary_working_directory
 from ..util.path import try_resolve
 from ..util.path import find_yamls
 
-from ..util import out
-from powertools.print import listprint, dictprint, rprint, pprint, pformat
+from powertools import term
+from powertools.print import listprint, dictprint, rprint, pprint, pformat, add_pprint
 
 from smash.core.constants import CONFIG_PROTOCOL
 
@@ -50,6 +51,9 @@ CURRENT_NODE            = None
 
 ####################
 def getdeepitem( data, keys, kro=() ) :
+    ''' convert nested index access to a list of keys
+        supports passing along the key resolution order for configsectionview lookups
+    '''
     return reduce( lambda d, key :
                    d.setdefault( key, OrderedDict( ), kro=kro ) if isinstance(d, ConfigSectionView)
               else d.setdefault( key, OrderedDict( ) )          if not isinstance(d, list)
@@ -84,9 +88,10 @@ class GreedyOrderedSet(OrderedSet):
 
 @export
 class Config:
-    """ A single non-mutating configuration structure
+    """ A single configuration structure expressed as arbitarily nested dictionaries and lists
         config[section][key]
         sections may be nested within sections arbitrarily deep
+        config[section1][section2][key]
         the interpretation of the keys is delegated to the ConfigSectionView
     """
 
@@ -145,10 +150,11 @@ class Config:
         except AssertionError as e:
             raise Config.ProtocolError('Protocol version mismatch')
 
-        log.print( out.yellow( '*' * 20 ), ' load=', self.filepath )
+        log.print( '*' * 20 , ' Config.load = ', term.yellow(self.filepath) )
 
-        print('parents:',self.__inherit__)
+        #print( 'parents:', self.__inherit__ )
 
+        # todo: straighten out this manual addition of self to the configtree
         if self.tree is not None :
             self.tree.nodes[self.filepath] = self
 
@@ -254,9 +260,10 @@ class Config:
         keyview     = OrderedSet( sorted( datachain.keys( ) ) )
         return keyview
 
+
     ####################
     def items( self ) -> list :
-        # todo: exclude dunder keys
+        ''' unchained and unprocessed '''
         return self._yaml_data.items( )
 
 
@@ -272,11 +279,11 @@ class Config:
             parsed_dict     = export_items #OrderedDict()
             #parsed_paths    = ConfigSectionView( self.tree.root, '__export__' ).evaluate_list( '__exports__', export_dict )
             #todo: this means that ConfigSectionView needs refactoring
-            # print( out.green('PARSED~~~~~'), parsed_dict )
+            # print( term.green('PARSED~~~~~'), parsed_dict )
         except KeyError as e :
             parsed_dict = OrderedDict()
 
-        # print( out.white( '_export' ), parsed_dict )
+        # print( term.white( '_export' ), parsed_dict )
         return parsed_dict
 
     @property
@@ -284,14 +291,15 @@ class Config:
         ''' a dictionary of exporter names mapped to a list of (output names, list of section keys)'''
 
         result = OrderedDict()
+        result = OrderedDict()
         for node in self.key_resolution_order :
-            #print( out.cyan( 'node:' ), node)
+            #print( term.cyan( 'node:' ), node)
             for destination, speclist in node.__export__:
                 parsed_destination = ConfigSectionView(self, 'path').evaluate('__destination__', destination)
                 assert len(speclist) > 1
                 exporter_name   = speclist[0]
                 export_subtrees = OrderedSet(speclist[1:])
-                # print( out.white( '    export' ), destination, out.white('|'), exporter_name, out.white( '|' ), export_subtrees )
+                # print( term.white( '    export' ), destination, term.white('|'), exporter_name, term.white( '|' ), export_subtrees )
 
                 if exporter_name not in result:
                     result[exporter_name] = OrderedDict()
@@ -308,9 +316,10 @@ class Config:
 #----------------------------------------------------------------------#
 
 class ConfigSectionView :
-    ''' dictionary view of a config section that provides alternate indexing logic
-        search config parents for keys if not found in the current one
-        perform token substitution, expression evaluation, and path resolution on raw scalar values
+    ''' implement the multi chainmap key resolution algorithm on a config and its tree
+        each instance of this class keeps track of a level of index depth in the value parsing algorithm
+        dynamic chainmap - search config parents for keys if not found in the current one
+        token expression substitution - evaluate to values from other keys, sections, and/or files
     '''
 
     ####################
@@ -337,21 +346,28 @@ class ConfigSectionView :
 
         key_union = GreedyOrderedSet( )
         for key in getdeepitem( self.config._yaml_data, self.section_keys ).keys( ) :
-            # print( out.green( 'key:' ), key )
+            # print( term.green( 'key:' ), key )
             key_union.add( key )
         return list( key_union )
 
     def items( self ) :
         '''key-value tuples for the current subtree only, with values resolved'''
 
-        # print( out.blue( 'items' ), self.section_keys )
-        return list( map(
-            lambda key : (
+        # print( term.blue( 'items' ), self.section_keys )
+        yield from map( lambda key : (
                 key,
                 getdeepitem( self.config, [*self.section_keys, key] )
             ),
-            self.keys( )
-        ) )
+            self.keys()
+        )
+
+    def values( self ) :
+        for value in (p for k, p in self.items()) :
+            yield value
+
+    def paths( self ) :
+        for path in map( Path, self.values() ) :
+            yield path
 
 
     ####################
@@ -360,32 +376,40 @@ class ConfigSectionView :
 
         key_union = GreedyOrderedSet()
         for node in self.config.key_resolution_order :
-            # print(out.cyan('node:'), node, self.section_keys, '\n',
+            # print(term.cyan('node:'), node, self.section_keys, '\n',
             #       getdeepitem( node._yaml_data, self.section_keys ))
             for key in getdeepitem(node._yaml_data, self.section_keys).keys():
-                # print(out.green('    key:'), key)
+                # print(term.green('    key:'), key)
                 key_union.add(key)
-        #     print( out.green( '\n------------------------------------' ))
-        # print(out.cyan( '\n------------------------------------' ))
+        #     print( term.green( '\n------------------------------------' ))
+        # print(term.cyan( '\n------------------------------------' ))
         return list(key_union)
 
     def allitems( self ) :
         '''same as items, but uses allkeys method'''
 
-        # print( out.blue( 'allitems' ), self.section_keys )
-        return list( map(
+        # print( term.blue( 'allitems' ), self.section_keys )
+        yield from map(
             lambda key : (
                 key,
                 getdeepitem( self.config, [*self.section_keys, key], self.config.key_resolution_order )
             ),
             self.allkeys( )
-        ) )
+        )
+
+    def allvalues( self ) :
+        ''' full-depth values '''
+        yield from (value for key, value in self.allitems())
+
+    def allpaths(self):
+        ''' full-depth values, convert values to Path objects before returning them '''
+        yield from starmap(lambda k, v: (k, Path(v)), self.allitems())
 
 
     ####################
     def setdefault( self, key, default, kro ) :
         ''' support for getdeepitem on Config object'''
-        # print( out.blue( "-----------------------------" ), 'begin setdefault', self.config, self.section_keys, out.white( key ) )
+        # print( term.blue( "-----------------------------" ), 'begin setdefault', self.config, self.section_keys, term.white( key ) )
         try :
             return self._getitem(key, kro)
         except KeyError :
@@ -401,7 +425,7 @@ class ConfigSectionView :
             paths are resolved relative to the path of the file they're defined in, so '.' means the current file's path.
             supports dictionaries inside dictionaries by returning nested ConfigSectionView objects
         '''
-        # print(out.blue("-----------------------------"), 'begin __getitem__', self.config, out.white(key))
+        # print(term.blue("-----------------------------"), 'begin __getitem__', self.config, term.white(key))
         return self._getitem(key, self.config.key_resolution_order)
 
     def _getitem( self, key, kro) :
@@ -419,20 +443,20 @@ class ConfigSectionView :
         if len(kro) == 0:
             pruned_kro = self.config.parents
         else:
-            # print(out.red("PRUNE KRO"))
+            # print(term.red("PRUNE KRO"))
             # listprint(kro)
-            # print(out.red('---'), self.config)
+            # print(term.red('---'), self.config)
             pruned_kro = deque( kro )
             try:
                 while pruned_kro.popleft( ) != self.config : pass
             except IndexError:
                 pruned_kro = (self.config.tree.root,)
             # listprint(pruned_kro)
-            # print( out.red( '--- pruned' ) )
+            # print( term.red( '--- pruned' ) )
 
 
         ### check current node
-        # print( out.pink( 'CHECK SELF' ), self.config.filepath, 'keys', self.section_keys, out.white( key ) )
+        # print( term.pink( 'CHECK SELF' ), self.config.filepath, 'keys', self.section_keys, term.white( key ) )
         try:
             raw_value = getdeepitem( self.config._yaml_data, self.section_keys )[key]
         except KeyError:
@@ -447,20 +471,20 @@ class ConfigSectionView :
                 # print( 'list' )
                 parsed_list = self.evaluate_list(key, raw_value, kro=pruned_kro)
 
-                # print( out.cyan('~~~Cache List Result'), self.section_keys, key, self.config , parsed_list)
+                # print( term.cyan('~~~Cache List Result'), self.section_keys, key, self.config , parsed_list)
                 getdeepitem( self.config._final_cache, self.section_keys)[key] = parsed_list   # CACHE LIST ###
                 return parsed_list
 
             else :                                                                              # Scalar Value Found
                 final_value = self.evaluate( key, raw_value , kro=pruned_kro)
 
-                # print( out.cyan('~~~Cache Scalar Result'), self.section_keys, key, final_value )
+                # print( term.cyan('~~~Cache Scalar Result'), self.section_keys, key, final_value )
                 getdeepitem( self.config._final_cache, self.section_keys )[key] = final_value   # CACHE VALUE ###
                 return final_value
 
 
         ### check parents
-        # print(out.pink('CHECK PARENTS'), self.config.filepath, 'keys', self.section_keys, out.white(key))
+        # print(term.pink('CHECK PARENTS'), self.config.filepath, 'keys', self.section_keys, term.white(key))
         # print('parents')
         # listprint(self.config.parents)
         # print('kro')
@@ -475,11 +499,11 @@ class ConfigSectionView :
                 # print("MISSING IN ", node.filepath)
                 continue
             else:
-                # print(out.blue('parent_value:'), self.section_keys, key, parent_value, self.config.filepath)
+                # print(term.blue('parent_value:'), self.section_keys, key, parent_value, self.config.filepath)
                 return parent_value
 
         # not found
-        # print('__getitem__', key, out.red('|'), self.config, out.red( '|' ),self.section_keys)
+        # print('__getitem__', key, term.red('|'), self.config, term.red( '|' ),self.section_keys)
         raise KeyError(str(key)+' not found.')
 
 
@@ -487,7 +511,7 @@ class ConfigSectionView :
     def evaluate_list(self, key, raw_list, kro):
         ''' evaluate each element of the list, and return the list of parsed values '''
         parsed_list = []
-        # print(out.yellow('------------'), 'EVALUATE LIST', raw_list)
+        # print(term.yellow('------------'), 'EVALUATE LIST', raw_list)
         # listprint(kro)
         for (i, value) in enumerate( raw_list ) :
             if isinstance( value, list ) or isinstance( value, dict ) :
@@ -515,7 +539,7 @@ class ConfigSectionView :
 
         new_value=value
         total_count = 1
-        # print(out.green('EVALUATE:'), key, value, self)
+        # print(term.green('EVALUATE:'), key, value, self)
 
         while total_count > 0 :
             total_count = 0
@@ -540,7 +564,7 @@ class ConfigSectionView :
         try:
             (result, count)     = token_expression_regex.subn( expression_replacer, value )
         except TypeError as e: # todo: handle this TypeError inside expression_replacer
-            print(out.red('SUBSTITUTE'), key, value, self)
+            print(term.red('SUBSTITUTE'), key, value, self)
             raise e
         # log.debug( "After re.subn:  ", result, " | ", count, "|", expression_replacer.counter[0] )
 
@@ -584,7 +608,7 @@ class ConfigSectionView :
             self.parse_counter += 1
             # log.info( '>'*20, " MATCH ", target_configpath, ' ', target_sections, ' ', target_key, ' | ', key, ' ',  self.section_keys )
             # listprint(kro)
-            # print("value", out.green(matchobj.group(0)))
+            # print("value", term.green(matchobj.group(0)))
             # print('-----------')
 
             # log.debug( matchobj.groups( ) )
@@ -600,7 +624,7 @@ class ConfigSectionView :
 
             result = getdeepitem(node, section_keys, kro)
 
-            # print(out.cyan("subn result:"), result, out.cyan('|'), key, out.cyan( '|' ), matchobj.group(0))
+            # print(term.cyan("subn result:"), result, term.cyan('|'), key, term.cyan( '|' ), matchobj.group(0))
             if isinstance(result, OrderedDict) and len(result) == 0:
                 raise Config.SubstitutionKeyNotFoundError(''.join(str(s) for s in [
                     'Could not find ', target_configpath, '::', target_sections,':', target_key,
@@ -609,7 +633,7 @@ class ConfigSectionView :
             elif isinstance(result, list) and matchobj.group(0) == matchobj.string and listeval and token == '@':
                 ### WARNING: use a hack to return a list out from the regex substitute
                 ### so we can later use it to extend a list we're substituting into
-                # log.info(out.blue('*'*30), 'LIST INSERT' )
+                # log.info(term.blue('*'*30), 'LIST INSERT' )
                 self.resultlist.append(result)
             elif not isinstance(result, str):
                 raise TypeError(' '.join(str(s) for s in [
@@ -738,9 +762,9 @@ class ConfigTree :
             self.nodes[node.filepath] = node
             return node
         except Config.EmptyFileWarning as e:
-            print('Config.EmptyFileWarning:', e)
+            log.debug('Config.EmptyFileWarning:', e)
         except Config.ProtocolError as e:
-            print('Config.ProtocolError:', e)
+            log.debug('Config.ProtocolError:', e)
 
     __add_root = add_root
     __add_node = add_node
@@ -866,8 +890,8 @@ class ConfigTree :
 
 #----------------------------------------------------------------------#
 
-out.add_pprint( ConfigTree )
-out.add_pprint( Config )
+add_pprint( ConfigTree )
+add_pprint( Config )
 
 
 #----------------------------------------------------------------------#

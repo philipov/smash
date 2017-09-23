@@ -15,7 +15,7 @@ def conftree( path_env00 ) :
 
 #----------------------------------------------------------------------#
 def test__Tool( conftree ) :
-    from smash.core.tool import Subprocess
+    from smash.core.tool import Tool
     # assert False
 
 

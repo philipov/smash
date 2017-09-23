@@ -50,7 +50,7 @@ def _select_class( cls, base ):
 
 from .exporter import Exporter, builtin_exporters
 from .handler import Handler, builtin_handlers
-from .tool import Subprocess, builtin_tools
+from .tool import Tool, builtin_tools
 
 from .instance import InstanceTemplate, builtin_templates
 from .pkg import PackageType, builtin_package_types
@@ -76,11 +76,11 @@ __all__     = [
 plugin_modules      = _load_plugins()
 
 environment_types   = _select_class( Environment,       builtin_environment_types )
-templates           = _select_class( InstanceTemplate,  builtin_templates )
+instance_templates  = _select_class( InstanceTemplate, builtin_templates )
 package_types       = _select_class( PackageType,       builtin_package_types )
 
 packages            = _select_class( Package,           builtin_packages )
-tools               = _select_class( Subprocess,        builtin_tools )
+tools               = _select_class( Tool, builtin_tools )
 exporters           = _select_class( Exporter,          builtin_exporters )
 handlers            = _select_class( Handler,           builtin_handlers )
 
@@ -96,7 +96,7 @@ def report_plugins():
     rprint( environment_types )
 
     print( out.green( '~~~~~~~~~~~' ) + out.pink(' instance templates:' ) )
-    rprint( templates )
+    rprint( instance_templates )
 
     print( out.green( '~~~~~~~~~~~' ) + out.pink(' package types:' ) )
     rprint( package_types )
@@ -128,11 +128,11 @@ def plugin_decorator_template(cls, collection):
     return plugin_decorator_factory
 
 environment_type    = plugin_decorator_template( Environment,       environment_types )
-template            = plugin_decorator_template( InstanceTemplate,  templates )
+template            = plugin_decorator_template( InstanceTemplate, instance_templates )
 packages_type       = plugin_decorator_template( PackageType,       package_types )
 
 package             = plugin_decorator_template( Package,           packages )
-tool                = plugin_decorator_template( Subprocess, tools )
+tool                = plugin_decorator_template( Tool, tools )
 exporter            = plugin_decorator_template( Exporter,          exporters )
 handler             = plugin_decorator_template( Handler,           handlers )
 

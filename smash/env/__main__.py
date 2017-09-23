@@ -8,11 +8,7 @@ from powertools import export
 from powertools import AutoLogger
 log = AutoLogger()
 
-###
-import colorama
-colorama.init( )
-import colored_traceback
-colored_traceback.add_hook( )
+
 
 import os
 import sys

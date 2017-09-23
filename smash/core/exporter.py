@@ -97,7 +97,7 @@ class ExportShell( Exporter ):
                         raise TypeError('Invalid environment value',
                                     namedtuple('_',['section', 'key', 'value', 'type' ])
                                                     (section, key, str(value), str(type(value))))
-                    log.info( out.red( 'ExportShell' ), " {:<20} = {:64}".format(str(key), subenv[key])  )
+                    log.info( out.pink( 'ExportShell' ), " {:<20} = {:64}".format(str(key), subenv[key])  )
                 else:
                     raise self.AmbiguousKeyError(
                         namedtuple( '_', ['conflicting_sections', 'key', 'values', 'config', 'destination'] )(

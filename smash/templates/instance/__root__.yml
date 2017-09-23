@@ -4,16 +4,15 @@
 __protocol__:     0
 __version__:      0.0.0
 
-__name__:         smash
+__name__:         instance/{name}
 __type__:         II
 
 __export__:
   subenv:         [Shell, path, shell]
 
-__import__:
-  -
 
 ##########################################################
+
 path:
   ROOT:           .
   SYS:            ${ROOT}/sys
@@ -23,21 +22,24 @@ path:
   DATA:           ${ROOT}/data
   SECRETS:        ${ROOT}/secrets
 
+pkg:
+  APP:            ${path:PKGS}/app    # installed applications
+  LIB:            ${path:PKGS}/lib    # installed libraries
+  DATA:           ${path:PKGS}/data   # installed data specifications
+  PYTHON:         ${path:PKGS}/python # self-contained python for the instance
+
+  HOST:           ${path:PKGS}/host   # local filesystem configuration
+  NET:            ${path:PKGS}/net    # local network configuration
+
+
+##########################################################
+
 remote:
   GIT:            github.com
 
 shell:
-  PATH:           ['${path:ROOT}']
+  PATH:           [ '${path:ROOT}' ]
   SYSTEMROOT:     C:\Windows
-
-##########################################################
-pkg:
-  APP:            ${path:PKGS}/app
-  LIB:            ${path:PKGS}/lib
-  DATA:           ${path:PKGS}/data
-  PY:             ${ENV::path:PYTHONHOME}
-  HOST:           ${path:PKGS}/host
-  NET:            ${path:PKGS}/net
 
 
 ##########################################################

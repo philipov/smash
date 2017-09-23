@@ -17,8 +17,6 @@ def collect_package_data( package_path ) :
     for root, _, _ in os.walk( str( root_path ) ) :
         package_data.append( str( Path( root ) / '*' ) )
 
-    print('package data')
-    pprint(package_data)
     return package_data
 
 
@@ -34,7 +32,7 @@ kwargs = dict(
     author_email    = 'philipov@gmail.com',
 
     packages = [
-        'smash',
+        'smash',            # main application
 
         'smash.core',       # fundamental abstractions
         'smash.tool',       # extensive subapplications

@@ -24,6 +24,7 @@ import time
 from .config import ConfigTree
 
 from ..util.proc import Subprocess
+from ..util.path import temporary_working_directory
 
 #----------------------------------------------------------------------#
 
@@ -91,10 +92,26 @@ class Environment:
         ''' access to shell state variables '''
         raise NotImplementedError()
 
-    def run(self, *command):
+    ####################
+    def run( self, *command ) :
         ''' execute a command within the environment '''
-        raise NotImplementedError()
 
+        ### environment variables
+        variables = self.variables
+
+        ### execution path
+        log.print( '\nWORKDIR: ', self.config.path )
+
+        ### parse token expressions in command as if it were a key in the 'shell' section
+        cmd_str = ' '.join( str( c ) for c in command )
+        log.print('RAW CMD: ', cmd_str)
+        cmd_str_parsed = self.config['shell'].evaluate( 'CMD', cmd_str, kro=self.config.parents ).replace( r'\\', r'\\' )
+        log.print( 'COMMAND: ', cmd_str_parsed, '\n')
+
+        ### execute
+        with temporary_working_directory( self.config.path ):
+            return Subprocess( cmd_str_parsed, self.config.path, variables )
+                                                # todo: ^
 
     #################### context manager interfaces
     def __enter__( self ) :
@@ -105,6 +122,7 @@ class Environment:
 
     def __exit__( self, exc_type, exc_value, traceback ) :
         self.teardown( )
+
 
     #################### iterator/coroutine interfaces
     #todo: can an environment be represented as a coroutine? send commands in, yield results back out
@@ -128,7 +146,7 @@ class Environment:
         self.closed = True
 
     def throw(self, exc_type, exc_value=None, traceback=None):
-        '''raise exception inside of the __exit__ method??'''
+        ''' raise exception inside of the __exit__ method? '''
         raise exc_type(self, exc_value, traceback)
 
     ####################
@@ -142,6 +160,16 @@ class Environment:
 
         absolute_path.mkdir(0o600)
         return absolute_path
+
+
+    def rmfile( self, path: Path ):
+        ''' recursively create path if it doesn't exist.
+            path must be relative, a branch of the homepath subtree.
+            returns the absolute path that was created
+        '''
+        absolute_path = (self.homepath / path).resolve()
+
+        absolute_path.unlink()
 
 
 #----------------------------------------------------------------------#
@@ -247,6 +275,10 @@ class InstanceEnvironment( Environment ) :
     ####################
 
     @property
+    def config(self):
+        return self.configtree.root
+
+    @property
     def variables( self ) :
         from ..core.plugins import exporters
 
@@ -270,23 +302,6 @@ class InstanceEnvironment( Environment ) :
         # dictprint(result)
         return result
 
-    ####################
-    def run( self, *command ) :
-
-        ### parse token expressions in command as if it were a key in the 'shell' section
-        cmd_str = ' '.join( str( c ) for c in command )
-        cmd_str_parsed = self.config['shell'].evaluate( 'CMD', cmd_str, kro=self.config.parents )
-
-        ### execution path
-        log.print( 'CWD:     ', self.homepath )
-        log.print( '' )
-
-        ### environment variables
-        variables = self.variables
-        log.print( '' )
-
-        ### execute
-        return Subprocess( cmd_str_parsed, self.config.homepath, variables )
 
 #----------------------------------------------------------------------#
 
@@ -360,25 +375,6 @@ class VirtualEnvironment(Environment):
         return result
 
 
-    ####################
-    def run( self, *command:tuple) :
-
-        ### parse token expressions in command as if it were a key in the 'shell' section
-        cmd_str = ' '.join( str( c ) for c in command )
-        cmd_str_parsed = self.config['shell'].evaluate( 'CMD', cmd_str, kro=self.config.parents )
-
-        ### execution path
-        log.print( 'CWD:     ', self.homepath )
-        log.print( '' )
-
-        ### environment variables
-        variables = self.variables
-        log.print( '' )
-
-        ### execute
-        return Subprocess(cmd_str_parsed, self.config.homepath, variables)
-
-
 #----------------------------------------------------------------------#
 
 #----------------------------------------------------------------------#
@@ -393,18 +389,18 @@ from conda.cli import python_api
 ################################
 @export
 class CondaEnvironment( VirtualEnvironment ) :
-    '''construct a conda environment, and run commands inside it'''
+    ''' construct a conda environment, and run commands inside it '''
     __slots__ = ()
 
     def _manage(self, command, *arguments, **kwargs):
-        print('manage', self.config)
+        log.print('manage ', self.config)
         python_api.run_command( command, *arguments, **kwargs )
 
         raise NotImplementedError()
 
     ####################
     def build( self ) :
-        ''' construct a conda environment'''
+        ''' construct a conda environment '''
 
     def validate( self ) :
         ''' defer to instance template '''

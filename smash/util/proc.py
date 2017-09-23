@@ -63,52 +63,6 @@ def execute2( command: str, path: Path = None, env=None ) -> (int, list) :
     proc.wait()
     return pid_shell
 
-class Subprocess:
-    '''coroutine for subprocesses'''
-    __slots__ = (
-        'proc',
-        'shell',
-        'children'
-    )
-
-    def __init__( self, command: str, path: Path = None, env=None ):
-        self.proc = subprocess.Popen(
-            command,
-            env=env,
-            cwd=str( path ),
-            shell=True
-        )
-        self.shell = self.proc.pid
-
-        ### collect child pids so they can be stored for later termination
-        self.children = [process.pid for process in psutil.Process( self.shell ).children( recursive=True )]
-
-    def orphan(self):
-        '''kill the shell'''
-        self.proc.terminate() #terminate exterior shell
-        self.proc.wait()
-
-    def close(self):
-        '''kill the shell and the children'''
-        self.orphan()
-        kill_all(self.children)
-        raise NotImplementedError
-
-    def send(self):
-        '''input to stdin'''
-        raise NotImplementedError
-
-    def __iter__(self):
-        '''iterator protocol'''
-        return self
-
-    def __next__(self):
-        '''block until output'''
-        return NotImplementedError
-
-@export
-def service( command_string: str, env=None ) -> (int, list) :
-    return None, None
 
 
 @export
@@ -120,40 +74,40 @@ def kill_all( pids: list ) :
 #----------------------------------------------------------------------#
 
 
-@export
-def load_configs(cwd:Path):
-
-    try :
-        configs = ConfigTree.from_path( cwd)
-    except FileNotFoundError as e :
-        configs = ConfigTree()
-    print("configs", configs)
-    return configs
-
-
-
+# @export
+# def load_configs(cwd:Path):
+#
+#     try :
+#         configs = ConfigTree.from_path( cwd)
+#     except FileNotFoundError as e :
+#         configs = ConfigTree()
+#     print("configs", configs)
+#     return configs
+#
 
 
-@export
-def build_subenv( configs:ConfigTree, pure_mode=False ):
-    if not pure_mode:
-        subenv = os.environ.copy( )
-    else:
-        subenv = OrderedDict()
-
-    try:
-        for (key, value) in configs.data['shell'].items():
-            subenv[key] = value
-    except KeyError as e:
-        pass
-
-    # ToDo: construct pythonpath
-    # ToDo: construct pythonhome
-    # ToDo: construct path
 
 
-    return subenv
-
+# @export
+# def build_subenv( configs:ConfigTree, pure_mode=False ):
+#     if not pure_mode:
+#         subenv = os.environ.copy( )
+#     else:
+#         subenv = OrderedDict()
+#
+#     try:
+#         for (key, value) in configs.data['shell'].items():
+#             subenv[key] = value
+#     except KeyError as e:
+#         pass
+#
+#     # ToDo: construct pythonpath
+#     # ToDo: construct pythonhome
+#     # ToDo: construct path
+#
+#
+#     return subenv
+#
 
 #----------------------------------------------------------------------#
 
@@ -161,59 +115,103 @@ def build_subenv( configs:ConfigTree, pure_mode=False ):
 # How do I synchronize knowledge of the ports that processes distributed across hosts need?
 # Need a cluster-level config layer
 
-@export
-def run_service_yaml( cwd: Path, verbose=False ) -> list :
-    children = None
-
-    return children
-
-
-#----------------------------------------------------------------------#
-
-@export
-def run_cmd( subenv: dict, working_dir:Path, command:str, *, config, verbose=False, pure_mode=False ) -> list :
-    command_string = command # ToDo: clean up the args dict
-
-    # ToDo: merge config files -- locator, acl
-    ### figure out working directory, and add it to path
-
-    #subenv  = build_subenv( working_dir, config, pure_mode=pure_mode )
-
-    if verbose:
-        print( "SUBENV: " )
-        for item in sorted(subenv.items()):
-            print(str(item))
-
-    _, children = execute( command_string, env=subenv )
-    return children
+# @export
+# def run_service_yaml( cwd: Path, verbose=False ) -> list :
+#     children = None
+#
+#     return children
 
 
 #----------------------------------------------------------------------#
+#
+# @export
+# def run_cmd( subenv: dict, working_dir:Path, command:str, *, config, verbose=False, pure_mode=False ) -> list :
+#     command_string = command # ToDo: clean up the args dict
+#
+#     # ToDo: merge config files -- locator, acl
+#     ### figure out working directory, and add it to path
+#
+#     #subenv  = build_subenv( working_dir, config, pure_mode=pure_mode )
+#
+#     if verbose:
+#         print( "SUBENV: " )
+#         for item in sorted(subenv.items()):
+#             print(str(item))
+#
+#     _, children = execute( command_string, env=subenv )
+#     return children
 
-def extension_handler( extension, filename ) :
-    return NotImplemented
 
-@export
-def run_open( filename, verbose=False, pure_mode=False ) -> list :
+#----------------------------------------------------------------------#
+#
+# def extension_handler( extension, filename ) :
+#     return NotImplemented
 
-    path_file = Path(filename).resolve().parents[0]
+# @export
+# def run_open( filename, verbose=False, pure_mode=False ) -> list :
+#
+#     path_file = Path(filename).resolve().parents[0]
+#
+#     print("File:", filename)
+#     extension=str(filename).split('.', maxsplit=1)[-1]
+#     print("EXTENSION", extension)
+#
+#     # Select command by extension
+#     command = ""
+#     children = None
+#
+#     if extension == "yaml" :
+#         run_service_yaml( path_file, verbose=verbose)
+#         # Todo: keep service loop running
+#     else:
+#         command = extension_handler(extension, filename)
+#
+#         children = run_cmd( path_file, command, verbose=verbose, pure_mode=pure_mode )
+#     return children
+#
 
-    print("File:", filename)
-    extension=str(filename).split('.', maxsplit=1)[-1]
-    print("EXTENSION", extension)
+class Subprocess :
+    '''coroutine for subprocesses'''
+    __slots__ = (
+        '_proc',
+        'shell',
+        'children'
+    )
 
-    # Select command by extension
-    command = ""
-    children = None
+    def __init__( self, command: str, path: Path = None, env=None ) :
+        self._proc = subprocess.Popen(
+            command,
+            env=env,
+            cwd=str( path ),
+            shell=True
+        )
+        self.shell = self._proc.pid
 
-    if extension == "yaml" :
-        run_service_yaml( path_file, verbose=verbose)
-        # Todo: keep service loop running
-    else:
-        command = extension_handler(extension, filename)
+        ### collect child pids so they can be stored for later termination
+        self.children = [process.pid for process in psutil.Process( self.shell ).children( recursive=True )]
 
-        children = run_cmd( path_file, command, verbose=verbose, pure_mode=pure_mode )
-    return children
+    def orphan( self ) :
+        '''kill the shell'''
+        self._proc.terminate() #terminate exterior shell
+        self._proc.wait()
+
+    def close( self ) :
+        '''kill the shell and the children'''
+        self.orphan()
+        kill_all( self.children )
+        raise NotImplementedError
+
+    def send( self ) :
+        '''input to stdin'''
+        raise NotImplementedError
+
+    def __iter__( self ) :
+        '''iterator protocol'''
+        return self
+
+    def __next__( self ) :
+        '''block until output'''
+        self._proc.wait()
 
 
 #----------------------------------------------------------------------#

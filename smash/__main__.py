@@ -9,12 +9,6 @@ from powertools import AutoLogger
 log = AutoLogger()
 from powertools import term
 
-###
-import colorama
-colorama.init( )
-import colored_traceback
-colored_traceback.add_hook( )
-
 import os
 import sys
 import traceback
@@ -29,8 +23,9 @@ from collections import deque
 from .core.env import ContextEnvironment
 from .core.env import InstanceEnvironment
 from .core.env import VirtualEnvironment
-#
-# #----------------------------------------------------------------------#
+
+#----------------------------------------------------------------------#
+
 
 #----------------------------------------------------------------------#
 
@@ -44,7 +39,9 @@ def console( command, verbose ) :
     # ToDo: manage env list
     # ToDo: manage package list
 
-    log.print( term.cyan('\n~~~~~~~~~~~~~~~~~~~~ '), term.pink('SMASH'))
+    term.init_color()
+
+    log.print( '\n', term.cyan('~~~~~~~~~~~~~~~~~~~~ '), term.pink('SMASH'))
     log.print( 'SCRIPT:  ', __file__ )
     log.print( 'TARGET:  ', command )
 
@@ -61,17 +58,21 @@ def console( command, verbose ) :
     try:
         filepath    = Path( arguments.popleft( ) )
     except IndexError as e:
-        pass
-        # begin interactive mode using default shell
+        # todo: interactive mode: contextually launch shell configured for virtual environment, instance, or else the system default
         log.print(term.white(">>> "),"Do Nothing")
     else:
+
+        ### wild lands of unmanaged state
         with ContextEnvironment(cwd) as context:
+
+            ### the wall that guards the lands of version control
             with InstanceEnvironment(parent=context) as instance:
 
                 import re
                 from smash.core.plugins import handlers
                 from smash.core.handler import NoHandlerMatchedError
 
+                ### virtual environments may use a different python version from instance
                 with VirtualEnvironment( instance ) as interior :
                     for pattern, Handler in reversed( handlers.items( ) ):
                         print('match attempt', pattern, Handler, filepath.name)
@@ -84,9 +85,8 @@ def console( command, verbose ) :
                     print( "\ninterior.processes", interior.children )
 
 
-    log.print( '' )
-    log.print( 'SMASH DONE...' )
-    # return result
+    log.print( '\n', term.pink( '~~~~~~~~~~~~~~~~~~~~' ), term.cyan(' DONE...') )
+
 
 #----------------------------------------------------------------------#
 

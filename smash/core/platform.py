@@ -6,6 +6,9 @@
 import sys
 from powertools import classproperty
 from powertools import export
+from powertools import assertion
+
+from contextlib import contextmanager
 
 #----------------------------------------------------------------------#
 @export
@@ -28,6 +31,9 @@ class Win32(Platform):
     def match( cls ) :
         return sys.platform == 'win32'
 
+    def __str__(self):
+        return 'Win32'
+
 
 #----------------------------------------------------------------------#
 @export
@@ -38,6 +44,9 @@ class Linux(Platform):
     def match( cls ) :
         return sys.platform in ('linux', 'linux2')
 
+    def __str__( self ) :
+        return 'Linux'
+
 
 #----------------------------------------------------------------------#
 @export
@@ -47,6 +56,9 @@ class Mac(Platform):
     @classproperty
     def match( cls ) :
         return False
+
+    def __str__( self ) :
+        return 'Mac'
 
 
 #----------------------------------------------------------------------#
@@ -64,5 +76,32 @@ def match() -> Platform:
         return Mac
     else:
         raise PlatformError('unknown platform')
+
+def trycall(obj, args, kwargs):
+    try:
+        return obj(*args, **kwargs)
+    except TypeError:
+        return obj
+
+
+def switch(
+        case_win = NotImplemented,
+        case_nix = NotImplemented,
+        case_mac = NotImplemented,
+        *args, **kwargs ) -> object:
+    ''' switch between 3 options depending on the current platform
+        return the value of `case_*`,
+        first, attempt to execute it as a function of args and kwargs
+    '''
+    case        = NotImplemented
+    platform    = match()
+    if platform   == Win32: case = case_win
+    elif platform == Linux: case = case_nix
+    elif platform == Mac:   case = case_mac
+
+    with assertion(PlatformError(f'missing implementation {str(platform)}')):
+        assert case is not NotImplemented
+
+    return trycall( case, args, kwargs )
 
 #----------------------------------------------------------------------#

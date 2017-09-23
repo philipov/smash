@@ -28,7 +28,7 @@ from .core.user import *
 # from .core import plugins
 
 from .core.plugins import environment_types
-from .core.plugins import templates
+from .core.plugins import instance_templates
 from .core.plugins import package_types
 from .core.plugins import packages
 from .core.plugins import tools
