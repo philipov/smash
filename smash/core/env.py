@@ -302,6 +302,9 @@ class InstanceEnvironment( Environment ) :
         # dictprint(result)
         return result
 
+    def install_package( self ):
+        pass
+
 
 #----------------------------------------------------------------------#
 

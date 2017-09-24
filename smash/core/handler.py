@@ -5,10 +5,8 @@
 """
 
 
-import logging
-log     = logging.getLogger( name=__name__ )
-debug = lambda *a, **b : print( "".join( str( arg ) for arg in a ) )
-info  = lambda *a, **b : print( "".join( str( arg ) for arg in a ) )
+from powertools import AutoLogger
+log = AutoLogger()
 
 ################################
 
@@ -16,8 +14,8 @@ from pathlib import Path
 from .config import Config
 from .env import Environment
 
-from ..util import out
-from ..util.out import rprint
+from powertools import term
+from powertools.print import rprint
 from pprint import pprint, pformat
 
 from ..util.meta import classproperty
@@ -47,14 +45,14 @@ class Handler:
         self.arguments  = arguments
         self.env        = env
 
-    def __run__( self, target: Path, arguments, env: Environment ):
+    def __run__( self, target: Path, arguments, env: Environment, *, ctx=None ):
         ''' this method is nominally static '''
         raise NotImplementedError()
 
-    def run( self ) :
+    def run( self, ctx ) :
         ''' implement the __run__ magic method on subclasses '''
         #todo: this should return a future
-        return self.__run__( self.target, self.arguments, self.env )
+        return self.__run__( self.target, self.arguments, self.env, ctx=ctx )
 
 
 #----------------------------------------------------------------------#
@@ -62,22 +60,29 @@ class Handler:
 class MashHandler( Handler ) :
     '''this allows using the python interpreter defined by the virtual environment'''
 
-    def __run__( self, target: Path, arguments, env: Environment ):
+    def __run__( self, target: Path, arguments, env: Environment, *, ctx=None ):
         '''read the file and do something with it'''
         raise NotImplementedError()
 
+
+def make_ClickHandler(func):
+    class ClickHandler( Handler ):
+        def __run__( self, command, arguments, env: Environment, *, ctx=None ) :
+            log.print(term.red(command, arguments))
+            ctx.invoke( func, *arguments )
+    return ClickHandler
 
 #----------------------------------------------------------------------#
 @export
 class SubprocessHandler( Handler ) :
     '''execute the target as-is'''
 
-    def __run__( self, command, arguments, env: Environment ) :
+    def __run__( self, command, arguments, env: Environment, *, ctx=None ) :
         env.run(command, *arguments)
 
 @export
 class Daemonizer( SubprocessHandler ):
-    def __run__( self, command, arguments:list, env: Environment ) :
+    def __run__( self, command, arguments:list, env: Environment, *, ctx=None ) :
         while True:
             print('subcommand', arguments)
             subcommand = Path( arguments[0] )
@@ -88,14 +93,14 @@ class Daemonizer( SubprocessHandler ):
 class ToolHandler( Handler ) :
     '''command is a tool invocation'''
 
-    def __run__( self, command, arguments, env: Environment ) :
+    def __run__( self, command, arguments, env: Environment, *, ctx=None ) :
         env.run( command, *arguments )
 
 @export
 class MouthHandler( Handler ) :
     '''print fortune'''
 
-    def __run__( self, command, arguments, env: Environment ) :
+    def __run__( self, command, arguments, env: Environment, *, ctx=None ) :
         env.run( command, *arguments )
 
 #----------------------------------------------------------------------#
@@ -104,7 +109,7 @@ class ScriptHandler( Handler ) :
     '''execute the script using its appropriate interpreter'''
     __interpreter__ = NotImplemented
 
-    def __run__( self, target: Path, arguments, env: Environment ) :
+    def __run__( self, target: Path, arguments, env: Environment, *, ctx=None ) :
         env.run( self.__interpreter__ + ' ' + str( target ), arguments )
 
 @export
@@ -124,8 +129,9 @@ class PythonHandler( ScriptHandler ) :
 
 #----------------------------------------------------------------------#
 
+from .. import pkg
 
-### last in first out; use the first handler whose key regex matches the filename
+### last in first term; use the first handler whose key regex matches the filename
 builtin_handlers            = OrderedDict()
 builtin_handlers['\.*']     = SubprocessHandler # default
 
@@ -133,6 +139,7 @@ builtin_handlers['\.*']     = SubprocessHandler # default
 builtin_handlers['begin']   = Daemonizer
 builtin_handlers['with']    = ToolHandler
 builtin_handlers['mouth']   = MouthHandler
+
 
 builtin_handlers['\.yml']   = MashHandler
 builtin_handlers['\.yaml']  = MashHandler

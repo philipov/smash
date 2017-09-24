@@ -88,7 +88,7 @@ def switch(
         case_win = NotImplemented,
         case_nix = NotImplemented,
         case_mac = NotImplemented,
-        *args, **kwargs ) -> object:
+        *args, **kwargs ):
     ''' switch between 3 options depending on the current platform
         return the value of `case_*`,
         first, attempt to execute it as a function of args and kwargs

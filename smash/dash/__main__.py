@@ -1,4 +1,4 @@
-#-- smash.test.__main__
+#-- smash.dash.__main__
 
 '''
 application entry point

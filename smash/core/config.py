@@ -96,17 +96,27 @@ class Config:
     """
 
     class ProtocolError(Exception):
-        '''Yaml file did not have the correct protocol'''
+        ''' Yaml file did not have the correct protocol'''
 
     class EmptyFileWarning(Exception):
-        '''May wish to ignore blank config files'''
+        ''' May wish to ignore blank config files'''
 
     class SubstitutionKeyNotFoundError(Exception):
-        '''expression token contained a key whose value could not be found during regex substitution'''
+        ''' expression token contained a key whose value could not be found during regex substitution'''
 
     class TokenExpressionError(Exception):
-        '''$ tokens are scalar substitutions, @ tokens are sequence extensions'''
+        ''' $ tokens are scalar substitutions, @ tokens are sequence extensions'''
 
+    class TokenRecursionError(Exception):
+        ''' RecursionError occured while performing token substitution'''
+
+    class InheritSelfError(Exception):
+        ''' config is its own parent '''
+    class InheritLoopError(Exception):
+        ''' config has a parent whose parent is config'''
+
+    class ParentNotFound(Exception):
+        ''' filepath in __inherit__ list could not be found'''
 
     ####################
     def __init__( self, tree=None ) :
@@ -130,7 +140,8 @@ class Config:
 
     ####################
     def load( self, target: Path ) :
-        self.filepath   = target
+
+        self.filepath   = target.resolve()
         self.path       = target.parents[0]
         self.filename   = target.name
 
@@ -157,6 +168,20 @@ class Config:
         # todo: straighten out this manual addition of self to the configtree
         if self.tree is not None :
             self.tree.nodes[self.filepath] = self
+
+        self.load_parents()
+
+    def load_parents(self):
+        for path in map( lambda p: Path(p).resolve(), self.__inherit__ ):
+            log.info( term.pink('load_parent: '), path)
+            if not path.exists():
+                raise Config.ParentNotFound(
+                    '\n'+term.dcyan('Config:')+ f' {str(self.filepath)}'
+                   +'\n'+term.dcyan('Parent:')+ f' {str(path)}'
+                   +''   # raise Config.ParentNotfound
+                )
+            if path not in self.tree.nodes:
+                self.tree.add_node(path)
 
 
     #----------------------------------------------------------------#
@@ -206,7 +231,12 @@ class Config:
             #todo: this means that ConfigSectionView needs refactoring
         except KeyError as e :
             # print("KeyError",  e, self)
-            parsed_paths = list( )
+            parsed_paths = list()
+        except TypeError as e:
+            parsed_paths = list()
+
+        if self.filepath in map(Path, parsed_paths): # prevent parental recursion loops
+            raise Config.InheritSelfError( str(self.filepath) )
 
         return parsed_paths
 
@@ -217,9 +247,21 @@ class Config:
         parent_paths    = self.__inherit__
         parents         = list( )
         for parent_path in parent_paths :
-            parent      = self.tree.nodes[Path( parent_path )]
+
+
+            parent      = self.tree.nodes[ Path(parent_path) ]
             parents.append( parent )
-            parents.extend( parent.parents )
+            parent_parents = parent.__inherit__
+
+            if str(self.filepath) in parent_parents:
+                raise Config.InheritLoopError(
+                      '\n' + term.dcyan( 'Config:' ) + f' {str(self.filepath)}'
+                    + '\n' + term.dcyan( 'Parent:' ) + f' {str(parent.filepath)}'
+                    + ''   # raise Config.ParentNotfound
+                )
+
+            parents.extend( map(lambda path: self.tree.nodes[Path( path )], parent_parents) )
+            # log.info(term.white('parents:', str(self.filename), parent_path ))
 
         return GreedyOrderedSet( chain( parents, [self.tree.root] ) )
 
@@ -428,6 +470,7 @@ class ConfigSectionView :
         # print(term.blue("-----------------------------"), 'begin __getitem__', self.config, term.white(key))
         return self._getitem(key, self.config.key_resolution_order)
 
+
     def _getitem( self, key, kro) :
 
         ### check cache
@@ -566,7 +609,12 @@ class ConfigSectionView :
         except TypeError as e: # todo: handle this TypeError inside expression_replacer
             print(term.red('SUBSTITUTE'), key, value, self)
             raise e
-        # log.debug( "After re.subn:  ", result, " | ", count, "|", expression_replacer.counter[0] )
+
+        except RecursionError as e:
+            raise RecursionError( self.config.filepath, self.section_keys, key, value) from None
+
+
+    # log.debug( "After re.subn:  ", result, " | ", count, "|", expression_replacer.counter[0] )
 
         total_count += expression_replacer.counter[0] + count# ToDo: Replace monkey patch with class
         # log.debug( "Subn Result: ", result, ' after ',total_count )
@@ -578,9 +626,9 @@ class ConfigSectionView :
     def expression_parser( self, key, kro=(), listeval=False ) :
         ''' factory that creates a replace function to be used by regex subn
             process ${configpath::section:key} token expressions:
-            -    key:        look up value in target node
-            -    sections:   [optional] key is in a sibling section
-            -    configpath: [optional] key is in a different file
+            -    key:        look up value in current section of current config
+            -    sections:   [optional] look for key in a different section
+            -    configpath: [optional] begin key lookup in a different node
 
             a token specifies a key that is to be looked up in a certain config node.
             If no section is specified, the same section the key is found in is searched.
@@ -595,14 +643,18 @@ class ConfigSectionView :
         def expression_replacer( matchobj ) :
 
             token = matchobj.group('token')
+
             target_configpath   = matchobj.group( 'configpath' ) \
                 if (matchobj.group( 'configpath' ) is not None) \
                 else self.config.filepath
+
             if target_configpath == 'ENV':
                 target_configpath = self.config.tree.env.filepath
+
             target_sections     = matchobj.group( 'sections' ).split( ':' ) \
                 if (matchobj.group( 'sections' ) is not None) \
                 else self.section_keys
+
             target_key          = matchobj.group( 'key' )
 
             self.parse_counter += 1
@@ -716,26 +768,35 @@ class ConfigTree :
     @classmethod
     def from_path( cls, target_path: Path ) :
         """ Find the root file for a target path, load it and its children. """
+
+        ### Find Root File
         try:
             root_file = stack_of_files( target_path, '__root__.yml' )[0]
             root_path = root_file.parents[0]
         except IndexError as e:
             raise FileNotFoundError("Could not find '__root__.yml' file in <" +str(target_path)+ ">, or inside any parent directory")
 
+        ### Find Env File
         try :
-            env_path = stack_of_files( target_path, '__env__.yml' )[0].parents[0]
+            env_file = stack_of_files( target_path, '__env__.yml' )[0]
+            env_path = env_file.parents[0]
         except IndexError as e :
-            print( 'Warning - __env__.yml file not found. Using root node...' )
+            log.info( 'Warning - __env__.yml file not found. Using root node...' )
+            env_file = None
             env_path = root_file.parents[0]
 
+        print("env_file", env_path)
         self = cls( root_file=root_file, env_path=env_path )
 
+        if env_file is not None:
+            self.add_node(env_file)
+
         # todo: instead of searching for files, load files referenced by root and env, recursively
-        with temporary_working_directory( root_path ) :
-            for file in find_yamls( root_path ) :
-                if file != self.root.filepath :
-                    # todo: skip files that throw an invalid config exception
-                    self.add_node( Path( file ) )
+        # with temporary_working_directory( root_path ) :
+        #     for file in find_yamls( root_path ) :
+        #         if file != self.root.filepath :
+        #             # todo: skip files that throw an invalid config exception
+        #             self.add_node( Path( file ) )
 
         self.finalize( )
         return self
@@ -758,13 +819,16 @@ class ConfigTree :
 
     def add_node( self, target_file ) :
         try:
+            assert target_file not in self.nodes
             node = Config.from_yaml( target_file, tree=self )
             self.nodes[node.filepath] = node
             return node
         except Config.EmptyFileWarning as e:
-            log.debug('Config.EmptyFileWarning:', e)
+            log.debug( 'Config.EmptyFileWarning:', e )
         except Config.ProtocolError as e:
-            log.debug('Config.ProtocolError:', e)
+            log.debug( 'Config.ProtocolError:', e )
+        except AssertionError as e:
+            log.info( f'Node already exists {str(target_file)}' )
 
     __add_root = add_root
     __add_node = add_node
@@ -782,8 +846,8 @@ class ConfigTree :
     ####################
     def __getitem__( self, filepath=None ) :
         ''' return the config node at a given filepath
-            if no filepath is given, returns the root node
-            if only a path is given, tries to guess the filename
+            if no filepath is given, return the root node
+            if only a path is given, try to guess the filename
         '''
         if filepath is None :
             return self.root
@@ -792,7 +856,7 @@ class ConfigTree :
             return self.nodes[Path( filepath )]
 
         with suppress( KeyError ) :
-            return self.nodes[Path( filepath ) / '3.yml']
+            return self.nodes[Path( filepath ) / '__env__.yml']
 
         with suppress( KeyError ) :
             return self.nodes[Path( filepath ) / '__pkg__.yml']

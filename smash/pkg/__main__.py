@@ -6,136 +6,71 @@ application entry point
 
 from powertools import export
 from powertools import AutoLogger
-log = AutoLogger()
 
+log = AutoLogger()
+from powertools import term
 
 import os
 import sys
 import traceback
 import argparse
+import click
 
 from pathlib import Path
 from collections import namedtuple
+from collections import deque
 
 from ..core.env import ContextEnvironment
-
-#----------------------------------------------------------------------#
-
-_argnames = list( )
-_parser = argparse.ArgumentParser(
-    description="Smart Shell"
-)
-
-def _add_argument( name, options=(), **kwargs ) :
-    _parser.add_argument( *options, dest=name, **kwargs )
-    _argnames.append( name )
-
-#################### main
-_add_argument( 'mode',
-               type=str,
-               help='execution mode',
-               )
-
-_add_argument( 'target',
-               type=str,
-               nargs=argparse.REMAINDER,
-               help='what is to be executed',
-               )
-
-#################### flags
-
-_add_argument( 'verbose',
-               options=('-v', '--verbose'),
-               action='store_true',
-               help='print extra information'
-               )
-
-####################
-Arguments = namedtuple( 'Arguments', _argnames )
-
-
-####################
-@export
-def parse( argv: list = None ) -> Arguments :
-    args = _parser.parse_args( argv )
-    return Arguments( **args.__dict__ )
-
-
-#----------------------------------------------------------------------#
-
-class Main:
-
-    @staticmethod
-    def do_test( *target, context: ContextEnvironment, verbose=False ) :
-        log.info( "Run tests for a target package" )
-
-    @staticmethod
-    def do_build( *target, context: ContextEnvironment, verbose=False ) :
-        log.info( "Build executable distribution archive" )
-
-
-    @staticmethod
-    def __default__( *target, context: ContextEnvironment, verbose=False ) :
-        log.info( "Unknown Command", )
-
+from ..core.env import InstanceEnvironment
+from ..core.env import VirtualEnvironment
 
 #----------------------------------------------------------------------#
 
 
-def main( args: Arguments ) :
-    # ToDo: initialize logging: stdout/stderr redirect
-    # ToDo: handle dev mode
-    # ToDo: manage env list
-    # ToDo: manage package list
 
-    log.print( '~~~~~~~~~~~~~~~~~~~~ SMASH-BOOT')
+##############################
+@click.group()
+@click.option( '--verbose', '-v', default=False, is_flag=True )
+@click.option( '--simulation', '-S', default=False, is_flag=True )
+@click.pass_context
+def console( ctx, verbose, simulation ) :
+    ''' basic utilities for managing smash instances on a host '''
+
+    term.init_color()
+
+    log.print( term.cyan( '\n~~~~~~~~~~~~~~~~~~~~ ' ), term.pink( 'SMASH' ), term.cyan( '.' ), term.pink( 'PKG' ) )
     log.print( 'SCRIPT:  ', __file__ )
-    log.print( 'MODE:    ', args.mode )
-    log.print( 'TARGET:  ', args.target )
-
     cwd = Path( os.getcwd() )
-    log.print( 'IWD:     ', cwd )
-    log.print( '' )
+    log.print( 'WORKDIR: ', cwd )
 
-    if args.verbose:
-        from ..core.plugins import report_plugins
-        report_plugins()
-
-    with ContextEnvironment(cwd) as context:
-        do_func = getattr( Main
-                         , 'do_'+args.mode
-                         , Main.__default__
-                         )
-
-        result  = do_func( *args.target
-                         , context=context
-                         , verbose=args.verbose
-                         )
-    log.print( '' )
-    log.print( 'SMASH DONE...' )
-    return result
-
-
+    ### precreate context environment
+    from ..core.env import ContextEnvironment
+    context_env = ContextEnvironment( cwd )
+    ctx.obj = namedtuple( 'Arguments', ['context', 'verbose', 'simulation'] )(
+        context_env, verbose, simulation )
 
 
 ##############################
-def console( args=None ) :
-    '''bind main to command-line argmuntes; print exceptions'''
+@console.command()
+@click.argument( 'package_path' )
+@click.pass_context
+def install( ctx, package_path) :
+    ''' install a package '''
 
-    try :
-        if args is None :
-            args = sys.argv[1 :]
-        return main( parse(args) )
+    args = ctx.obj
+    ### wild lands of unmanaged state
+    with args.context as context :
+        ### the wall that guards the lands of version control
+        with InstanceEnvironment( parent=context ) as instance :
+            ### virtual environments may use a different python version from instance
+            with VirtualEnvironment( instance ) as interior :
 
-    except Exception as err :
-        traceback.print_tb( err.__traceback__ )
-        log.print( sys.exc_info( )[0].__name__ + ':', err )
-        input( '\nPress ENTER to continue...' )
+                ...
 
 
-##############################
-if __name__ == '__main__' :
-    console( )
-
+    log.print( '\n', term.pink( '~~~~~~~~~~~~~~~~~~~~' ), term.cyan( ' DONE ' ), '...' )
 
 #----------------------------------------------------------------------#
+
+if __name__ == '__main__' :
+    console()

@@ -32,7 +32,8 @@ from .core.env import VirtualEnvironment
 @click.command()
 @click.option('--verbose', '-v', default=False, is_flag=True)
 @click.argument('command', nargs=-1)
-def console( command, verbose ) :
+@click.pass_context
+def console( ctx, command, verbose ) :
     """Run target file using associated command inside an environent"""
     # ToDo: initialize logging: stdout/stderr redirect
     # ToDo: handle dev mode
@@ -75,9 +76,9 @@ def console( command, verbose ) :
                 ### virtual environments may use a different python version from instance
                 with VirtualEnvironment( instance ) as interior :
                     for pattern, Handler in reversed( handlers.items( ) ):
-                        print('match attempt', pattern, Handler, filepath.name)
+                        log.debug('match attempt', pattern, Handler, filepath.name)
                         if re.match( pattern, filepath.name ) :
-                            result = Handler( filepath, list(arguments), interior ).run( )
+                            result = Handler( filepath, list(arguments), interior ).run( ctx )
                             break
                     else :
                         raise NoHandlerMatchedError( filepath, handlers )
@@ -86,6 +87,11 @@ def console( command, verbose ) :
 
 
     log.print( '\n', term.pink( '~~~~~~~~~~~~~~~~~~~~' ), term.cyan(' DONE...') )
+
+    ### precreate context environment
+    context_env = context
+    ctx.obj = namedtuple( 'Arguments', ['context', 'verbose', ] )(
+        context_env, verbose )
 
 
 #----------------------------------------------------------------------#

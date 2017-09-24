@@ -3,4 +3,4 @@
 ''' nothing here
 '''
 
-from .__main__ import main, console
+from .__main__ import console

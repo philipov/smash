@@ -138,6 +138,8 @@ class SmashTemplate( InstanceTemplate ) :
         host_config = platform.switch(self.win_host_config, self.nix_host_config, self.mac_host_config)
         self.install_package( config, host_config, 'HOST' )
 
+        self.install_package( config, templates.NET, 'NET' )
+
 
     def install_package(self, config:Config, template_path, pkg_name):
         src = str( template_path / templates.PKG_YAMLISP )
