@@ -88,35 +88,35 @@ class GreedyOrderedSet(OrderedSet):
 
 @export
 class Config:
-    """ A single configuration structure expressed as arbitarily nested dictionaries and lists
+    ''' A single configuration structure expressed as arbitarily nested dictionaries and lists
         config[section][key]
         sections may be nested within sections arbitrarily deep
         config[section1][section2][key]
         the interpretation of the keys is delegated to the ConfigSectionView
-    """
+    '''
 
     class ProtocolError(Exception):
-        ''' Yaml file did not have the correct protocol'''
+        ''' Yaml file did not have the correct protocol '''
 
     class EmptyFileWarning(Exception):
-        ''' May wish to ignore blank config files'''
+        ''' May wish to ignore blank config files '''
 
     class SubstitutionKeyNotFoundError(Exception):
-        ''' expression token contained a key whose value could not be found during regex substitution'''
+        ''' expression token contained a key whose value could not be found during regex substitution '''
 
     class TokenExpressionError(Exception):
-        ''' $ tokens are scalar substitutions, @ tokens are sequence extensions'''
+        ''' $ tokens are scalar substitutions, @ tokens are sequence extensions '''
 
     class TokenRecursionError(Exception):
-        ''' RecursionError occured while performing token substitution'''
+        ''' RecursionError occured while performing token substitution '''
 
     class InheritSelfError(Exception):
         ''' config is its own parent '''
     class InheritLoopError(Exception):
-        ''' config has a parent whose parent is config'''
+        ''' config has a parent whose parent is config '''
 
     class ParentNotFound(Exception):
-        ''' filepath in __inherit__ list could not be found'''
+        ''' filepath in __inherit__ list could not be found '''
 
     ####################
     def __init__( self, tree=None ) :
@@ -798,7 +798,7 @@ class ConfigTree :
         #             # todo: skip files that throw an invalid config exception
         #             self.add_node( Path( file ) )
 
-        self.finalize( )
+        self.finalize()
         return self
 
 
