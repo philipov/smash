@@ -38,8 +38,9 @@ remote:
   GIT:            github.com
 
 shell:
-  PATH:           [ '${path:ROOT}' ]
+  PATH:           ['${path:ROOT}', '${SYSTEMROOT}', '${WIN_BIN}']
   SYSTEMROOT:     C:\Windows
+  WIN_BIN:        ${SYSTEMROOT}/System32
 
 
 ##########################################################

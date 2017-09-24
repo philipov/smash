@@ -36,6 +36,7 @@ from ..util.path import stack_of_files
 from ..util.path import temporary_working_directory
 from ..util.path import try_resolve
 from ..util.path import find_yamls
+from . import platform
 
 from powertools import term
 from powertools.print import listprint, dictprint, rprint, pprint, pformat, add_pprint
@@ -46,8 +47,7 @@ from powertools import export
 
 #----------------------------------------------------------------------#
 
-KEY_RESOLUTION_ORDER    = None
-CURRENT_NODE            = None
+# todo: move this general stuff to powertools
 
 ####################
 def getdeepitem( data, keys, kro=() ) :
@@ -80,6 +80,14 @@ class GreedyOrderedSet(OrderedSet):
         return self.map[key]
 
     append = add
+
+def name( obj ) -> str :
+    ''' easier access to object name '''
+    return str( obj.__name__ )
+
+def qualname( obj: object ) -> str :
+    ''' module and qualified object name '''
+    return f'{obj.__module__}.{obj.__qualname__}'
 
 
 #----------------------------------------------------------------------#
@@ -161,7 +169,7 @@ class Config:
         except AssertionError as e:
             raise Config.ProtocolError('Protocol version mismatch')
 
-        log.print( '*' * 20 , ' Config.load = ', term.yellow(self.filepath) )
+        log.dinfo( ' Config.load = ', term.yellow(self.filepath) )
 
         #print( 'parents:', self.__inherit__ )
 
@@ -170,10 +178,12 @@ class Config:
             self.tree.nodes[self.filepath] = self
 
         self.load_parents()
+        log.info(term.yellow('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~done: '), self.filepath,'\n')
 
     def load_parents(self):
+        log.dinfo( 'load_parents ',term.dyellow(self.filepath), ' ', self.__inherit__)
         for path in map( lambda p: Path(p).resolve(), self.__inherit__ ):
-            log.info( term.pink('load_parent: '), path)
+            log.dinfo( term.pink('inherit_path: '), path)
             if not path.exists():
                 raise Config.ParentNotFound(
                     '\n'+term.dcyan('Config:')+ f' {str(self.filepath)}'
@@ -181,7 +191,9 @@ class Config:
                    +''   # raise Config.ParentNotfound
                 )
             if path not in self.tree.nodes:
+
                 self.tree.add_node(path)
+                self.tree.nodes[path].load_parents()
 
 
     #----------------------------------------------------------------#
@@ -219,26 +231,52 @@ class Config:
         return True
 
 
+
+
     ####################
     @property
     def __inherit__( self ) -> list :
-        ''' this node's immediate parents, a list of keys (paths) to find them in the configtree'''
+        ''' compute this node's immediate parents from the config's __inherit__ list
+            a value in the list may either be a string or a dictionary
+            if it is a string, it refers to the path of a prante config file
+            if dictionary, the keys must be Platform names,
+                and the values are parent config file paths
+        '''
+        # todo: ConfigSectionView needs refactoring
 
+        ### try to get the raw __inherit__ list
         try :
             parent_paths = self._yaml_data['__inherit__']
-            # print( 'PARSED~~~~~', parent_paths )
-            parsed_paths = ConfigSectionView( self.tree.root ).evaluate_list( '__inherit__', parent_paths, (self.tree.root,) )
-            #todo: this means that ConfigSectionView needs refactoring
+            # log.info( term.blue( 'parent paths: ' ), parent_paths )
         except KeyError as e :
-            # print("KeyError",  e, self)
-            parsed_paths = list()
+            parent_paths = list()
         except TypeError as e:
-            parsed_paths = list()
+            parent_paths = list()
 
-        if self.filepath in map(Path, parsed_paths): # prevent parental recursion loops
+        ### get the platform-specific import strings from dictionary values
+        platform_paths = list()
+        for path in parent_paths:
+            try:
+                platform_paths.append(
+                    platform.choose( path )
+                    if isinstance( path, dict )
+                    else path
+                )
+            except platform.MissingKeyError as e:
+                log.info( term.red('Warning: '), f'{qualname(type(e))}( {e} )' )
+
+        # log.info( term.blue( 'platform paths: ' ), platform_paths )
+
+        ### evaluate tokens in resulting strings
+        parsed_paths = ConfigSectionView( self.tree.root ).evaluate_list( '__inherit__', platform_paths, (self.tree.root,) )
+
+        ### A node may not inherit itself
+        if self.filepath in map(Path, parsed_paths):
             raise Config.InheritSelfError( str(self.filepath) )
 
+        ###
         return parsed_paths
+
 
     @property
     def parents( self ) :
@@ -253,6 +291,7 @@ class Config:
             parents.append( parent )
             parent_parents = parent.__inherit__
 
+            ### Node A may not inherit Node B, if Node B inherits Node A
             if str(self.filepath) in parent_parents:
                 raise Config.InheritLoopError(
                       '\n' + term.dcyan( 'Config:' ) + f' {str(self.filepath)}'

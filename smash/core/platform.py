@@ -3,6 +3,9 @@
 """
 """
 
+from powertools import AutoLogger
+log = AutoLogger()
+
 import sys
 from powertools import classproperty
 from powertools import export
@@ -67,7 +70,7 @@ class PlatformError(Exception):
     '''unsupported or unknown platform'''
 
 @export
-def match() -> Platform:
+def match():
     if Win32.match:
         return Win32
     elif Linux.match:
@@ -103,5 +106,22 @@ def switch(
         assert case is not NotImplemented
 
     return trycall( case, args, kwargs )
+
+
+class MissingKeyError(Exception):
+    ''' dictionary did not contain a key for the requested platform '''
+
+def choose(pdict):
+    ''' choose a value out of a dict keyed by str(Platform())
+        __inherit__:
+          - Win32: ${HOME}/__win__.yml
+          - Linux: ${HOME}/__nix__.yml
+          - Linux: ${HOME}/__nix__.yml
+    '''
+    try:
+        key = str( match()() )
+        return pdict[key]
+    except KeyError as e:
+        raise MissingKeyError(key)
 
 #----------------------------------------------------------------------#

@@ -56,7 +56,7 @@ class InstanceTemplate :
 
 @export
 class SmashTemplate( InstanceTemplate ) :
-    ''' a default template for smash instance '''
+    ''' procedure for creating a new instance directory '''
 
     __slots__ = ()
     def __init__( self, homepath: Path, **kwargs ) :
@@ -86,7 +86,6 @@ class SmashTemplate( InstanceTemplate ) :
         with Miniconda(self.instance, config) as mc:
             mc.download()
             mc.install()
-
 
         print(mc)
 
@@ -125,10 +124,6 @@ class SmashTemplate( InstanceTemplate ) :
                 log.info( term.pink( 'MKDIR: ' ), f"{str(path):<16}" )
                 absolute_path = self.instance.mkdir( path )
 
-
-    win_host_config = templates.WIN_HOST
-    nix_host_config = templates.NIX_HOST
-    mac_host_config = NotImplemented
 
     ################################
     def install_default_packages( self, config:Config ):
