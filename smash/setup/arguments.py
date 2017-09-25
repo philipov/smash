@@ -59,6 +59,7 @@ kwargs = dict(
             'smash.boot = smash.boot:console',
             'smash.env  = smash.env:console',
             'smash.pkg  = smash.pkg:console',
+            'smash.git  = smash.git:console',
             'smash.test = smash.test:console',
         ],
     },
