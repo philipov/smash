@@ -6,19 +6,18 @@ modular reproducible research environment manager
 ### Table of Contents:
 
 - Motivation and Objectives
-- Components
-
+- [Components](#components)
 - [Ideology](docs/manifesto.md)
     - Reproducible Research
     - Modularity
     - Test-driven
     - A Command-Line IDE
     - Scripting in python
-    - [Packaging Methodology](docs/manifesto.md#Packaging Methodology)
+    - [Packaging Methodology](docs/manifesto.md#packaging-methodology)
 - [Tutorials](docs/howto.md)
-    - [Installation](docs/howto.md#Installation)
-    - [Getting Started](docs/howto.md#Getting Started)
-    - [Modular Configuration System](docs/howto.md#Modular Configuration System)
+    - [Installation](docs/howto.md#installation)
+    - [Getting Started](docs/howto.md#getting-started)
+    - [Modular Configuration System](docs/howto.md#modular-configuration-system)
 - [API Reference](docs/api.md)
     - nope
 
