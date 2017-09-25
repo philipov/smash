@@ -1,4 +1,4 @@
-#-- smash.\_\_init__
+# smash.\_\_init__
 
 - [`smash.console`]()
 

@@ -1,4 +1,4 @@
-#-- smash.pkg
+# smash.pkg
 
 - [`smash.boot.console`](#console)
 

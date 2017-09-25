@@ -1,4 +1,4 @@
-#-- smash.test
+# smash.test
 
 - [`smash.boot.console`](#console)
 

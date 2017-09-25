@@ -1,4 +1,4 @@
-#-- smash.__init__
+# smash submodules
 
 - [`smash`](api-core.md)
     - [`smash.boot`](api-boot.md)

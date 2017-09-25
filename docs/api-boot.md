@@ -1,4 +1,4 @@
-#-- smash.boot.__init__
+# smash.boot
 
 - [`smash.boot.console`](#console)
 

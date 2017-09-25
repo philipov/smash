@@ -1,4 +1,4 @@
-#-- smash.env
+# smash.env
 
 - [`smash.boot.console`](#console)
 
