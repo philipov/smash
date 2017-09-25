@@ -2,11 +2,9 @@
 
 - [`smash.console`](#console)
 
-- [`smash.ConfigTree`](#smashconfigtree)
-- [`smash.Config`](#smashconfig)
-    - [`smash.ConfigSectionView`](#smashconfigsectionview)
 
-
+---
+- [`smash.config`](#smashconfigtree)
 - [`smash.core.platform`](#smashcoreplatform)
 - [`smash.core.plugins`](#smashcoreplugins)
 - [`smash.core.env`](#smashcoreenv)
@@ -18,6 +16,7 @@
 - [`smash.core.user`](#smashcoreuser)
 
 
+---
 - `smash.util`
 - `smash.tool`
     - `.master`
@@ -26,18 +25,12 @@
 - `smash.setup`
 - `smash.templates`
 
-
 ---
-
 ### console
 
-### smash.ConfigTree
-
-### smash.Config
-
-### smash.ConfigSectionView
 
 ---
+### smash.core.config
 
 ### smash.core.platform
 
@@ -56,5 +49,6 @@
 ### smash.core.handler
 
 ### smash.core.user
+
 
 ---
