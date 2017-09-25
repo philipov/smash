@@ -12,9 +12,7 @@ from .__main__ import console
 from .core.config import Config
 from .core.config import ConfigSectionView
 from .core.config import ConfigTree
-
 from .core.config import getdeepitem
-from .core.config import GreedyOrderedSet
 
 from .core.env import *
 from .core.instance import *

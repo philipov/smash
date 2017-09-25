@@ -49,8 +49,6 @@ from powertools import export
 
 #----------------------------------------------------------------------#
 
-# todo: move this general stuff to powertools
-
 ####################
 def getdeepitem( data, keys, kro=() ) :
     ''' convert nested index access to a list of keys
