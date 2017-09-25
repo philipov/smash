@@ -40,6 +40,8 @@ from . import platform
 
 from powertools import term
 from powertools.print import listprint, dictprint, rprint, pprint, pformat, add_pprint
+from powertools import GreedyOrderedSet
+from powertools import qualname
 
 from smash.core.constants import CONFIG_PROTOCOL
 
@@ -59,34 +61,6 @@ def getdeepitem( data, keys, kro=() ) :
               else d.setdefault( key, OrderedDict( ) )          if not isinstance(d, list)
               else d[key],
                    keys, data )
-
-
-####################
-class GreedyOrderedSet(OrderedSet):
-    '''OrderedSet that keeps the last value added to it instead of the first.'''
-
-    def add( self, key ) :
-        """ Add `key` as an item to this OrderedSet, then return its index.
-            If `key` is already in the OrderedSet, delete it and add it again.
-        """
-
-        if key not in self.map :
-            self.map[key] = len( self.items )
-            self.items.append( key )
-        else:
-            self.discard(key)
-            self.add(key)
-        return self.map[key]
-
-    append = add
-
-def name( obj ) -> str :
-    ''' easier access to object name '''
-    return str( obj.__name__ )
-
-def qualname( obj: object ) -> str :
-    ''' module and qualified object name '''
-    return f'{obj.__module__}.{obj.__qualname__}'
 
 
 #----------------------------------------------------------------------#

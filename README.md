@@ -5,7 +5,7 @@ modular reproducible research environment manager
 
 ### Table of Contents:
 
-- Motivation and Objectives
+- [Motivation and Objectives](#motivation-and-objectives)
 - [Components](#components)
 - [Ideology](docs/manifesto.md)
     - Reproducible Research
@@ -24,6 +24,10 @@ modular reproducible research environment manager
 
 --------------------------------------------------------------------------
 ### Motivation and Objectives
+
+- conda has environment.yml, but also requires a shell script to set environment varibalse. What's up with that?
+
+- pip virtual 
 
 ---
 ### Components:
