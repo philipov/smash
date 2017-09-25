@@ -36,6 +36,9 @@ kwargs = dict(
 
         'smash.core',       # fundamental abstractions
         'smash.tool',       # extensive subapplications
+        'smash.util',       # low-level utilities
+        'smash.setup',      # arguments for setup.py
+        'smash.templates'   # library of default files
 
         'smash.boot',       # instance manager
         'smash.pkg',        # package manager
@@ -43,9 +46,6 @@ kwargs = dict(
         'smash.test',       # testing manager
         'smash.dash',       # graphical user interface
 
-        'smash.util',       # low-level utilities
-        'smash.setup',      # arguments for setup.py
-        'smash.templates'   # library of default files
     ],
 
     zip_safe                = True,
