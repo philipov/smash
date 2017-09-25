@@ -21,6 +21,7 @@ from pprint import pprint, pformat
 from ..util.meta import classproperty
 
 from collections import OrderedDict
+from contextlib import suppress
 
 from powertools import export
 
@@ -30,7 +31,10 @@ from powertools import export
 class NoHandlerMatchedError(Exception):
     '''no handler picked up the file as a target it could provide the command string for'''
 
-#----------------------------------------------------------------------#
+@export
+class MissingTargetFileError( Exception ) :
+    ''' tried to run a file that doesn't exist '''
+
 
 @export
 class Handler:
@@ -56,38 +60,53 @@ class Handler:
 
 
 #----------------------------------------------------------------------#
-@export
-class MashHandler( Handler ) :
-    '''this allows using the python interpreter defined by the virtual environment'''
 
-    def __run__( self, target: Path, arguments, env: Environment, *, ctx=None ):
-        '''read the file and do something with it'''
-        raise NotImplementedError()
-
-
-def make_ClickHandler(func):
-    class ClickHandler( Handler ):
-        def __run__( self, command, arguments, env: Environment, *, ctx=None ) :
-            log.print(term.red(command, arguments))
-            ctx.invoke( func, *arguments )
-    return ClickHandler
-
-#----------------------------------------------------------------------#
 @export
 class SubprocessHandler( Handler ) :
     '''execute the target as-is'''
 
     def __run__( self, command, arguments, env: Environment, *, ctx=None ) :
-        env.run(command, *arguments)
+        proc = env.run(command, *arguments)
+        return next(proc) # wait for termination
+
+
+#----------------------------------------------------------------------#
+
+@export
+class YamlispHandler( Handler ) :
+    '''this allows using the python interpreter defined by the virtual environment'''
+
+    def __run__( self, target: Path, arguments, env: Environment, *, ctx=None ) :
+        '''read the file and do something with it'''
+
+        if not Path( target ).exists() :
+            raise MissingTargetFileError( target )
+
+        with suppress( IndexError ) :
+            subcommand = arguments[0]
+        with suppress( IndexError ) :
+            subarguments = arguments[1 :]
+
+        env.config.tree.new_env( target )
+        log.print()
+
+
+#----------------------------------------------------------------------#
 
 @export
 class Daemonizer( SubprocessHandler ):
+    RESTART_DELAY = 5
     def __run__( self, command, arguments:list, env: Environment, *, ctx=None ) :
+        import time
         while True:
-            print('subcommand', arguments)
             subcommand = Path( arguments[0] )
-            subarguments = arguments[1:2]
-            task = super().__run__( subcommand, subarguments, env )
+            subarguments = arguments[1:]
+            log.info(term.dpink('subcommand:'), f' {subcommand} {str(*subarguments)}')
+            proc = super().__run__( subcommand, subarguments, env, ctx=ctx )
+            time.sleep(self.RESTART_DELAY)
+
+
+#----------------------------------------------------------------------#
 
 @export
 class ToolHandler( Handler ) :
@@ -103,7 +122,9 @@ class MouthHandler( Handler ) :
     def __run__( self, command, arguments, env: Environment, *, ctx=None ) :
         env.run( command, *arguments )
 
+
 #----------------------------------------------------------------------#
+
 @export
 class ScriptHandler( Handler ) :
     '''execute the script using its appropriate interpreter'''
@@ -129,25 +150,23 @@ class PythonHandler( ScriptHandler ) :
 
 #----------------------------------------------------------------------#
 
-from .. import pkg
 
-### last in first term; use the first handler whose key regex matches the filename
+### last in first out; use the last handler whose key regex matches the filename
 builtin_handlers            = OrderedDict()
-builtin_handlers['\.*']     = SubprocessHandler # default
+builtin_handlers['.*']          = SubprocessHandler # default
 
 #todo: can these subcommands be integrated with click?
-builtin_handlers['begin']   = Daemonizer
-builtin_handlers['with']    = ToolHandler
-builtin_handlers['mouth']   = MouthHandler
+builtin_handlers['begin']       = Daemonizer
+builtin_handlers['with']        = ToolHandler
+builtin_handlers['mouth']       = MouthHandler
 
 
-builtin_handlers['\.yml']   = MashHandler
-builtin_handlers['\.yaml']  = MashHandler
-builtin_handlers['\.msh']   = MashHandler
+builtin_handlers['.*\.yml']    = YamlispHandler
+builtin_handlers['.*\.yaml']   = YamlispHandler
 
-builtin_handlers['\.sh']    = BashHandler
-builtin_handlers['\.bat']   = BatchHandler
-builtin_handlers['\.py']    = PythonHandler
+builtin_handlers['.*\.sh']     = BashHandler
+builtin_handlers['.*\.bat']    = BatchHandler
+builtin_handlers['.*\.py']     = PythonHandler
 
 
 #----------------------------------------------------------------------#

@@ -93,7 +93,7 @@ class Environment:
         raise NotImplementedError()
 
     ####################
-    def run( self, *command ) :
+    def run( self, *command ) -> Subprocess:
         ''' execute a command within the environment '''
 
         ### environment variables

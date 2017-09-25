@@ -56,6 +56,7 @@ def console( ctx, command, verbose ) :
 
     result      = None
     arguments   = deque( command )
+    context     = None
     try:
         filepath    = Path( arguments.popleft( ) )
     except IndexError as e:
@@ -76,8 +77,8 @@ def console( ctx, command, verbose ) :
                 ### virtual environments may use a different python version from instance
                 with VirtualEnvironment( instance ) as interior :
                     for pattern, Handler in reversed( handlers.items( ) ):
-                        log.debug('match attempt', pattern, Handler, filepath.name)
-                        if re.match( pattern, filepath.name ) :
+                        log.debug(term.dpink('match attempt'), f' {pattern:<16} {str(Handler):<50} {filepath.name}')
+                        if re.match( pattern, str(filepath.name) ) :
                             result = Handler( filepath, list(arguments), interior ).run( ctx )
                             break
                     else :

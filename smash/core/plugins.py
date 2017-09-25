@@ -12,7 +12,7 @@ import pkg_resources
 from copy import copy
 from contextlib import suppress
 
-from ..util import out
+from powertools import term
 from powertools.print import rprint
 
 #----------------------------------------------------------------------#
@@ -89,31 +89,31 @@ handlers            = _select_class( Handler,           builtin_handlers )
 
 @export
 def report_plugins():
-    print(  out.green('~~~~~~~~~~~'), out.pink(__name__ ))
+    print(  term.dcyan('~~~~~~~~~~~'), term.pink(__name__ ))
     rprint( plugin_modules )
 
-    print( out.green( '~~~~~~~~~~~' ) + out.pink(' environment types:' ))
+    print( term.dcyan( '~~~~~~~~~~~' ) + term.pink(' environment types:' ))
     rprint( environment_types )
 
-    print( out.green( '~~~~~~~~~~~' ) + out.pink(' instance templates:' ) )
+    print( term.dcyan( '~~~~~~~~~~~' ) + term.pink(' instance templates:' ) )
     rprint( instance_templates )
 
-    print( out.green( '~~~~~~~~~~~' ) + out.pink(' package types:' ) )
+    print( term.dcyan( '~~~~~~~~~~~' ) + term.pink(' package types:' ) )
     rprint( package_types )
 
-    print( out.green( '~~~~~~~~~~~' ) + out.pink(' packages:' ))
+    print( term.dcyan( '~~~~~~~~~~~' ) + term.pink(' packages:' ))
     rprint( packages )
 
-    print( out.green( '~~~~~~~~~~~' ) + out.pink(' tools:' ))
+    print( term.dcyan( '~~~~~~~~~~~' ) + term.pink(' tools:' ))
     rprint( tools )
 
-    print( out.green( '~~~~~~~~~~~' ) + out.pink(' exporters:' ) )
+    print( term.dcyan( '~~~~~~~~~~~' ) + term.pink(' exporters:' ) )
     rprint( exporters )
 
-    print( out.green( '~~~~~~~~~~~' ) + out.pink(' handlers:' ))
+    print( term.dcyan( '~~~~~~~~~~~' ) + term.pink(' handlers:' ))
     rprint( handlers )
 
-    print( out.green( '~~~~~~~~~~~\n' ) )
+    print( term.dcyan( '~~~~~~~~~~~\n' ) )
 
 #----------------------------------------------------------------------#
 
@@ -128,7 +128,7 @@ def plugin_decorator_template(cls, collection):
     return plugin_decorator_factory
 
 environment_type    = plugin_decorator_template( Environment,       environment_types )
-template            = plugin_decorator_template( InstanceTemplate, instance_templates )
+template            = plugin_decorator_template( InstanceTemplate,  instance_templates )
 packages_type       = plugin_decorator_template( PackageType,       package_types )
 
 package             = plugin_decorator_template( Package,           packages )

@@ -22,7 +22,7 @@ def test__Handler( conftree ) :
 
 #----------------------------------------------------------------------#
 def test__MashHandler( conftree ) :
-    from smash.core.handler import MashHandler
+    from smash.core.handler import YamlispHandler
 
     # assert False
 

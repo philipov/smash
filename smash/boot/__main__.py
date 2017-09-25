@@ -73,25 +73,25 @@ def create( ctx, instance_name:str, template_name:str ) :
 ##############################
 @console.command()
 def build() :
-    '''build executable distribution archive'''
+    ''' build executable distribution archive '''
 
 
 ##############################
 @console.command()
 def test() :
-    '''run deployment tests on an instance or an archive'''
+    ''' run deployment tests on an instance or an archive '''
 
 
 ##############################
 @console.command()
 def push() :
-    '''upload archive to deployment registry'''
+    ''' upload archive to deployment registry '''
 
 
 ##############################
 @console.command()
 def clone() :
-    '''pull an instance archive from the deployment registry and extract it to a new directory'''
+    ''' pull an instance archive from the deployment registry and extract it to a new directory '''
 
 
 ##############################

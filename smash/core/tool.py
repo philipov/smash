@@ -181,7 +181,12 @@ class Validator( Task ) :
     ''' a task that checks whether a previous task succeeded and records the result '''
 
 
+class Lateralizer( Task ):
+    ''' Spiral out. Keep going... '''
+
+
 ################################
+
 @export
 class Daemon( Tool ) :
     ''' until killed: start a subprocess, block until it terminates, then repeat '''

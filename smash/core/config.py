@@ -61,7 +61,6 @@ def getdeepitem( data, keys, kro=() ) :
                    keys, data )
 
 
-
 ####################
 class GreedyOrderedSet(OrderedSet):
     '''OrderedSet that keeps the last value added to it instead of the first.'''
@@ -120,11 +119,13 @@ class Config:
 
     class InheritSelfError(Exception):
         ''' config is its own parent '''
+
     class InheritLoopError(Exception):
         ''' config has a parent whose parent is config '''
 
     class ParentNotFound(Exception):
         ''' filepath in __inherit__ list could not be found '''
+
 
     ####################
     def __init__( self, tree=None ) :
@@ -137,6 +138,7 @@ class Config:
         self._final_cache   = OrderedDict( )
 
         self.tree       = tree
+
 
     ####################
     @classmethod
@@ -169,7 +171,7 @@ class Config:
         except AssertionError as e:
             raise Config.ProtocolError('Protocol version mismatch')
 
-        log.dinfo( ' Config.load = ', term.yellow(self.filepath) )
+        log.dinfo( 'Config.load = ', term.yellow(self.filepath) )
 
         #print( 'parents:', self.__inherit__ )
 
@@ -178,12 +180,12 @@ class Config:
             self.tree.nodes[self.filepath] = self
 
         self.load_parents()
-        log.info(term.yellow('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~done: '), self.filepath,'\n')
+        log.debug(term.yellow('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~done: '), self.filepath,'\n')
 
     def load_parents(self):
-        log.dinfo( 'load_parents ',term.dyellow(self.filepath), ' ', self.__inherit__)
+        log.debug( 'load_parents ',term.dyellow(self.filepath), ' ', self.__inherit__)
         for path in map( lambda p: Path(p).resolve(), self.__inherit__ ):
-            log.dinfo( term.pink('inherit_path: '), path)
+            log.debug( term.pink('inherit_path: '), path)
             if not path.exists():
                 raise Config.ParentNotFound(
                     '\n'+term.dcyan('Config:')+ f' {str(self.filepath)}'
@@ -305,11 +307,14 @@ class Config:
         return GreedyOrderedSet( chain( parents, [self.tree.root] ) )
 
 
+
     ####################
     @property
     def key_resolution_order( self ) :
         return GreedyOrderedSet( chain( [self], self.parents ) )
 
+
+    #----------------------------------------------------------------#
 
     ####################
     def __getitem__( self, section_name ) :
@@ -347,6 +352,8 @@ class Config:
         ''' unchained and unprocessed '''
         return self._yaml_data.items( )
 
+
+    #----------------------------------------------------------------#
 
     ####################
 
@@ -390,6 +397,11 @@ class Config:
                     result[exporter_name][parsed_destination] |= export_subtrees
 
         return result
+
+    #----------------------------------------------------------------#
+
+    def __script__( self ):
+        ''' a procedure to execute using yamlisp s-expressions '''
 
 
 #----------------------------------------------------------------------#
@@ -793,7 +805,7 @@ class ConfigTree :
         self.root = None
 
         self.root_filepath = root_file
-        self.env_path = env_path
+        self.env_filepath = env_path / self.envfile
 
         self.out_file = None
         self.raw_file = None
@@ -869,8 +881,14 @@ class ConfigTree :
         except AssertionError as e:
             log.info( f'Node already exists {str(target_file)}' )
 
-    __add_root = add_root
-    __add_node = add_node
+    def new_env(self, target_file):
+        node                = self.add_node(target_file)
+        self.env_filepath   = node.filepath
+
+
+    __add_root  = add_root
+    __add_node  = add_node
+    __new_env   = new_env
 
     def finalize( self ) :
         self._final = True
@@ -968,13 +986,14 @@ class ConfigTree :
 
     def node( self, name=None ) :
         if name is None :
-            return self.nodes[self.env_path / self.envfile]
+            return self.nodes[self.env_filepath ]
         return self.nodes[name]
+
 
     @property
     def env( self ) -> Config :
         try :
-            return self.nodes[self.env_path / self.envfile]
+            return self.nodes[self.env_filepath ]
         except KeyError as e :
             log.debug( 'KeyError:', e )
             return self.root
