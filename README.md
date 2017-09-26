@@ -26,8 +26,11 @@ modular reproducible research environment manager
 ### Motivation and Objectives
 
 - conda has environment.yml, but also requires a shell script to set environment varibalse. What's up with that?
+- pipenv also doesn't care about environment variables
+- I want a single source of truth for values in my shell environment variables, for various configuration files, and for use inside other python programs.
+- yaml is easier to read than xml or json
+    - but it doesn't have a great syntax for constructing values out of tokens like shell scripts, do.
 
-- pip virtual 
 
 ---
 ### Components:
