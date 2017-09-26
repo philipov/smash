@@ -24,14 +24,16 @@ modular reproducible research environment manager
 
 --------------------------------------------------------------------------
 ### Motivation and Objectives
-- I want a single source of truth for values in my shell environment variables, for various configuration files, and for use inside other python programs.
+- I want a single source of truth for values in my shell environment variables and various configuration files, and for use inside other python programs.
 - yaml is easier to read than xml or json. 
     - but it doesn't have a great syntax for constructing values out of tokens, like shell scripts can.
 - it would be great to convert all my other configuration into a single yml file per project.
     - but I also want to split it up into configuration modules for each separate concern.  
 - conda has environment.yml, but also requires a shell script to set environment varibalse. What's up with that?
-- pipenv also doesn't care about environment variables
-- I want the package/environment manager to also manage the git project, not merely support installing from one
+- pipenv also doesn't care about environment variables.
+- I want the package/environment manager to also manage the git project, not merely support installing from one.
+- Ansible is for building immutable servers, not for living research and development environments.
+- On the other hand, the same process used during R&D shoeuld be easy to promote to production, and also easy to load into a support environment.
 
 ---
 ### Components:
