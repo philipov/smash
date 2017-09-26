@@ -37,9 +37,10 @@ modular reproducible research environment manager
 - I want the package/environment manager to also manage the git project, not merely support installing from one.
 - It needs to work on windows, mac, and linux, on my laptop, without destroying everything else.
 - It needs to be easy to adopt gruadually without demanding total devotion to a walled garden.
-- It should be able to construct both deployment packages as well as docker images
+- It should be able to construct both deployment archives as well as docker images
 - or control a remote environment over ssh 
     - integration to task scheduling through dask 
+- bring-your-own-python, or pyinstaller bootloader? some combination of both...
 
 ---
 ### Components:
