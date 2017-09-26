@@ -1,17 +1,21 @@
 # __root__.yml -- define instance filesystem structure and dependencies
 ##########################################################
 
-__protocol__:     0
-__version__:      0.0.0
-
 __name__:         instance/{name}
+__version__:      0.0.0
+__protocol__:     0
 __type__:         II
-
-__export__:
-  subenv:         [Shell, path, shell]
 
 
 ##########################################################
+
+pkg:
+  APP:            ${path:PKGS}/app    # installed applications
+  LIB:            ${path:PKGS}/lib    # installed libraries
+  DATA:           ${path:PKGS}/data   # installed data specifications
+  PYTHON:         ${path:PKGS}/python # self-contained python for the instance
+  HOST:           ${path:PKGS}/host   # local filesystem configuration
+  NET:            ${path:PKGS}/net    # local network configuration
 
 path:
   ROOT:           .
@@ -22,25 +26,17 @@ path:
   DATA:           ${ROOT}/data
   SECRETS:        ${ROOT}/secrets
 
-pkg:
-  APP:            ${path:PKGS}/app    # installed applications
-  LIB:            ${path:PKGS}/lib    # installed libraries
-  DATA:           ${path:PKGS}/data   # installed data specifications
-  PYTHON:         ${path:PKGS}/python # self-contained python for the instance
+git:
+  REMOTE:         github.com
 
-  HOST:           ${path:PKGS}/host   # local filesystem configuration
-  NET:            ${path:PKGS}/net    # local network configuration
+shell:
+  PATH:           []
 
 
 ##########################################################
 
-remote:
-  GIT:            github.com
-
-shell:
-  PATH:           ['${path:ROOT}', '${SYSTEMROOT}', '${WIN_BIN}']
-  SYSTEMROOT:     C:\Windows
-  WIN_BIN:        ${SYSTEMROOT}/System32
+__export__:
+  subenv:         [Shell, path, remote, shell]
 
 
 ##########################################################
