@@ -29,11 +29,17 @@ modular reproducible research environment manager
     - but it doesn't have a great syntax for constructing values out of tokens, like shell scripts can.
 - it would be great to convert all my other configuration into a single yml file per project.
     - but I also want to split it up into configuration modules for each separate concern.  
-- conda has environment.yml, but also requires a shell script to set environment varibalse. What's up with that?
-- pipenv also doesn't care about environment variables.
-- I want the package/environment manager to also manage the git project, not merely support installing from one.
+- conda has environment.yml, but also requires a shell script to set environment variablse. What's up with that?
+- pipenv doesn't seem to even care about environment variables.
 - Ansible is for building immutable servers, not for living research and development environments.
-- On the other hand, the same process used during R&D shoeuld be easy to promote to production, and also easy to load into a support environment.
+    - environments aren't immutable, and changes to their state need to be version controlled.
+- On the other hand, the same process used during R&D should be easy to promote to production, and also easy to load into a support environment.
+- I want the package/environment manager to also manage the git project, not merely support installing from one.
+- It needs to work on windows, mac, and linux, on my laptop, without destroying everything else.
+- It needs to be easy to adopt gruadually without demanding total adherance to a walled garden.
+- It should be able to construct both deployment packages as well as docker images
+- or control a remote environment over ssh 
+    - integration to task scheduling through dask 
 
 ---
 ### Components:
