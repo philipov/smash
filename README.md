@@ -42,7 +42,8 @@ modular reproducible research environment manager
 - control a remote environment over ssh 
     - integration to task scheduling through dask
 - use the same single source of truth for configuring both scheduled jobs and services
-    - integration to some sort of service registry  
+    - integration to some sort of service registry
+- the environment manager should integrate a solution for secrets management across different hosts  
 
 
 ---
