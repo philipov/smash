@@ -34,17 +34,17 @@ modular reproducible research environment manager
 - Ansible is for building immutable servers, not for living research and development environments.
     - environments aren't immutable, and changes to their state need to be version controlled.
 - On the other hand, the same process used during R&D should be easy to promote to production, and also easy to load into a support environment.
-- I want the package/environment manager to also manage the git project, not merely support installing from one.
-- It needs to work on windows, mac, and linux, on my laptop, without destroying everything else.
-- It needs to be easy to adopt gruadually without demanding total devotion to a walled garden.
+    - It needs to be easy to adopt gruadually without demanding total devotion to a walled garden.
+    - It needs to work on windows, mac, and linux, on my laptop, without destroying everything else.
+    - the package/environment manager should also manage the git project, not merely support installing from one.
+    - the environment manager should integrate a solution for secrets management across different hosts  
 - possible to construct either deployment archives or docker images
     - bring-your-own-python, or pyinstaller bootloader? some combination of both...
 - control a remote environment over ssh 
     - integration to task scheduling through dask
 - use the same single source of truth for configuring both scheduled jobs and services
     - integration to some sort of service registry
-- the environment manager should integrate a solution for secrets management across different hosts  
-
+- 
 
 ---
 ### Components:
