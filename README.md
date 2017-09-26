@@ -36,7 +36,7 @@ modular reproducible research environment manager
 - On the other hand, the same process used during R&D should be easy to promote to production, and also easy to load into a support environment.
 - I want the package/environment manager to also manage the git project, not merely support installing from one.
 - It needs to work on windows, mac, and linux, on my laptop, without destroying everything else.
-- It needs to be easy to adopt gruadually without demanding total adherance to a walled garden.
+- It needs to be easy to adopt gruadually without demanding total devotion to a walled garden.
 - It should be able to construct both deployment packages as well as docker images
 - or control a remote environment over ssh 
     - integration to task scheduling through dask 
