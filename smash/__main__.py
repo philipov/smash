@@ -61,21 +61,18 @@ def console( ctx, command, verbose ) :
         filepath    = Path( arguments.popleft( ) )
     except IndexError as e:
         # todo: interactive mode: contextually launch shell configured for virtual environment, instance, or else the system default
-        log.print(term.white(">>> "),"Do Nothing")
+        log.print(term.white(">>> "),"Display status here")
     else:
-
         ### wild lands of unmanaged state
         with ContextEnvironment(cwd) as context:
-
             ### the wall that guards the lands of version control
             with InstanceEnvironment(parent=context) as instance:
-
-                import re
-                from smash.core.plugins import handlers
-                from smash.core.handler import NoHandlerMatchedError
-
                 ### virtual environments may use a different python version from instance
                 with VirtualEnvironment( instance ) as interior :
+                    import re
+                    from smash.core.plugins import handlers
+                    from smash.core.handler import NoHandlerMatchedError
+
                     for pattern, Handler in reversed( handlers.items( ) ):
                         log.debug(term.dpink('match attempt'), f' {pattern:<16} {str(Handler):<50} {filepath.name}')
                         if re.match( pattern, str(filepath.name) ) :

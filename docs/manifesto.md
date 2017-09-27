@@ -1,5 +1,5 @@
 
-##### the state is the enemy
+##### state is the enemy
 - just like in programming, in computer infrastructure it is unsafe and inconvenient to have unmanaged state
 - I need to be able to refer to the project structure within project code, so I need to have a mapping to represent the structure of the filesystem.
     - cookiecutter, virtualenv, and conda don't satisfy on their own because they rely on stateful tempalates, or procedural mutation of environment state (shell scripts)

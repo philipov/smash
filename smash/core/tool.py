@@ -46,7 +46,7 @@ class Tool:
         pass
 
     ###
-    def run(self):
+    def run(self, *args, **kwargs):
         raise NotImplementedError
 
 
@@ -55,13 +55,32 @@ class Tool:
 #----------------------------------------------------------------------#
 
 @export
-class Task( Tool ) :
+class ATask( Tool ) :
+    ''' begin a single action and return without waiting for it to end '''
+
+    def run( self, *command, **kwargs ) :
+        return self.env.run( *command )
+
+
+
+class Task( ATask ):
+    ''' wait for a task to complete before returning '''
+    def run( self, *command, **kwargs ) :
+        proc = super().run(*command, **kwargs)
+        next( proc )
+        return proc
+
+
+#----------------------------------------------------------------------#
+
+@export
+class PlatformTask( ATask ) :
     ''' perform an action once '''
 
     def run( self ) :
-        return self.env.run( *self.command() )
+        return super().run( *self.command() )
 
-    def command( self ) -> list:
+    def command( self ) -> list :
         ''' call the command function for the appropriate platform'''
         cmd = list()
         if Platform == platform.Linux :
@@ -78,25 +97,21 @@ class Task( Tool ) :
 
         return cmd
 
-
     ### abstract: platform-dependant implementations for self.command
-    def command_windows( self ) -> list:
+    def command_windows( self ) -> list :
         raise NotImplementedError
 
-    def command_linux( self ) -> list:
+    def command_linux( self ) -> list :
         raise NotImplementedError
 
-    def command_mac( self ) -> list:
+    def command_mac( self ) -> list :
         raise NotImplementedError
-
-#----------------------------------------------------------------------#
-
 
 
 ################################
 
 @export
-class Installer( Task ) :
+class Installer( PlatformTask ) :
     ''' install external dependencies using their own script '''
 
     class MissingSourceUrlError( Exception ) :
@@ -172,7 +187,7 @@ class Installer( Task ) :
 #----------------------------------------------------------------------#
 
 @export
-class Loader( Task ) :
+class Loader( ATask ) :
     ''' batch job for writing to a data store '''
 
 
@@ -184,16 +199,31 @@ class Validator( Task ) :
 class Lateralizer( Task ):
     ''' Spiral out. Keep going... '''
 
+class Ouroboros( ATask ) :
+    ''' Run python inside python '''
 
 ################################
 
 @export
-class Daemon( Tool ) :
+class Daemon( Task ) :
     ''' until killed: start a subprocess, block until it terminates, then repeat '''
+    RESTART_DELAY = 5
+
+    def run( self, *command, restart_delay=RESTART_DELAY ) :
+        import time
+        while True :
+            subcommand = Path( command[0] )
+            subarguments = command[1 :]
+            log.print('')
+            log.info( term.dpink( 'subcommand:' ), f' {subcommand} {str(*subarguments)}' )
+            proc = super().run( subcommand, *subarguments )
+            time.sleep( float(restart_delay) )
+
 
 @export
-class Service( Daemon ) :
+class Service( Task ) :
     ''' pass '''
+
 
 @export
 class Monitor( Daemon ) :
@@ -207,10 +237,12 @@ builtin_tools = {
     'Installer' : Installer,
     'Loader'    : Loader,
     'Validator' : Validator,
+    'Python'    : Ouroboros,
 
     'Daemon'    : Daemon,
     'Monitor'   : Monitor,
     'Service'   : Service,
+
 }
 
 

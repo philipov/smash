@@ -27,7 +27,7 @@ from functools import reduce
 from itertools import chain
 from itertools import starmap
 from contextlib import suppress
-
+from copy import deepcopy
 
 from pathlib import Path
 
@@ -98,6 +98,17 @@ class Config:
     class ParentNotFound(Exception):
         ''' filepath in __inherit__ list could not be found '''
 
+    class MissingCommandWordError(Exception):
+        ''' yamlisp s-expressions must contain at least a command word'''
+
+    class YamlispKwargDuplicate(Exception):
+        ''' duplicate keys from dictionaries on the same line of a yamlisp script'''
+
+    class DuplicateScriptLineName(Exception):
+        ''' two s-expressions in a yamlisp command word have the same key '''
+
+    class DelayedEvaluationTokenNotDuringScript( Exception ) :
+        ''' avoid infinite substitution loop for delayed tokens'''
 
     ####################
     def __init__( self, tree=None ) :
@@ -156,7 +167,8 @@ class Config:
 
     def load_parents(self):
         log.debug( 'load_parents ',term.dyellow(self.filepath), ' ', self.__inherit__)
-        for path in map( lambda p: Path(p).resolve(), self.__inherit__ ):
+        for path in starmap( lambda k,p: Path(p).resolve(), self.__inherit__.items() ):
+
             log.debug( term.pink('inherit_path: '), path)
             if not path.exists():
                 raise Config.ParentNotFound(
@@ -165,9 +177,8 @@ class Config:
                    +''   # raise Config.ParentNotfound
                 )
             if path not in self.tree.nodes:
-
                 self.tree.add_node(path)
-                self.tree.nodes[path].load_parents()
+                self.tree[path].load_parents()
 
 
     #----------------------------------------------------------------#
@@ -186,9 +197,6 @@ class Config:
     def name( self ) :
         return self._yaml_data['__name__']
 
-    @property
-    def type( self ) :
-        return self._yaml_data['__type__']
 
     @property
     def protocol( self ) :
@@ -205,11 +213,9 @@ class Config:
         return True
 
 
-
-
     ####################
     @property
-    def __inherit__( self ) -> list :
+    def __inherit__( self ) -> OrderedDict :
         ''' compute this node's immediate parents from the config's __inherit__ list
             a value in the list may either be a string or a dictionary
             if it is a string, it refers to the path of a prante config file
@@ -220,14 +226,24 @@ class Config:
 
         ### try to get the raw __inherit__ list
         try :
-            parent_paths = self._yaml_data['__inherit__']
-            # log.info( term.blue( 'parent paths: ' ), parent_paths )
+            parent_items = self._yaml_data['__inherit__']
         except KeyError as e :
-            parent_paths = list()
+            parent_items = list()
         except TypeError as e:
-            parent_paths = list()
+            parent_items = list()
 
-        ### get the platform-specific import strings from dictionary values
+        # log.info( term.blue( 'parent items: ' ), parent_items )
+        ### if a dictionary is provided, the keys may be used as aliases for the path inside token expressions
+        if isinstance(parent_items, dict):
+            parent_aliases  = deepcopy(list(parent_items.keys()))
+            parent_paths    = deepcopy(list(parent_items.values()))
+        elif isinstance(parent_items, list):
+            parent_paths    = deepcopy(parent_items)
+        else:
+            raise TypeError(f'__inherit__ must be either dict or list: {parent_items}')
+
+        ### check if any inherit paths are dictionaries
+        ### and interpret them as mappings of platform-specific inherit paths
         platform_paths = list()
         for path in parent_paths:
             try:
@@ -238,7 +254,6 @@ class Config:
                 )
             except platform.MissingKeyError as e:
                 log.info( term.red('Warning: '), f'{qualname(type(e))}( {e} )' )
-
         # log.info( term.blue( 'platform paths: ' ), platform_paths )
 
         ### evaluate tokens in resulting strings
@@ -248,22 +263,38 @@ class Config:
         if self.filepath in map(Path, parsed_paths):
             raise Config.InheritSelfError( str(self.filepath) )
 
+        ### `with special_handling(parent_items):`
+        if isinstance( parent_items, list ) : # todo: use context manager pattern here
+            parent_aliases = deepcopy( parsed_paths )
+        #
+        # print('alias', parent_aliases)
+        # print('paths', parsed_paths)
+        # listprint(parsed_paths)
+        result = OrderedDict( (k,v) for k,v in zip( parent_aliases, parsed_paths ) )
+
         ###
-        return parsed_paths
+        return result
+
+    class ParentsExtendError(Exception):
+        ''' catch unknown exception while computing parents'''
 
 
+    ####################
     @property
     def parents( self ) :
         ''' the full ordered set of all parent nodes, after recursive linearization'''
 
-        parent_paths    = self.__inherit__
-        parents         = list( )
-        for parent_path in parent_paths :
+        # log.dinfo(term.green('parents '), self.filepath)
+        parent_items    = self.__inherit__
+        parents         = list()
+        for parent_alias, parent_path in parent_items.items() :
+            # log.dinfo(term.dgreen('parent '), parent_alias, term.dgreen(' | '), parent_path)
 
-
-            parent      = self.tree.nodes[ Path(parent_path) ]
+            parent      = self.tree[ Path(parent_path) ]
             parents.append( parent )
-            parent_parents = parent.__inherit__
+
+            parent_parents = parent.parents
+            # log.info(term.cyan('__inherit__ '), parent_parents)
 
             ### Node A may not inherit Node B, if Node B inherits Node A
             if str(self.filepath) in parent_parents:
@@ -273,17 +304,41 @@ class Config:
                     + ''   # raise Config.ParentNotfound
                 )
 
-            parents.extend( map(lambda path: self.tree.nodes[Path( path )], parent_parents) )
+            try:
+                parents.extend( parent_parents )
+            except Exception as e:
+                raise Config.ParentsExtendError(e)
             # log.info(term.white('parents:', str(self.filename), parent_path ))
 
-        return GreedyOrderedSet( chain( parents, [self.tree.root] ) )
+        result = GreedyOrderedSet( chain( parents, [self.tree.root] ) )
+        # log.info(term.green('RESULT:'), list(p for p in result))
+        return result
 
+
+    ####################
+    @property
+    def parent_aliases( self ):
+        alias_map = OrderedDict()
+        for node in self.key_resolution_order:
+            for alias, path in node.__inherit__.items():
+                alias_map.setdefault(alias, path)
+
+        # alias_map = ChainMap(list(map(lambda p: p.__inherit__, )))
+        # for d in alias_map.maps:
+        #     for key, value in d:
+        #         if key in alias_map \
+        #         and value != alias_map[key]:
+        #             raise
+        # print("alias_map", alias_map.items())
+        return alias_map
 
 
     ####################
     @property
     def key_resolution_order( self ) :
-        return GreedyOrderedSet( chain( [self], self.parents ) )
+        kro = GreedyOrderedSet( chain( [self], self.parents ) )
+        # log.info('kro ', list(str(p) for p in kro))
+        return kro
 
 
     #----------------------------------------------------------------#
@@ -291,6 +346,8 @@ class Config:
     ####################
     def __getitem__( self, section_name ) :
         return ConfigSectionView( self, section_name )
+
+
 
     ####################
     def setdefault( self, key, default ) :
@@ -328,7 +385,6 @@ class Config:
     #----------------------------------------------------------------#
 
     ####################
-
     @property
     def __export__( self ):
         ''' parse the export dictionary for this node and return it'''
@@ -338,7 +394,7 @@ class Config:
             export_items    = self['__export__'].items()
             parsed_dict     = export_items #OrderedDict()
             #parsed_paths    = ConfigSectionView( self.tree.root, '__export__' ).evaluate_list( '__exports__', export_dict )
-            #todo: this means that ConfigSectionView needs refactoring
+            #todo: ConfigSectionView needs refactoring if it needs to be the entrypoint for this
             # print( term.green('PARSED~~~~~'), parsed_dict )
         except KeyError as e :
             parsed_dict = OrderedDict()
@@ -346,6 +402,8 @@ class Config:
         # print( term.white( '_export' ), parsed_dict )
         return parsed_dict
 
+
+    ####################
     @property
     def exports(self) -> OrderedDict:
         ''' a dictionary of exporter names mapped to a list of (output names, list of section keys)'''
@@ -372,9 +430,64 @@ class Config:
 
     #----------------------------------------------------------------#
 
-    def __script__( self ):
-        ''' a procedure to execute using yamlisp s-expressions '''
+    ScriptLine = namedtuple( 'CommandLine', ['command_word', 'args', 'kwargs'] )
 
+    ####################
+    @property
+    def __script__( self ):
+        ''' construct a flat yamlisp script data structure
+            resolve the values of the config's script section
+        '''
+        raw_scripts = OrderedDict()
+        with suppress(KeyError):
+            raw_scripts = self._yaml_data['__script__']
+
+        log.info('__script__')
+        rprint(raw_scripts)
+
+        scripts = OrderedDict()
+        for script_name, script_body in raw_scripts.items():
+            scripts[script_name] = OrderedDict()
+            # log.info('command_word: ', script_name)
+            for line_name, s_expr in script_body.items():
+                # log.info(f'    line: {line_name:<10} | {s_expr}')
+
+                if line_name in scripts[script_name]:
+                    raise Config.DuplicateScriptLineName(script_name, line_name )
+                try:
+                    command_word = s_expr[0]
+                except IndexError as e:
+                    raise Config.MissingCommandWordError(script_name, line_name, s_expr) from None
+
+                command_args = list()
+                with suppress(IndexError):
+                    command_args = s_expr[1: ]
+
+                args = list()
+                kwargs = OrderedDict()
+                for arg in command_args:
+                    if isinstance(arg, dict):
+                        for key, raw_value in arg.items():
+                            if key in kwargs:
+                                raise Config.YamlispKwargDuplicate(script_name, line_name, key)
+
+                            value = self['path'].evaluate(key, raw_value, kro=self.key_resolution_order)
+                            kwargs[key] = value
+                    elif isinstance(arg, list):
+                        value = self['path'].evaluate_list( '__script__', arg, kro=self.key_resolution_order )
+                        args.append(value)
+                    else:
+                        value = self['path'].evaluate( '__script__', arg, kro=self.key_resolution_order )
+                        args.append(value)
+
+                scripts[script_name][line_name] = Config.ScriptLine( command_word, args, kwargs )
+
+        return scripts
+
+
+
+
+###
 
 #----------------------------------------------------------------------#
 
@@ -404,6 +517,8 @@ class ConfigSectionView :
     __pprint__ = __str__
     __repr__ = str
 
+
+    #----------------------------------------------------------------#
 
     ####################
     def keys( self ) :
@@ -470,6 +585,8 @@ class ConfigSectionView :
         ''' full-depth values, convert values to Path objects before returning them '''
         yield from starmap(lambda k, v: (k, Path(v)), self.allitems())
 
+
+    #----------------------------------------------------------------#
 
     ####################
     def setdefault( self, key, default, kro ) :
@@ -573,8 +690,10 @@ class ConfigSectionView :
         raise KeyError(str(key)+' not found.')
 
 
+    #----------------------------------------------------------------#
+
     ####################
-    def evaluate_list(self, key, raw_list, kro):
+    def evaluate_list(self, key, raw_list, kro, scripts_data=None):
         ''' evaluate each element of the list, and return the list of parsed values '''
         parsed_list = []
         # print(term.yellow('------------'), 'EVALUATE LIST', raw_list)
@@ -583,7 +702,7 @@ class ConfigSectionView :
             if isinstance( value, list ) or isinstance( value, dict ) :
                 new_value = ConfigSectionView( self.config, *self.section_keys, key, i )
             else :
-                new_value = self.evaluate( key, value, listeval=True, kro=kro )
+                new_value = self.evaluate( key, value, listeval=True, kro=kro, scripts_data=scripts_data )
                 try :
                     resultlist = self.resultlist.pop( )
                     # print( "RESULTLIST:", resultlist )
@@ -597,7 +716,7 @@ class ConfigSectionView :
 
 
     ####################
-    def evaluate(self, key, value, listeval=False, kro=()) -> str:
+    def evaluate(self, key, value, listeval=False, kro=(), scripts_data=None) -> str:
         ''' parse a raw value
             perform regex substitution on ${} token expressions until there are none left
             then attempt to resolve the result relative to the config file's path
@@ -609,7 +728,13 @@ class ConfigSectionView :
 
         while total_count > 0 :
             total_count = 0
-            (new_value, count) = self.substitute( key, str(new_value), listeval=listeval, kro=kro )
+            (new_value, count) = self.substitute(
+                key,
+                str(new_value),
+                listeval=listeval,
+                kro=kro,
+                scripts_data=scripts_data
+            )
             total_count += count
 
         with temporary_working_directory(self.config.path):
@@ -618,26 +743,33 @@ class ConfigSectionView :
         return final_value  # todo: DifferedPath
 
 
+    #----------------------------------------------------------------#
+
     ####################
-    def substitute( self, key, value: str, listeval=False, kro=() ) :
+    def substitute( self, key, value: str, listeval=False, kro=(), scripts_data=None ) :
         ''' responsible for running a single regex substitute
         '''
         total_count = 0
         count = None
 
         # log.debug( 'VALUE --- ', colored( value, 'red', attrs=['bold'] ) )
-        expression_replacer = self.expression_parser( key, listeval=listeval, kro=kro)
+        expression_replacer = self.expression_parser( key, listeval=listeval, kro=kro, scripts_data=scripts_data)
         try:
             (result, count)     = token_expression_regex.subn( expression_replacer, value )
+
         except TypeError as e: # todo: handle this TypeError inside expression_replacer
             print(term.red('SUBSTITUTE'), key, value, self)
             raise e
-
         except RecursionError as e:
             raise RecursionError( self.config.filepath, self.section_keys, key, value) from None
 
+        except Config.DelayedEvaluationTokenNotDuringScript as e:
+            ### handle %-tokens
+            count   = 0
+            result  = e.args[0]
+            # log.info('result: ', result)
 
-    # log.debug( "After re.subn:  ", result, " | ", count, "|", expression_replacer.counter[0] )
+        # log.debug( "After re.subn:  ", result, " | ", count, "|", expression_replacer.counter[0] )
 
         total_count += expression_replacer.counter[0] + count# ToDo: Replace monkey patch with class
         # log.debug( "Subn Result: ", result, ' after ',total_count )
@@ -645,8 +777,11 @@ class ConfigSectionView :
         return result, total_count
 
 
+    class InvalidTokenReferenceToPreviousLine(Exception):
+        ''' can't refer to the previous line on the first line of a script'''
+
     ####################
-    def expression_parser( self, key, kro=(), listeval=False ) :
+    def expression_parser( self, key, kro=(), listeval=False, scripts_data=None ) :
         ''' factory that creates a replace function to be used by regex subn
             process ${configpath::section:key} token expressions:
             -    key:        look up value in current section of current config
@@ -665,22 +800,54 @@ class ConfigSectionView :
 
         def expression_replacer( matchobj ) :
 
-            token = matchobj.group('token')
+            match       = matchobj.group(0)
+            orig_value  = matchobj.string
+            token       = matchobj.group('token')
+            target_key  = matchobj.group('key')
 
-            target_configpath   = matchobj.group( 'configpath' ) \
+            ### %-tokens are evaluated at run-time instead of compile-time
+            ###     and use a different confipath::sections interpretation
+            if token == '%' and scripts_data is None :
+                raise Config.DelayedEvaluationTokenNotDuringScript( orig_value )
+            elif token == '%' :
+                ###
+                if matchobj.group( 'configpath' ) is not None:
+                    target_configpath = matchobj.group( 'configpath' )
+                else:
+                    target_configpath = scripts_data['current_script']
+                ###
+                if matchobj.group( 'sections' ) is not None:
+                    target_sections = matchobj.group( 'sections' ).split( ':' )
+                else:
+                    target_sections = (scripts_data['previous_line'], )
+                    if target_sections == (None, ):
+                        raise Config.InvalidTokenReferenceToPreviousLine(target_configpath, target_sections, target_key)
+                ###
+                try :
+                    line_results    = getattr(scripts_data['results'], str(target_configpath) )
+                    result          = getattr(line_results, target_key)
+
+                    return result
+                except AttributeError as e :
+                    raise Config.SubstitutionKeyNotFoundError( 'during script', target_configpath, target_sections, target_key, '\n' )
+
+            ###################
+            target_configpath = matchobj.group( 'configpath' ) \
                 if (matchobj.group( 'configpath' ) is not None) \
                 else self.config.filepath
 
-            if target_configpath == 'ENV':
+            if target_configpath == 'ENV' :
                 target_configpath = self.config.tree.env.filepath
+            else:
+                parents_aliases = self.config.parent_aliases
+                if target_configpath in parents_aliases:
+                    target_configpath = parents_aliases[target_configpath]
 
-            target_sections     = matchobj.group( 'sections' ).split( ':' ) \
+            ###################
+            target_sections = matchobj.group( 'sections' ).split( ':' ) \
                 if (matchobj.group( 'sections' ) is not None) \
                 else self.section_keys
 
-            target_key          = matchobj.group( 'key' )
-
-            self.parse_counter += 1
             # log.info( '>'*20, " MATCH ", target_configpath, ' ', target_sections, ' ', target_key, ' | ', key, ' ',  self.section_keys )
             # listprint(kro)
             # print("value", term.green(matchobj.group(0)))
@@ -691,6 +858,7 @@ class ConfigSectionView :
             section_keys    = [*target_sections, target_key]
             node            = self.config.tree[target_configpath]
 
+            ###################
             ### self-key references begin the search from the config's immediate parent
             if key == target_key \
             and self.section_keys == target_sections \
@@ -699,29 +867,43 @@ class ConfigSectionView :
 
             result = getdeepitem(node, section_keys, kro)
 
+            ###################
             # print(term.cyan("subn result:"), result, term.cyan('|'), key, term.cyan( '|' ), matchobj.group(0))
-            if isinstance(result, OrderedDict) and len(result) == 0:
+            if isinstance(result, OrderedDict) \
+            and len(result) == 0:
                 raise Config.SubstitutionKeyNotFoundError(''.join(str(s) for s in [
-                    'Could not find ', target_configpath, '::', target_sections,':', target_key,
-                    ' for inserting into ', self.config.filepath, '::', self.section_keys,':', key,
+                    '\nCould not find ', target_configpath, '::', target_sections,':', target_key,
+                    '\n for inserting into ', self.config.filepath, '::', self.section_keys,':', key,
+                    '\n', kro
                 ]))
-            elif isinstance(result, list) and matchobj.group(0) == matchobj.string and listeval and token == '@':
+
+            ###################
+            elif isinstance(result, list) \
+            and match == orig_value \
+            and listeval \
+            and token == '@':
                 ### WARNING: use a hack to return a list out from the regex substitute
                 ### so we can later use it to extend a list we're substituting into
                 # log.info(term.blue('*'*30), 'LIST INSERT' )
+                # todo: maybe use an exception to do this instead?
                 self.resultlist.append(result)
+
+            ###################
             elif not isinstance(result, str):
                 raise TypeError(' '.join(str(s) for s in [
-                    "Can't substitute non-scalar result", namedtuple('_', ['section', 'key', 'result'
-
-
-                                                                           ])
-                                                            (target_sections, target_key, result),
+                    "Can't substitute non-scalar result",
+                    namedtuple('_', ['section', 'key', 'result'])
+                           (target_sections, target_key, result),
                     '\n\tin', namedtuple( '_', ['section', 'key', 'value'] )
                                             (self.section_keys, key, matchobj.string)
                 ]))
+
+            ###################
             elif token == '@':
                 raise Config.TokenExpressionError('@ tokens may only be used to extend other sequences')
+
+            ###################
+            self.parse_counter += 1
             return str(result)
 
         ###
@@ -736,12 +918,13 @@ class ConfigSectionView :
     # ^ this is achieved in part by using the ENV configpath keyword
 
 token_expression_regex = re.compile(
-    r"""(   (?P<token>[$@])
-          {                                  # ${
-            ((?P<configpath>[^${}]+?)::)?     #   configpath@         [optional]
-            ((?P<sections>[^${}]+):)?        #   sections:           [optional]
-            (?P<key>[^$:{}]+?)               #   key                 -required-
-          })                                  #  }
+    r"""(   (?P<token>[$@%])
+          {                                     # ${
+            ((?P<configpath>[^${}]+?)::)?       #   configpath@         [optional]
+            ((?P<sections>[^${}]+):)?           #   sections:           [optional]
+            #((?P<objects>[^${}]+).)?            #   objects.            [optional]
+            (?P<key>[^$:{}]+?)                  #   key                 -required-
+          })                                    #  }
     """, re.VERBOSE )
 
 
@@ -881,19 +1064,19 @@ class ConfigTree :
         if filepath is None :
             return self.root
 
-        with suppress( KeyError ) :
-            return self.nodes[Path( filepath )]
+        resolved_filepath = Path(filepath).resolve()
 
         with suppress( KeyError ) :
-            return self.nodes[Path( filepath ) / '__env__.yml']
-
+            return self.nodes[resolved_filepath]
         with suppress( KeyError ) :
-            return self.nodes[Path( filepath ) / '__pkg__.yml']
-
+            return self.nodes[resolved_filepath / '__env__.yml']
         with suppress( KeyError ) :
-            return self.nodes[Path( filepath ) / '__root__.yml']
+            return self.nodes[resolved_filepath / '__pkg__.yml']
+        with suppress( KeyError ) :
+            return self.nodes[resolved_filepath / '__root__.yml']
 
-        raise KeyError( filepath, 'not found in', self )
+        raise KeyError( resolved_filepath, 'not found in', self )
+
 
     ####################
     def __len__( self ) :

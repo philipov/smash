@@ -63,7 +63,7 @@ class Handler:
 
 @export
 class SubprocessHandler( Handler ) :
-    '''execute the target as-is'''
+    ''' execute the target as-is'''
 
     def __run__( self, command, arguments, env: Environment, *, ctx=None ) :
         proc = env.run(command, *arguments)
@@ -74,21 +74,30 @@ class SubprocessHandler( Handler ) :
 
 @export
 class YamlispHandler( Handler ) :
-    '''this allows using the python interpreter defined by the virtual environment'''
+    ''' this allows using the python interpreter defined by the virtual environment'''
 
     def __run__( self, target: Path, arguments, env: Environment, *, ctx=None ) :
-        '''read the file and do something with it'''
+        ''' read the file and do something with it'''
 
         if not Path( target ).exists() :
             raise MissingTargetFileError( target )
 
+        # if target != env.config.filepath:
+        env.config.tree.new_env( target )
+        log.print('')
+
+        subcommand, subarguments = '__main__', []
         with suppress( IndexError ) :
             subcommand = arguments[0]
         with suppress( IndexError ) :
-            subarguments = arguments[1 :]
+            subarguments = arguments[1: ]
 
-        env.config.tree.new_env( target )
-        log.print()
+        from .yamlisp import run_yamlisp
+        return run_yamlisp(env, env.config, subcommand, subarguments, g_kwargs=OrderedDict())
+        # todo: support kwargs in handlers
+
+
+
 
 
 #----------------------------------------------------------------------#
@@ -150,6 +159,7 @@ class PythonHandler( ScriptHandler ) :
 
 #----------------------------------------------------------------------#
 
+#----------------------------------------------------------------------#
 
 ### last in first out; use the last handler whose key regex matches the filename
 builtin_handlers            = OrderedDict()

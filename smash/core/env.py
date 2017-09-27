@@ -317,14 +317,17 @@ class VirtualEnvironment(Environment):
         shell variables are supplied by evaluating the 'Environment' __export__ process in the configtree
     '''
     __slots__ = (
-        'config',
+        'configtree',
     )
 
     def __init__( self, instance:InstanceEnvironment, **kwargs ):
-        self.config = instance.configtree.env
+        self.configtree = instance.configtree
         homepath    = self.config.path
         super().__init__(homepath, **kwargs)
 
+    @property
+    def config(self):
+        return self.configtree.env
 
     ####################
     def build( self ) :

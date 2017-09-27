@@ -84,6 +84,7 @@ class ExportShell( Exporter ):
     def write( self, config: Config, sections:list, destination:None ) -> OrderedDict:
         subenv      = OrderedDict()
         keysources  = OrderedDict()
+
         for section in sections:
             for key, value in config[section].allitems():
                 if key not in subenv:
