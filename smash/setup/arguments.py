@@ -67,6 +67,7 @@ kwargs = dict(
         'powertools',       # std lib extension
         'psutil',           # process utils
         'ruamel.yaml',      # yaml parser
+        'xmltodict',        # xml parser
         'ordered_set',      # ...
 
         'click',            # command-line parser
@@ -78,7 +79,6 @@ kwargs = dict(
         'colored_traceback',
         'colorama',
         'termcolor',
-
     ],
 
 

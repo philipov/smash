@@ -15,11 +15,12 @@ from .config import Config
 from .env import Environment
 
 from powertools import term
-from powertools.print import rprint
+from powertools.print import rprint, listprint, dictprint
 from pprint import pprint, pformat
 
 from ..util.meta import classproperty
 
+from pathlib import Path
 from collections import OrderedDict
 from contextlib import suppress
 
@@ -156,6 +157,25 @@ class PythonHandler( ScriptHandler ) :
     '''this allows using the python interpreter defined by the virtual environment'''
     __interpreter__ = 'python'
 
+#----------------------------------------------------------------------#
+
+@export
+class ConvertXML( Handler ) :
+    ''' produce yaml file containing equivalent to input xml'''
+
+    def __run__( self, target: Path, arguments, env: Environment, *, ctx=None ) :
+        log.info('paths to convert: ', arguments)
+
+        from ..util import yaml, xml
+        for path in map(Path, arguments):
+
+            data = xml.load(path)
+            log.info(f'with {path}: ', len( list( data['locator']['DATABASES']['db'] ) ) )
+            # listprint(data['locator']['DATABASES']['db'].items())
+            purified_data = yaml.convert_xmldict(data)
+            output_path = path.parents[0] / f'{path.name}.yml'
+            yaml.dump(output_path, data)
+
 
 #----------------------------------------------------------------------#
 
@@ -169,7 +189,7 @@ builtin_handlers['.*']          = SubprocessHandler # default
 builtin_handlers['begin']       = Daemonizer
 builtin_handlers['with']        = ToolHandler
 builtin_handlers['mouth']       = MouthHandler
-
+builtin_handlers['xml']         = ConvertXML
 
 builtin_handlers['.*\.yml']    = YamlispHandler
 builtin_handlers['.*\.yaml']   = YamlispHandler

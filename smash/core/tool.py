@@ -202,6 +202,7 @@ class Lateralizer( Task ):
 class Ouroboros( ATask ) :
     ''' Run python inside python '''
 
+
 ################################
 
 @export
@@ -230,20 +231,9 @@ class Monitor( Daemon ) :
     ''' pass '''
 
 
+
+
 #----------------------------------------------------------------------#
-
-builtin_tools = {
-    'Task'      : Task,
-    'Installer' : Installer,
-    'Loader'    : Loader,
-    'Validator' : Validator,
-    'Python'    : Ouroboros,
-
-    'Daemon'    : Daemon,
-    'Monitor'   : Monitor,
-    'Service'   : Service,
-
-}
 
 
 

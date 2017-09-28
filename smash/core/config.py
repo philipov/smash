@@ -28,8 +28,8 @@ from itertools import chain
 from itertools import starmap
 from contextlib import suppress
 from copy import deepcopy
-
 from pathlib import Path
+import types
 
 from ..util.yaml import load as load_yaml
 from ..util.path import stack_of_files
@@ -56,9 +56,16 @@ def getdeepitem( data, keys, kro=() ) :
     '''
     return reduce( lambda d, key :
                    d.setdefault( key, OrderedDict( ), kro=kro ) if isinstance(d, ConfigSectionView)
-              else d.setdefault( key, OrderedDict( ) )          if not isinstance(d, list)
-              else d[key],
+              else d.setdefault( key, OrderedDict( ) )          if not isinstance(d, (list, tuple))
+              else listdefault(d, key, [] ), #d[key],
                    keys, data )
+
+def listdefault(l, key, default ):
+    try:
+        return l[key]
+    except IndexError:
+        l[key] = default
+        return l[key]
 
 
 #----------------------------------------------------------------------#
@@ -109,6 +116,7 @@ class Config:
 
     class DelayedEvaluationTokenNotDuringScript( Exception ) :
         ''' avoid infinite substitution loop for delayed tokens'''
+
 
     ####################
     def __init__( self, tree=None ) :
@@ -443,7 +451,7 @@ class Config:
             raw_scripts = self._yaml_data['__script__']
 
         log.info('__script__')
-        rprint(raw_scripts)
+        # rprint(raw_scripts)
 
         scripts = OrderedDict()
         for script_name, script_body in raw_scripts.items():
@@ -482,6 +490,8 @@ class Config:
 
                 scripts[script_name][line_name] = Config.ScriptLine( command_word, args, kwargs )
 
+        rprint( scripts )
+
         return scripts
 
 
@@ -518,73 +528,6 @@ class ConfigSectionView :
     __repr__ = str
 
 
-    #----------------------------------------------------------------#
-
-    ####################
-    def keys( self ) :
-        '''list of keys for the current subtree of the config'''
-
-        key_union = GreedyOrderedSet( )
-        for key in getdeepitem( self.config._yaml_data, self.section_keys ).keys( ) :
-            # print( term.green( 'key:' ), key )
-            key_union.add( key )
-        return list( key_union )
-
-    def items( self ) :
-        '''key-value tuples for the current subtree only, with values resolved'''
-
-        # print( term.blue( 'items' ), self.section_keys )
-        yield from map( lambda key : (
-                key,
-                getdeepitem( self.config, [*self.section_keys, key] )
-            ),
-            self.keys()
-        )
-
-    def values( self ) :
-        for value in (p for k, p in self.items()) :
-            yield value
-
-    def paths( self ) :
-        for path in map( Path, self.values() ) :
-            yield path
-
-
-    ####################
-    def allkeys( self ) :
-        '''get the union of keys for all nodes in the key resolution order'''
-
-        key_union = GreedyOrderedSet()
-        for node in self.config.key_resolution_order :
-            # print(term.cyan('node:'), node, self.section_keys, '\n',
-            #       getdeepitem( node._yaml_data, self.section_keys ))
-            for key in getdeepitem(node._yaml_data, self.section_keys).keys():
-                # print(term.green('    key:'), key)
-                key_union.add(key)
-        #     print( term.green( '\n------------------------------------' ))
-        # print(term.cyan( '\n------------------------------------' ))
-        return list(key_union)
-
-    def allitems( self ) :
-        '''same as items, but uses allkeys method'''
-
-        # print( term.blue( 'allitems' ), self.section_keys )
-        yield from map(
-            lambda key : (
-                key,
-                getdeepitem( self.config, [*self.section_keys, key], self.config.key_resolution_order )
-            ),
-            self.allkeys( )
-        )
-
-    def allvalues( self ) :
-        ''' full-depth values '''
-        yield from (value for key, value in self.allitems())
-
-    def allpaths(self):
-        ''' full-depth values, convert values to Path objects before returning them '''
-        yield from starmap(lambda k, v: (k, Path(v)), self.allitems())
-
 
     #----------------------------------------------------------------#
 
@@ -610,17 +553,28 @@ class ConfigSectionView :
         # print(term.blue("-----------------------------"), 'begin __getitem__', self.config, term.white(key))
         return self._getitem(key, self.config.key_resolution_order)
 
+    def _add2cache(self, key, value):
+        getdeepitem( self.config._final_cache, self.section_keys )[key]
 
+    class CouldNotGetItem(Exception):
+        ''' _getitem didn't find a result '''
     def _getitem( self, key, kro) :
 
         ### check cache
-        try :
-            final_value = getdeepitem( self.config._final_cache, self.section_keys )[key]
-        except KeyError :
-            pass
-        else:
+
+        # try :
+        #     # log.debug( self.config, term.red( ' | ' ), self.section_keys )
+        #     final_value = getdeepitem( self.config._final_cache, self.section_keys )[key]
+        # except KeyError :
+        #     pass
+        # except RecursionError:
+        #     pass
+
+        # except ConfigSectionView.CouldNotGetItem:
+        #     pass
+        # else:
             # print('else', self.config.name)
-            return final_value
+            # return final_value
 
         ### construct the current state of the inheritence chain
         if len(kro) == 0:
@@ -628,7 +582,6 @@ class ConfigSectionView :
         else:
             # print(term.red("PRUNE KRO"))
             # listprint(kro)
-            # print(term.red('---'), self.config)
             pruned_kro = deque( kro )
             try:
                 while pruned_kro.popleft( ) != self.config : pass
@@ -655,14 +608,14 @@ class ConfigSectionView :
                 parsed_list = self.evaluate_list(key, raw_value, kro=pruned_kro)
 
                 # print( term.cyan('~~~Cache List Result'), self.section_keys, key, self.config , parsed_list)
-                getdeepitem( self.config._final_cache, self.section_keys)[key] = parsed_list   # CACHE LIST ###
+                #getdeepitem( self.config._final_cache, self.section_keys)[key] = parsed_list   # CACHE LIST ###
                 return parsed_list
 
             else :                                                                              # Scalar Value Found
                 final_value = self.evaluate( key, raw_value , kro=pruned_kro)
 
                 # print( term.cyan('~~~Cache Scalar Result'), self.section_keys, key, final_value )
-                getdeepitem( self.config._final_cache, self.section_keys )[key] = final_value   # CACHE VALUE ###
+                #getdeepitem( self.config._final_cache, self.section_keys )[key] = final_value   # CACHE VALUE ###
                 return final_value
 
 
@@ -678,7 +631,7 @@ class ConfigSectionView :
                 continue
             try:
                 parent_value = getdeepitem( node, self.section_keys, pruned_kro )._getitem( key, kro )
-            except KeyError:
+            except ConfigSectionView.CouldNotGetItem as e:
                 # print("MISSING IN ", node.filepath)
                 continue
             else:
@@ -687,8 +640,83 @@ class ConfigSectionView :
 
         # not found
         # print('__getitem__', key, term.red('|'), self.config, term.red( '|' ),self.section_keys)
-        raise KeyError(str(key)+' not found.')
+        raise ConfigSectionView.CouldNotGetItem( str(self.config), self.section_keys, key)
 
+
+    #----------------------------------------------------------------#
+
+    ####################
+    def keys( self ) :
+        '''list of keys for the current subtree of the config'''
+
+        key_union = GreedyOrderedSet()
+        for key in getdeepitem( self.config._yaml_data, self.section_keys ).keys() :
+            # print( term.green( 'key:' ), key )
+            key_union.add( key )
+        return list( key_union )
+
+    def items( self ) :
+        '''key-value tuples for the current subtree only, with values resolved'''
+
+        # print( term.blue( 'items' ), self.section_keys )
+        yield from map( lambda key : (
+            key,
+            getdeepitem( self.config, [*self.section_keys, key] )
+        ),
+                        self.keys()
+                        )
+
+    def values( self ) :
+        for value in (p for k, p in self.items()) :
+            yield value
+
+    def paths( self ) :
+        for path in map( Path, self.values() ) :
+            yield path
+
+    ####################
+    def allkeys( self ) :
+        '''get the union of keys for all nodes in the key resolution order'''
+
+        key_union = GreedyOrderedSet()
+        for node in self.config.key_resolution_order :
+            # print(term.cyan('node:'), node, self.section_keys, '\n',
+            #       getdeepitem( node._yaml_data, self.section_keys ))
+
+            section = getdeepitem( node._yaml_data, self.section_keys )
+            try:
+                keys = section.keys()
+            except AttributeError as e:
+                keys = range(0, len(section))
+            for key in keys :
+                # print(term.green('    key:'), key)
+                key_union.add( key )
+        #     print( term.green( '\n------------------------------------' ))
+        # print(term.cyan( '\n------------------------------------' ))
+        return list( key_union )
+
+    def allitems( self ) :
+        '''same as items, but uses allkeys method'''
+
+        # print( term.blue( 'allitems' ), self.section_keys )
+        yield from map(
+            lambda key : (
+                key,
+                getdeepitem( self.config, [*self.section_keys, key], self.config.key_resolution_order )
+            ),
+            self.allkeys()
+        )
+
+    def allvalues( self ) :
+        ''' full-depth values '''
+        yield from (value for key, value in self.allitems())
+
+    def allpaths( self ) :
+        ''' full-depth values, convert values to Path objects before returning them '''
+        yield from starmap( lambda k, v : (k, Path( v )), self.allitems() )
+
+
+    #----------------------------------------------------------------#
 
     #----------------------------------------------------------------#
 

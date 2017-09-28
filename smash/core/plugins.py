@@ -45,12 +45,28 @@ def _select_class( cls, base ):
                         results[value.__key__]=value
     return results
 
+#----------------------------------------------------------------------#
+
+from . import tool
+
+
+builtin_tools = {
+    'Task' :        tool.Task,
+    'Installer' :   tool.Installer,
+    'Loader' :      tool.Loader,
+    'Validator' :   tool.Validator,
+    'Python' :      tool.Ouroboros,
+
+    'Daemon' :      tool.Daemon,
+    'Monitor' :     tool.Monitor,
+    'Service' :     tool.Service,
+
+}
 
 #----------------------------------------------------------------------#
 
 from .exporter import Exporter, builtin_exporters
 from .handler import Handler, builtin_handlers
-from .tool import Tool, builtin_tools
 
 from .instance import InstanceTemplate, builtin_templates
 from .pkg import PackageType, builtin_package_types
@@ -80,7 +96,7 @@ instance_templates  = _select_class( InstanceTemplate, builtin_templates )
 package_types       = _select_class( PackageType,       builtin_package_types )
 
 packages            = _select_class( Package,           builtin_packages )
-tools               = _select_class( Tool, builtin_tools )
+tools               = _select_class( tool.Tool,         builtin_tools )
 exporters           = _select_class( Exporter,          builtin_exporters )
 handlers            = _select_class( Handler,           builtin_handlers )
 
@@ -117,23 +133,23 @@ def report_plugins():
 
 #----------------------------------------------------------------------#
 
-def plugin_decorator_template(cls, collection):
-    def plugin_decorator_factory(key):
-        '''decorator factory for registering plugins'''
-        def plugin_decorator(obj):
-            assert type(obj) == cls
-            collection[key] = obj
-            return obj
-        return plugin_decorator
-    return plugin_decorator_factory
-
-environment_type    = plugin_decorator_template( Environment,       environment_types )
-template            = plugin_decorator_template( InstanceTemplate,  instance_templates )
-packages_type       = plugin_decorator_template( PackageType,       package_types )
-
-package             = plugin_decorator_template( Package,           packages )
-tool                = plugin_decorator_template( Tool, tools )
-exporter            = plugin_decorator_template( Exporter,          exporters )
-handler             = plugin_decorator_template( Handler,           handlers )
+# def plugin_decorator_template(cls, collection):
+#     def plugin_decorator_factory(key):
+#         '''decorator factory for registering plugins'''
+#         def plugin_decorator(obj):
+#             assert type(obj) == cls
+#             collection[key] = obj
+#             return obj
+#         return plugin_decorator
+#     return plugin_decorator_factory
+#
+# environment_type    = plugin_decorator_template( Environment,       environment_types )
+# template            = plugin_decorator_template( InstanceTemplate,  instance_templates )
+# packages_type       = plugin_decorator_template( PackageType,       package_types )
+#
+# package             = plugin_decorator_template( Package,           packages )
+# tool                = plugin_decorator_template( Tool, tools )
+# exporter            = plugin_decorator_template( Exporter,          exporters )
+# handler             = plugin_decorator_template( Handler,           handlers )
 
 #----------------------------------------------------------------------#

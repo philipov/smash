@@ -51,9 +51,9 @@ class SubcommandNotFound( Exception ) :
 ####################
 def run_yamlisp(    env: Environment,
                     config: Config,
-                    command_word: str,
-                    g_args: list,
-                    g_kwargs:dict,
+                    command_word:   str,
+                    g_args:         list,
+                    g_kwargs:       dict,
                     *,
                     scripts_results=None,
                 ):
@@ -78,35 +78,43 @@ def run_yamlisp(    env: Environment,
     else:
         scripts_data['results'] = scripts=scripts_results
 
-    ### execute it line-by-line
+    ### execute command-word, line-by-line
     for line_name, (subcommand, args, kwargs) in script.items() :
         log.print('')
         log.info(f'run_line: {line_name}'
                  f', {subcommand}, {args}, {kwargs}')
         result = None
 
-        ### run a command-word defined in the same file.
+        ### run a command-word defined in the same file (!!!DANGER!!!)
+        # todo: don't do this...
         if subcommand in scripts:
-            result = run_yamlisp( env, config, subcommand,
-                                  scripts_results=scripts_results,
-                                  g_args=args,
-                                  g_kwargs=g_kwargs
-                                  )
+            result = run_yamlisp(
+                env, config, subcommand,
+                scripts_results   = scripts_results,
+                g_args            = args,
+                g_kwargs          = g_kwargs
+            )
 
-        ### run a registered tool with the same name
-        else:
-            try:
-                 tool = tools[subcommand]
-                 log.info('tool ', tool)
-            except KeyError as e:
-                raise SubcommandNotFound(line_name) from None
+        ### run a registered Tool subclass
+        elif subcommand in tools:
+            tool = tools[subcommand]
+            log.info('tool ', tool)
 
+            args.extend( g_args )
+            kwargs.update( g_kwargs )
             result = tool( env, config ).run( *args, **kwargs )
 
+        ###
+        else:
+            raise SubcommandNotFound( line_name ) from None
+
         scripts_results[command_word][line_name] = result
+
+    ###
     return scripts_results
 
 
+###
 
 #----------------------------------------------------------------------#
 

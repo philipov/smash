@@ -69,6 +69,7 @@ class Environment:
         self.results        = deque()
         self.closed         = None
 
+
     ####################
     def build(self):
         ''' run all the exporters '''

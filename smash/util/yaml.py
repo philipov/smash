@@ -4,7 +4,8 @@
 process yaml files
 '''
 
-
+from powertools import AutoLogger
+log = AutoLogger()
 from collections import OrderedDict
 from pathlib import Path
 
@@ -14,6 +15,7 @@ try :
     from ruamel.yaml import CLoader as Loader, CDumper as Dumper
 except ImportError :
     from ruamel.yaml import Loader, Dumper
+import sys
 
 
 # YAML Anchors, references, nested values    - https://gist.github.com/bowsersenior/979804
@@ -32,7 +34,7 @@ def export( obj ) :
 #----------------------------------------------------------------------#
 
 # OrderedDictYYAMLLoader - https://gist.github.com/enaeseth/844388
-class OrderedDictYAMLLoader( Loader ) :
+class OrderedDictYAMLLoader(  Loader ) :
     """
     A YAML loader that loads mappings into ordered dictionaries.
     """
@@ -82,5 +84,36 @@ def load( filename:Path ) :
     return result
 
 
+
+#----------------------------------------------------------------------#
+
+
+def make_yml() :
+    yml = yaml.YAML()
+    yml.explicit_start      = False
+    yml.indent              = 2
+    yml.block_seq_indent    = 0
+    yml.typ                 = 'safe'
+    yml.tags                = False
+
+
+    return yml
+
+
+#----------------------------------------------------------------------#
+
+def convert_xmldict(data):
+    result = None
+    log.info(type(data))
+
+    return result
+
+#----------------------------------------------------------------------#
+
+def dump( filename: Path, data ) :
+    yml = make_yml()
+    with open( str(filename), 'w' ) as file :
+        yaml.dump( data, file, Dumper=yaml.RoundTripDumper, indent=2, block_seq_indent=0, explicit_start=False, tags=None, canonical=False)
+    yml.dump( data, sys.stdout  )
 
 #----------------------------------------------------------------------#
