@@ -189,7 +189,7 @@ class ContextEnvironment( Environment ) :
     '''
     __slots__ = ()
 
-    def __init__( self, homepath=None, **kwargs ) :
+    def __init__( self, homepath=None, pure=False, **kwargs ) :
         if homepath is None:
             homepath = os.getcwd()
         super( ).__init__( homepath, **kwargs)
@@ -240,12 +240,12 @@ class InstanceEnvironment( Environment ) :
         'configtree',
     )
 
-    def __init__( self, homepath=None, parent=None, **kwargs ) :
+    def __init__( self, homepath=None, parent=None, pure=False, **kwargs ) :
         ''' either homepath or parent.homepath '''
         if homepath is None :
             homepath = parent.homepath
 
-        super().__init__( homepath, **kwargs )
+        super().__init__( homepath, pure=pure, **kwargs )
         try :
             self.configtree = ConfigTree.from_path( homepath )
             assert self.configtree.final
@@ -326,7 +326,7 @@ class VirtualEnvironment(Environment):
     def __init__( self, instance:InstanceEnvironment, **kwargs ):
         self.configtree = instance.configtree
         homepath    = self.config.path
-        super().__init__(homepath, **kwargs)
+        super().__init__(homepath, pure=True, **kwargs)
 
     @property
     def config(self):
@@ -381,8 +381,10 @@ class VirtualEnvironment(Environment):
         subenv      = exporter( self.config, export_subtrees, 'subenv' ).export()
 
         result = OrderedDict()
+
         if not self.pure :
             result.update( os.environ )
+
         result.update( subenv )
         # log.info()
         # dictprint(result)
