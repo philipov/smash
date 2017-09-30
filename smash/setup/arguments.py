@@ -24,7 +24,7 @@ def collect_package_data( package_path ) :
 
 kwargs = dict(
     name            = 'smash',
-    version         = '0.0.2',
+    version         = '0.0.3',
     description     = __doc__,
 
     url             = 'https://github.com/philipov/smash',
