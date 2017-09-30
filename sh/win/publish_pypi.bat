@@ -8,7 +8,7 @@ set PIP_CONFIG_FILE=C:\dev\secrets\pip.ini
 
 rem -- ToDo: macro to obtain __version__
 
-twine upload %PROJECT_PATH%\dist\smash-0.0.1-py3-none-any.whl --comment "rewrite of config submodule, part 1"
+twine upload %PROJECT_PATH%\dist\smash-0.0.2-py3-none-any.whl --comment "object oriented configuration, and first cut of yamlisp scripting"
 
 @popd
 @endlocal
