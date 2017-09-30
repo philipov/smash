@@ -8,6 +8,7 @@ from powertools import export
 from powertools import AutoLogger
 log = AutoLogger()
 from powertools import term
+from powertools.print import *
 
 import os
 import sys
@@ -49,6 +50,7 @@ def console( ctx, command, verbose ) :
     cwd = Path( os.getcwd() )
     log.print( 'IWD:     ', cwd )
     log.print( '' )
+
 
     if verbose:
         from .core.plugins import report_plugins
@@ -96,3 +98,6 @@ def console( ctx, command, verbose ) :
 
 if __name__ == '__main__':
     console()
+
+
+#----------------------------------------------------------------------#

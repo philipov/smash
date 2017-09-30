@@ -172,9 +172,9 @@ class ConvertXML( Handler ) :
             data = xml.load(path)
             log.info(f'with {path}: ', len( list( data['locator']['DATABASES']['db'] ) ) )
             # listprint(data['locator']['DATABASES']['db'].items())
-            purified_data = yaml.convert_xmldict(data)
+            purified_data = xml.convert_xmldict(data)
             output_path = path.parents[0] / f'{path.name}.yml'
-            yaml.dump(output_path, data)
+            yaml.dump(output_path, purified_data)
 
 
 #----------------------------------------------------------------------#

@@ -47,25 +47,46 @@ from smash.core.constants import CONFIG_PROTOCOL
 
 from powertools import export
 
+PATH_VARS_SECTION   = 'path'
+SHELL_VARS_SECTION  = 'var'
+
 #----------------------------------------------------------------------#
 
-####################
+
+
+
+def listdefault( l, key, default ) :
+    try :
+        return l[int( key )]
+    except IndexError as e:
+        raise IndexError(e, l, key) from None
+        # l.append( default )
+        # return l[-1]
+
 def getdeepitem( data, keys, kro=() ) :
     ''' convert nested index access to a list of keys
         supports passing along the key resolution order for configsectionview lookups
     '''
-    return reduce( lambda d, key :
-                   d.setdefault( key, OrderedDict( ), kro=kro ) if isinstance(d, ConfigSectionView)
-              else d.setdefault( key, OrderedDict( ) )          if not isinstance(d, (list, tuple))
-              else listdefault(d, key, [] ), #d[key],
+
+    def getlayer( d, key ) :
+        if isinstance( d, ConfigSectionView ) :
+            return d.setdefault( key, OrderedDict(), kro=kro )
+        #elif isinstance( d, dict ):
+        elif isinstance( d, (dict, Config) ) :
+            return d.setdefault( key, OrderedDict() )
+        elif isinstance( d, (list, tuple)):
+            return listdefault( d, key, [] )
+        elif d is None:
+            return OrderedDict()     # magical container dummyplug
+        raise TypeError(d, key)
+
+
+    return reduce( getlayer, #d[key],
                    keys, data )
 
-def listdefault(l, key, default ):
-    try:
-        return l[key]
-    except IndexError:
-        l[key] = default
-        return l[key]
+
+
+
 
 
 #----------------------------------------------------------------------#
@@ -89,6 +110,9 @@ class Config:
 
     class SubstitutionKeyNotFoundError(Exception):
         ''' expression token contained a key whose value could not be found during regex substitution '''
+
+    class SubstitutionValueTypeError(Exception):
+        ''' couldn't value the type of the value obtained from token substitution'''
 
     class TokenExpressionError(Exception):
         ''' $ tokens are scalar substitutions, @ tokens are sequence extensions '''
@@ -264,8 +288,19 @@ class Config:
                 log.info( term.red('Warning: '), f'{qualname(type(e))}( {e} )' )
         # log.info( term.blue( 'platform paths: ' ), platform_paths )
 
-        ### evaluate tokens in resulting strings
-        parsed_paths = ConfigSectionView( self.tree.root ).evaluate_list( '__inherit__', platform_paths, (self.tree.root,) )
+        ### attempt to resolve paths
+        resolved_paths = list()
+        with temporary_working_directory( self.path ) :
+            for path in platform_paths:
+                resolved_path = try_resolve( path, self.path )
+                resolved_paths.append(resolved_path)
+
+        ### evaluate tokens in resulting stringsa
+        parsed_paths = ConfigSectionView( self.tree.root ).evaluate_list(
+            '__inherit__',
+            resolved_paths,
+            kro=(self.tree.root,)
+        )
 
         ### A node may not inherit itself
         if self.filepath in map(Path, parsed_paths):
@@ -421,7 +456,7 @@ class Config:
         for node in self.key_resolution_order :
             #print( term.cyan( 'node:' ), node)
             for destination, speclist in node.__export__:
-                parsed_destination = ConfigSectionView(self, 'path').evaluate('__destination__', destination)
+                parsed_destination = ConfigSectionView(self, PATH_VARS_SECTION).evaluate('__destination__', destination)
                 assert len(speclist) > 1
                 exporter_name   = speclist[0]
                 export_subtrees = OrderedSet(speclist[1:])
@@ -479,13 +514,13 @@ class Config:
                             if key in kwargs:
                                 raise Config.YamlispKwargDuplicate(script_name, line_name, key)
 
-                            value = self['path'].evaluate(key, raw_value, kro=self.key_resolution_order)
+                            value = self[PATH_VARS_SECTION].evaluate(key, raw_value, kro=self.key_resolution_order)
                             kwargs[key] = value
                     elif isinstance(arg, list):
-                        value = self['path'].evaluate_list( '__script__', arg, kro=self.key_resolution_order )
+                        value = self[PATH_VARS_SECTION].evaluate_list( '__script__', arg, kro=self.key_resolution_order )
                         args.append(value)
                     else:
-                        value = self['path'].evaluate( '__script__', arg, kro=self.key_resolution_order )
+                        value = self[PATH_VARS_SECTION].evaluate( '__script__', arg, kro=self.key_resolution_order )
                         args.append(value)
 
                 scripts[script_name][line_name] = Config.ScriptLine( command_word, args, kwargs )
@@ -503,7 +538,7 @@ class Config:
 
 #----------------------------------------------------------------------#
 
-class ConfigSectionView :
+class ConfigSectionView:
     ''' implement the multi chainmap key resolution algorithm on a config and its tree
         each instance of this class keeps track of a level of index depth in the value parsing algorithm
         dynamic chainmap - search config parents for keys if not found in the current one
@@ -526,122 +561,6 @@ class ConfigSectionView :
 
     __pprint__ = __str__
     __repr__ = str
-
-
-
-    #----------------------------------------------------------------#
-
-    ####################
-    def setdefault( self, key, default, kro ) :
-        ''' support for getdeepitem on Config object'''
-        # print( term.blue( "-----------------------------" ), 'begin setdefault', self.config, self.section_keys, term.white( key ) )
-        try :
-            return self._getitem(key, kro)
-        except KeyError :
-            return getdeepitem( self.config._yaml_data, self.section_keys, kro ).setdefault( key, default )
-
-
-    ###################
-    def __getitem__( self, key ) :
-        ''' obtain the 'flat' value of the key in the configtree, from the point of view of the current config
-            if the current config contains the key, evaluate it and store it in a cache
-            if the value is a list, evaluate each element of the list and return the parsed list
-            if we need to look in a different node for the key, the process recurses from the point of view of that node
-            paths are resolved relative to the path of the file they're defined in, so '.' means the current file's path.
-            supports dictionaries inside dictionaries by returning nested ConfigSectionView objects
-        '''
-        # print(term.blue("-----------------------------"), 'begin __getitem__', self.config, term.white(key))
-        return self._getitem(key, self.config.key_resolution_order)
-
-    def _add2cache(self, key, value):
-        getdeepitem( self.config._final_cache, self.section_keys )[key]
-
-    class CouldNotGetItem(Exception):
-        ''' _getitem didn't find a result '''
-    def _getitem( self, key, kro) :
-
-        ### check cache
-
-        # try :
-        #     # log.debug( self.config, term.red( ' | ' ), self.section_keys )
-        #     final_value = getdeepitem( self.config._final_cache, self.section_keys )[key]
-        # except KeyError :
-        #     pass
-        # except RecursionError:
-        #     pass
-
-        # except ConfigSectionView.CouldNotGetItem:
-        #     pass
-        # else:
-            # print('else', self.config.name)
-            # return final_value
-
-        ### construct the current state of the inheritence chain
-        if len(kro) == 0:
-            pruned_kro = self.config.parents
-        else:
-            # print(term.red("PRUNE KRO"))
-            # listprint(kro)
-            pruned_kro = deque( kro )
-            try:
-                while pruned_kro.popleft( ) != self.config : pass
-            except IndexError:
-                pruned_kro = (self.config.tree.root,)
-            # listprint(pruned_kro)
-            # print( term.red( '--- pruned' ) )
-
-
-        ### check current node
-        # print( term.pink( 'CHECK SELF' ), self.config.filepath, 'keys', self.section_keys, term.white( key ) )
-        try:
-            raw_value = getdeepitem( self.config._yaml_data, self.section_keys )[key]
-        except KeyError:
-            raw_value = None
-        else:
-            if isinstance( raw_value, dict ) :                                                  # Dict Value Found
-                # print( 'config_view', key )
-                configview = ConfigSectionView( self.config, *self.section_keys, key )
-                return configview
-
-            elif isinstance( raw_value, list ) :                                                # List Value Found
-                # print( 'list' )
-                parsed_list = self.evaluate_list(key, raw_value, kro=pruned_kro)
-
-                # print( term.cyan('~~~Cache List Result'), self.section_keys, key, self.config , parsed_list)
-                #getdeepitem( self.config._final_cache, self.section_keys)[key] = parsed_list   # CACHE LIST ###
-                return parsed_list
-
-            else :                                                                              # Scalar Value Found
-                final_value = self.evaluate( key, raw_value , kro=pruned_kro)
-
-                # print( term.cyan('~~~Cache Scalar Result'), self.section_keys, key, final_value )
-                #getdeepitem( self.config._final_cache, self.section_keys )[key] = final_value   # CACHE VALUE ###
-                return final_value
-
-
-        ### check parents
-        # print(term.pink('CHECK PARENTS'), self.config.filepath, 'keys', self.section_keys, term.white(key))
-        # print('parents')
-        # listprint(self.config.parents)
-        # print('kro')
-        # listprint(pruned_kro )
-        for node in self.config.parents:
-            # print("look in parent:", node)
-            if node is self.config:
-                continue
-            try:
-                parent_value = getdeepitem( node, self.section_keys, pruned_kro )._getitem( key, kro )
-            except ConfigSectionView.CouldNotGetItem as e:
-                # print("MISSING IN ", node.filepath)
-                continue
-            else:
-                # print(term.blue('parent_value:'), self.section_keys, key, parent_value, self.config.filepath)
-                return parent_value
-
-        # not found
-        # print('__getitem__', key, term.red('|'), self.config, term.red( '|' ),self.section_keys)
-        raise ConfigSectionView.CouldNotGetItem( str(self.config), self.section_keys, key)
-
 
     #----------------------------------------------------------------#
 
@@ -675,24 +594,45 @@ class ConfigSectionView :
             yield path
 
     ####################
-    def allkeys( self ) :
-        '''get the union of keys for all nodes in the key resolution order'''
+    class KeyValueTypeMismatch(Exception):
+        ''' two parallel nodes did not have the same type for a key's value '''
 
-        key_union = GreedyOrderedSet()
+    def allkeys( self ) :
+        ''' get the union of keys for all nodes in the key resolution order '''
+
+        key_union               = GreedyOrderedSet()
+        key_sum                 = 0
+        first_section_type      = None
+        first_section           = None
+        # if 'db' in self.section_keys:
+        #     log.info(term.green('ALLKEYS DB '), self.config )
+
         for node in self.config.key_resolution_order :
             # print(term.cyan('node:'), node, self.section_keys, '\n',
             #       getdeepitem( node._yaml_data, self.section_keys ))
-
-            section = getdeepitem( node._yaml_data, self.section_keys )
             try:
+                section = getdeepitem( node._yaml_data, self.section_keys )
+            except IndexError as e:
+                continue
+
+            if first_section_type is None:
+                first_section_type  = type(section)
+                first_section       = section
+            elif first_section_type != type(section):
+                raise ConfigSectionView.KeyValueTypeMismatch(self.config, self.section_keys, first_section, section)
+
+            try :
                 keys = section.keys()
-            except AttributeError as e:
-                keys = range(0, len(section))
+            except AttributeError as e :
+                keys = range( key_sum, key_sum+len( section ) )
+                key_sum += len(keys)
+
             for key in keys :
                 # print(term.green('    key:'), key)
                 key_union.add( key )
         #     print( term.green( '\n------------------------------------' ))
         # print(term.cyan( '\n------------------------------------' ))
+        # log.info('keys ', term.green(key_union))
         return list( key_union )
 
     def allitems( self ) :
@@ -718,6 +658,162 @@ class ConfigSectionView :
 
     #----------------------------------------------------------------#
 
+    ####################
+    def setdefault( self, key, default, kro ) :
+        ''' support for getdeepitem on Config object'''
+        # print( term.blue( "-----------------------------" ), 'begin setdefault', self.config, self.section_keys, term.white( key ) )
+        try :
+            return self._getitem(key, kro)
+        except KeyError :
+            return getdeepitem( self.config._yaml_data, self.section_keys, kro ).setdefault( key, default )
+        # except ConfigSectionView.CouldNotGetItem as e:
+        #     return None
+
+
+
+    ###################
+    def __getitem__( self, key ) :
+        ''' obtain the 'flat' value of the key in the configtree, from the point of view of the current config
+            if the current config contains the key, evaluate it and store it in a cache
+            if the value is a list, evaluate each element of the list and return the parsed list
+            if we need to look in a different node for the key, the process recurses from the point of view of that node
+            paths are resolved relative to the path of the file they're defined in, so '.' means the current file's path.
+            supports dictionaries inside dictionaries by returning nested ConfigSectionView objects
+        '''
+        # print(term.blue("-----------------------------"), 'begin __getitem__', self.config, term.white(key))
+        return self._getitem(key, self.config.key_resolution_order)
+
+
+    def _add2cache(self, key, value):
+        raise NotImplementedError
+        return getdeepitem( self.config._final_cache, self.section_keys )[key]
+
+
+    ###################
+    class CouldNotGetItem(Exception):
+        ''' _getitem didn't find a result '''
+
+
+    ###################
+    def _getitem( self, key, kro) :
+
+        ### check cache
+
+        # try :
+        #     # log.debug( self.config, term.red( ' | ' ), self.section_keys )
+        #     final_value = getdeepitem( self.config._final_cache, self.section_keys )[key]
+        # except KeyError :
+        #     pass
+        # except RecursionError:
+        #     pass
+
+        # except ConfigSectionView.CouldNotGetItem:
+        #     pass
+        # else:
+            # print('else', self.config.name)
+            # return final_value
+        # if 'db' in self.section_keys:
+        #     log.dinfo(term.dred('GETITEM'), self.config,term.dred(' | '), key, term.dred( ' | ' ), list(str(p) for p in kro))
+        ### construct the current state of the inheritence chain
+        if len(kro) == 0:
+            pruned_kro = self.config.parents
+        else:
+            # print(term.red("PRUNE KRO"))
+            # listprint(kro)
+            pruned_kro = deque( kro )
+            try:
+                while pruned_kro.popleft( ) != self.config : pass
+            except IndexError:
+                pruned_kro = (self.config.tree.root,)
+            # listprint(pruned_kro)
+            # print( term.red( '--- pruned' ) )
+
+
+        ### check current node
+        # if 'db' in self.section_keys:
+        #     log.info( term.pink( 'CHECK SELF ' ), self.config.filepath, ' keys ', self.section_keys, ' ', term.white( key ) )
+        try:
+            raw_value = getdeepitem( self.config._yaml_data, self.section_keys )[key]
+        except KeyError:
+            raw_value = None
+        # except ConfigSectionView.CouldNotGetItem as e:
+        #     pass
+        else:
+            if isinstance( raw_value, dict ) :                                                  # Dict Value Found
+                # print( 'config_view', key )
+                configview = ConfigSectionView( self.config, *self.section_keys, key )
+                return configview
+
+            elif isinstance( raw_value, list ) :                                                # List Value Found
+                # log.info( 'list ', raw_value )
+                try:
+                    parsed_list = self.evaluate_list(key, raw_value, kro=pruned_kro)
+                # except Config.SubstitutionValueTypeError as e: #todo: this works but hides a deeper structural error
+                #     pass
+                except: raise
+                # print( term.cyan('~~~Cache List Result'), self.section_keys, key, self.config , parsed_list)
+                #getdeepitem( self.config._final_cache, self.section_keys)[key] = parsed_list   # CACHE LIST ###
+                else:
+                    return parsed_list
+                pass
+
+            else :                                                                              # Scalar Value Found
+                final_value = self.evaluate( key, raw_value , kro=pruned_kro)
+
+                # print( term.cyan('~~~Cache Scalar Result'), self.section_keys, key, final_value )
+                #getdeepitem( self.config._final_cache, self.section_keys )[key] = final_value   # CACHE VALUE ###
+                return final_value
+
+
+        ### check parents
+        # if 'db' in self.section_keys:
+        #     log.print(term.pink('CHECK PARENTS '), self.config.filepath, ' keys ', self.section_keys, term.white(key))
+        #     print('parents')
+        #     listprint(self.config.parents)
+        #     print('kro')
+        #     listprint(pruned_kro )
+        for node in self.config.parents:
+            # if 'db' in self.section_keys:
+            #     log.info("look in parent: ", node)
+            if node is self.config:
+                continue
+            try:
+                parent_value = getdeepitem( node, self.section_keys, pruned_kro )._getitem( key, kro )
+            except ConfigSectionView.CouldNotGetItem as e:
+                continue
+            # except Config.SubstitutionValueTypeError as e:
+            #     continue
+            else:
+                # print(term.blue('parent_value:'), self.section_keys, key, parent_value, self.config.filepath)
+                return parent_value
+
+        for node in pruned_kro :
+            # if key == 'db' :
+            #     log.info( "look in kro: ", node )
+            if node is self.config :
+                continue
+            try :
+                parent_value = getdeepitem( node, self.section_keys, pruned_kro )._getitem( key, kro )
+            except ConfigSectionView.CouldNotGetItem as e :
+                continue
+            # except Config.SubstitutionValueTypeError as e:
+            #     continue
+            else :
+                return parent_value
+
+        # not found
+        # print('__getitem__', key, term.red('|'), self.config, term.red( '|' ),self.section_keys)
+        raise ConfigSectionView.CouldNotGetItem( ''.join(str(s) for s in [
+            '\nlookup:     ', str(self.config), '::',self.section_keys, ':', key,
+
+            '\npruned kro: ', list( str( p ) for p in pruned_kro),
+            '\nkro:        ', list( str( p ) for p in kro ),
+            '\nparents:    ', self.config.parents
+        ]))
+
+
+    #----------------------------------------------------------------#
+
     #----------------------------------------------------------------#
 
     ####################
@@ -730,7 +826,19 @@ class ConfigSectionView :
             if isinstance( value, list ) or isinstance( value, dict ) :
                 new_value = ConfigSectionView( self.config, *self.section_keys, key, i )
             else :
-                new_value = self.evaluate( key, value, listeval=True, kro=kro, scripts_data=scripts_data )
+
+                try:
+                    # log.info('kro ', list(str(p) for p in kro))
+                    new_value = self.evaluate( key, value, listeval=True, kro=kro, scripts_data=scripts_data )
+                except ConfigSectionView.CouldNotGetItem as e:
+                    if value[0] == '@':
+                        continue
+                    else:
+                        raise
+                # except Config.SubstitutionValueTypeError as e:
+                #     parsed_list.extend(e.args[1])
+
+
                 try :
                     resultlist = self.resultlist.pop( )
                     # print( "RESULTLIST:", resultlist )
@@ -785,9 +893,9 @@ class ConfigSectionView :
         try:
             (result, count)     = token_expression_regex.subn( expression_replacer, value )
 
-        except TypeError as e: # todo: handle this TypeError inside expression_replacer
-            print(term.red('SUBSTITUTE'), key, value, self)
-            raise e
+        # except Config.SubstitutionValueTypeError as e: # todo: handle this TypeError inside expression_replacer
+        #     print(term.red('SUBSTITUTE'), key, value, self)
+        #     raise e
         except RecursionError as e:
             raise RecursionError( self.config.filepath, self.section_keys, key, value) from None
 
@@ -805,8 +913,10 @@ class ConfigSectionView :
         return result, total_count
 
 
+    ####################
     class InvalidTokenReferenceToPreviousLine(Exception):
         ''' can't refer to the previous line on the first line of a script'''
+
 
     ####################
     def expression_parser( self, key, kro=(), listeval=False, scripts_data=None ) :
@@ -889,11 +999,20 @@ class ConfigSectionView :
             ###################
             ### self-key references begin the search from the config's immediate parent
             if key == target_key \
-            and self.section_keys == target_sections \
+            and self.section_keys == tuple(target_sections) \
             and self.config.filepath == target_configpath:
                 node = kro[0]
 
+            # if key == 'db':
+            #     log.info(term.red('node '), node, ' | ', list(str(p) for p in kro),
+            #              term.red('\nCould not find '), target_configpath, '::', target_sections, ':', target_key,
+            #              term.red('\n for inserting into '), self.config.filepath, '::', self.section_keys, ':', key,
+            #      )
+
+            # try:
             result = getdeepitem(node, section_keys, kro)
+            # except ConfigSectionView.CouldNotGetItem as e:
+            #     raise RuntimeError(e)
 
             ###################
             # print(term.cyan("subn result:"), result, term.cyan('|'), key, term.cyan( '|' ), matchobj.group(0))
@@ -916,15 +1035,30 @@ class ConfigSectionView :
                 # todo: maybe use an exception to do this instead?
                 self.resultlist.append(result)
 
+            # elif result is None \
+            # and match == orig_value \
+            # and token == '@' :
+            #     self.resultlist.append( list() )
+            #
+            # elif isinstance(result, ConfigSectionView)\
+            #      and match == orig_value \
+            #      and token == '@':
+            #     log.info('rssult', result)
+            #     self.resultlist.append( list() )
+
             ###################
             elif not isinstance(result, str):
-                raise TypeError(' '.join(str(s) for s in [
-                    "Can't substitute non-scalar result",
-                    namedtuple('_', ['section', 'key', 'result'])
-                           (target_sections, target_key, result),
-                    '\n\tin', namedtuple( '_', ['section', 'key', 'value'] )
-                                            (self.section_keys, key, matchobj.string)
-                ]))
+                log.info( term.red( 'result ' ), result )
+                log.info( term.red('result.keys() '), result.keys())
+                log.info( term.red( 'result[0] ' ), result[0] )
+                log.info( term.red( '@ ' ), match, ' | ', orig_value, ' | ', listeval, ' | ', token )
+                raise Config.SubstitutionValueTypeError(
+                    namedtuple('token', ['section', 'key', 'result'])
+                            (target_sections, target_key, str(result)),
+                    namedtuple( 'section', ['section', 'key', 'value'] )
+                            (self.section_keys, key, matchobj.string),
+                    )
+
 
             ###################
             elif token == '@':
@@ -1019,7 +1153,7 @@ class ConfigTree :
             env_file = None
             env_path = root_file.parents[0]
 
-        print("env_file", env_path)
+        # print("env_file", env_path)
         self = cls( root_file=root_file, env_path=env_path )
 
         if env_file is not None:

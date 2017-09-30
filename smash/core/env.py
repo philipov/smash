@@ -7,7 +7,7 @@
 from powertools import export
 from powertools import AutoLogger
 log = AutoLogger()
-from powertools.print import dictprint
+from powertools.print import *
 from powertools import term
 
 from pathlib import Path
@@ -21,7 +21,9 @@ import subprocess
 import psutil
 import time
 
+
 from .config import ConfigTree
+from .config import SHELL_VARS_SECTION
 
 from ..util.proc import Subprocess
 from ..util.path import temporary_working_directory
@@ -103,10 +105,10 @@ class Environment:
         ### execution path
         log.print( '\nWORKDIR: ', self.config.path )
 
-        ### parse token expressions in command as if it were a key in the 'shell' section
+        ### parse token expressions in command as if it were a key in the SHELL_VARS_SECTION section
         cmd_str = ' '.join( str( c ) for c in command )
         log.print('RAW CMD: ', cmd_str)
-        cmd_str_parsed = self.config['shell'].evaluate( 'CMD', cmd_str, kro=self.config.parents ).replace( r'\\', r'\\' )
+        cmd_str_parsed = self.config[SHELL_VARS_SECTION].evaluate( 'CMD', cmd_str, kro=self.config.parents ).replace( r'\\', r'\\' )
         log.print( 'COMMAND: ', cmd_str_parsed, '\n')
 
         ### execute
@@ -336,6 +338,11 @@ class VirtualEnvironment(Environment):
         from .plugins import exporters
 
         print(term.white('\nBUILD VIRTUAL ENVIRONMENT'))
+
+        log.info( term.red( 'ENVIRONMENT KEY RESOLUTION ORDER' ) )
+
+        listprint( self.config.key_resolution_order, pfunc=log.info )
+
         for name, target in self.config.exports.items():
             if name == 'Shell': continue
             exporter = exporters[name]
@@ -390,8 +397,6 @@ class VirtualEnvironment(Environment):
 # https://github.com/conda/conda/issues/5356
 
 
-import conda
-from conda.cli import python_api
 
 ################################
 @export
@@ -400,6 +405,9 @@ class CondaEnvironment( VirtualEnvironment ) :
     __slots__ = ()
 
     def _manage(self, command, *arguments, **kwargs):
+        import conda
+        from conda.cli import python_api
+
         log.print('manage ', self.config)
         python_api.run_command( command, *arguments, **kwargs )
 

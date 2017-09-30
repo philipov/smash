@@ -17,6 +17,11 @@ except ImportError :
     from ruamel.yaml import Loader, Dumper
 import sys
 
+yaml.representer.RoundTripRepresenter.add_representer(
+    OrderedDict,
+    yaml.representer.RoundTripRepresenter.represent_ordereddict )
+
+from ruamel.yaml.comments import CommentedMap
 
 # YAML Anchors, references, nested values    - https://gist.github.com/bowsersenior/979804
 
@@ -102,11 +107,6 @@ def make_yml() :
 
 #----------------------------------------------------------------------#
 
-def convert_xmldict(data):
-    result = None
-    log.info(type(data))
-
-    return result
 
 #----------------------------------------------------------------------#
 
