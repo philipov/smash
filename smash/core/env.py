@@ -99,6 +99,7 @@ class Environment:
     def run( self, *command ) -> Subprocess:
         ''' execute a command within the environment '''
 
+
         ### environment variables
         variables = self.variables
 
@@ -338,18 +339,17 @@ class VirtualEnvironment(Environment):
         from .plugins import exporters
 
         print(term.white('\nBUILD VIRTUAL ENVIRONMENT'))
-
         log.info( term.red( 'ENVIRONMENT KEY RESOLUTION ORDER' ) )
-
         listprint( self.config.key_resolution_order, pfunc=log.info )
 
-        for name, target in self.config.exports.items():
-            if name == 'Shell': continue
-            exporter = exporters[name]
-
-            for destination, sections in target.items():
-                print(term.red('\nEXPORT'),' {:<10} {:<50} {:<10} {:<10}'.format(str(name), str(destination), str(sections), str(exporter)) )
-                result = exporter(self.config, sections, destination).export()
+        log.print('')
+        if self.configtree.has_changed :
+            for name, target in self.config.exports.items():
+                if name == 'Shell': continue
+                exporter = exporters[name]
+                for destination, sections in target.items():
+                    print(term.red('\nEXPORT'),' {:<10} {:<50} {:<10} {:<10}'.format(str(name), str(destination), str(sections), str(exporter)) )
+                    result = exporter(self.config, sections, destination).export()
         print(term.white('\n----------------'))
 
 
@@ -377,6 +377,8 @@ class VirtualEnvironment(Environment):
             else :
                 print( "Warning: No Shell Exporter defined. Will use only exterior environment variables." )
                 return OrderedDict( )
+
+        log.info('export shell\n')
         exporter    = exporters['Shell']
         subenv      = exporter( self.config, export_subtrees, 'subenv' ).export()
 

@@ -19,8 +19,8 @@ from ordered_set import OrderedSet
 from pathlib import Path
 
 
-from .config import Config
-from ..util import out
+from .config import Config, ConfigSectionView, ConfigTree, CONFIG_PROTOCOL
+from ..util import out, yaml
 from ..util.out import rprint
 from pprint import pprint, pformat
 
@@ -53,6 +53,35 @@ class Exporter:
 
 
 ################################
+
+#-------------------------------------------------------------------------------------------------#
+@export
+class ExportHashfile( Exporter ) :
+
+    @staticmethod
+    def new_hashfile(configtree:ConfigTree):
+        ''' construct a new hashfile config node '''
+
+        try :
+            hashfile = configtree.hashfile
+        except ConfigTree.HashfileMissing as e:
+            hashfile = None
+
+        hashes = yaml.CommentedMap()
+        hashes['__name__']      = str(configtree.root.name + '/hash')
+        hashes['__protocol__']  = CONFIG_PROTOCOL
+        hashes['__version__']   = '0.0.0' if hashfile is None else hashfile.version
+        hashes['smashbrowns']    = yaml.CommentedMap()
+
+        for filepath, node in configtree.items():
+            hashes['smashbrowns'][str(filepath)] = str(node.hash)
+        return hashes
+
+
+    def write( self, config: Config, sections, destination ) -> None :
+        hashes = self.new_hashfile(config.tree)
+        yaml.dump(destination, hashes)
+
 
 
 #-------------------------------------------------------------------------------------------------#
@@ -194,6 +223,7 @@ class ExportINI( ExportShell ) :
 # todo: change sys.platform checks to environment platform checks
 
 builtin_exporters = {
+    'Hashfile'      : ExportHashfile,
     'Shell'         : ExportShell,
     'ShellScript'   : ExportShellScriptCMD if sys.platform=='win32'
                  else ExportShellScriptBASH,

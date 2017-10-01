@@ -67,6 +67,7 @@ class SubprocessHandler( Handler ) :
     ''' execute the target as-is'''
 
     def __run__( self, command, arguments, env: Environment, *, ctx=None ) :
+        log.info( command,' ', arguments, '\n' )
         proc = env.run(command, *arguments)
         return next(proc) # wait for termination
 

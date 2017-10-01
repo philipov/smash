@@ -8,7 +8,8 @@ set PIP_CONFIG_FILE=C:\dev\secrets\pip.ini
 
 rem -- ToDo: macro to obtain __version__
 
-twine upload %PROJECT_PATH%\dist\smash-0.0.3-py3-none-any.whl --comment "fixing pypi description"
+rem twine upload %PROJECT_PATH%\dist\smash-0.0.3-py3-none-any.whl --comment "fixing pypi description"
+twine upload %PROJECT_PATH%\dist\smash-0.0.3.tar.gz --comment "fixing pypi description"
 
 @popd
 @endlocal

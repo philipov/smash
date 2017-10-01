@@ -27,8 +27,10 @@ from functools import reduce
 from itertools import chain
 from itertools import starmap
 from contextlib import suppress
-from copy import deepcopy
+from contextlib import contextmanager
+from copy import deepcopy, copy
 from pathlib import Path
+import hashlib
 import types
 
 from ..util.yaml import load as load_yaml
@@ -148,6 +150,7 @@ class Config:
         self.filename   = None
         self.path       = None
         self.filepath   = None
+        self.hash       = None
 
         self._yaml_data     = None
         self._final_cache   = OrderedDict( )
@@ -170,7 +173,15 @@ class Config:
         self.path       = target.parents[0]
         self.filename   = target.name
 
-        self._yaml_data  = load_yaml( target )
+        ### compute hash # https://stackoverflow.com/questions/36873485/compare-md5-hashes-of-two-files-in-python
+        hasher = hashlib.md5()
+        with open(target, 'rb') as file:
+            buffer = file.read()
+            hasher.update(buffer)
+            self.hash   = hasher.hexdigest()
+
+        ### load yaml
+        self._yaml_data = load_yaml( target )
         # todo: validate magic keys and immediately raise exception if not a compatible format
 
         if self._yaml_data is None:
@@ -190,10 +201,12 @@ class Config:
 
         #print( 'parents:', self.__inherit__ )
 
+        ### add self to configtree
         # todo: straighten out this manual addition of self to the configtree
         if self.tree is not None :
             self.tree.nodes[self.filepath] = self
 
+        ###
         self.load_parents()
         log.debug(term.yellow('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~done: '), self.filepath,'\n')
 
@@ -457,7 +470,7 @@ class Config:
             #print( term.cyan( 'node:' ), node)
             for destination, speclist in node.__export__:
                 parsed_destination = ConfigSectionView(self, PATH_VARS_SECTION).evaluate('__destination__', destination)
-                assert len(speclist) > 1
+                assert len(speclist) > 0
                 exporter_name   = speclist[0]
                 export_subtrees = OrderedSet(speclist[1:])
                 # print( term.white( '    export' ), destination, term.white('|'), exporter_name, term.white( '|' ), export_subtrees )
@@ -1217,6 +1230,8 @@ class ConfigTree :
 
     #----------------------------------------------------------------#
 
+
+
     ####################
     def __getitem__( self, filepath=None ) :
         ''' return the config node at a given filepath
@@ -1227,15 +1242,19 @@ class ConfigTree :
             return self.root
 
         resolved_filepath = Path(filepath).resolve()
+        paths = [
+            resolved_filepath,
+            resolved_filepath / '__env__.yml',
+            resolved_filepath / '__pkg__.yml',
+            resolved_filepath / '__root__.yml',
+        ]
 
-        with suppress( KeyError ) :
-            return self.nodes[resolved_filepath]
-        with suppress( KeyError ) :
-            return self.nodes[resolved_filepath / '__env__.yml']
-        with suppress( KeyError ) :
-            return self.nodes[resolved_filepath / '__pkg__.yml']
-        with suppress( KeyError ) :
-            return self.nodes[resolved_filepath / '__root__.yml']
+        for fp in paths:
+            try:
+                return self.nodes[fp]
+            except KeyError as e:
+               if fp.exists():
+                   return self.add_node(fp)
 
         raise KeyError( resolved_filepath, 'not found in', self )
 
@@ -1254,6 +1273,11 @@ class ConfigTree :
     __pprint__ = __str__
     __repr__ = str
 
+    def __iter__(self):
+        return self.nodes.keys()
+
+    def items(self):
+        return self.nodes.items()
 
     #----------------------------------------------------------------#
 
@@ -1314,6 +1338,58 @@ class ConfigTree :
         except KeyError as e :
             log.debug( 'KeyError:', e )
             return self.root
+
+
+    ####################
+    class HashfilePathUndefined(Exception):
+        ''' environment must have pkg:HASHFILE to access the hashfile '''
+    class HashfileMissing(Exception):
+        ''' attempt to access hashfile on a configtree that doesn't have one defined. '''
+
+    @property
+    def hashfile( self ) -> Config :
+        ''' config containing the saved hash results of the last smash invokation '''
+        try:
+
+            hashfile_path = self.env['pkg']['HASHFILE']
+        except ConfigSectionView.CouldNotGetItem as e:
+            raise ConfigTree.HashfilePathUndefined(self)
+
+        try:
+            return self[Path(hashfile_path)]
+        except KeyError as e:
+            raise ConfigTree.HashfileMissing(self, hashfile_path)
+
+    @property
+    def has_changed(self) -> bool:
+        ''' if the files are the same, we can skip running export (save Shell).
+            if the hashes of the new configs don't match the hashes in the hashfile,
+            or there are new config files, or if the hashfile doesn't exist,
+            then all exports will be executed again.
+        '''
+        try:                                    ### missing hashfile
+
+            hashes = self.hashfile['smashbrowns']
+        except ConfigTree.HashfileMissing as e:
+            log.warn(e)
+            return True
+
+        hashitems = list( hashes.items() )      ### file number doesn't match
+        if len(hashitems) != len(self.nodes):
+            log.warn('different number of configs')
+            return True
+
+        for filename, hashcode in hashitems:    ### codes don't match
+            log.info('check hashes ', filename)
+            new_hash = self[Path( filename )].hash
+            if str(self.hashfile.filepath) == str(filename):
+                continue
+            if new_hash != hashcode:
+                log.warn('hashcode mismatch: ', filename )
+                log.warn( new_hash, term.red(' != '), hashcode )
+                return True
+
+        return False                            ### Match!
 
 
     #----------------------------------------------------------------#

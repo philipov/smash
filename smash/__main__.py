@@ -74,10 +74,11 @@ def console( ctx, command, verbose ) :
                     import re
                     from smash.core.plugins import handlers
                     from smash.core.handler import NoHandlerMatchedError
-
+                    log.info('get handler')
                     for pattern, Handler in reversed( handlers.items( ) ):
-                        log.debug(term.dpink('match attempt'), f' {pattern:<16} {str(Handler):<50} {filepath.name}')
+                        log.info(term.dpink('handler match attempt'), f' {pattern:<16} {str(Handler):<50} {filepath.name}')
                         if re.match( pattern, str(filepath.name) ) :
+                            log.info('matched')
                             result = Handler( filepath, list(arguments), interior ).run( ctx )
                             break
                     else :
