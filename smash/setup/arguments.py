@@ -24,8 +24,9 @@ def collect_package_data( package_path ) :
 
 kwargs = dict(
     name            = 'smash',
-    version         = '0.0.3',
+    version         = '0.0.4',
     description     = __doc__,
+    license         = "MIT License",
 
     url             = 'https://github.com/philipov/smash',
     author          = 'Philip Loguinov',
@@ -38,7 +39,7 @@ kwargs = dict(
         'smash.tool',       # extensive subapplications
         'smash.util',       # low-level utilities
         'smash.setup',      # arguments for setup.py
-        'smash.templates',   # library of default files
+        'smash.templates',  # library of default files
 
         'smash.boot',       # instance manager
         'smash.pkg',        # package manager
@@ -80,8 +81,6 @@ kwargs = dict(
         'colorama',
         'termcolor',
     ],
-
-
     classifiers = [
         'Environment :: Console',
         'Environment :: Other Environment',
