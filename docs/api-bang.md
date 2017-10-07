@@ -1,6 +1,6 @@
 # smash.bang
 
-- [`smash.bang.console`](#console)
+- [`smash!`](#console)
   - [`smash.bang.init`](#smashbang-init)
   - [`smash.bang.set`](#smashbang-set)
   - [`smash.bang.box`](#smashbang-box)
