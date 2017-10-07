@@ -54,7 +54,7 @@ modular reproducible research environment manager
     - `smash.tool`  - transactional model for manipulating environment state
     - `smash.bang`  - `smash!` manage instances and boxes
     - `smash.box`   - put your research into [boxes](https://www.youtube.com/watch?v=XUwUp-D_VV0) and it'll all come out the same
-    - `smash.dash`  - graphical user interface; visualize interconnected instances
+    - `smash.dash`  - `smash-` graphical user interface; visualize interconnected instances
     - `smash.test`  - wrapper for running development, qa, deployment, and validation tests
     - `smash.setup` - smash package metadata used by setup.py. includes variations for testing and development.
 
