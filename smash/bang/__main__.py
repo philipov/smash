@@ -71,17 +71,29 @@ def spawn( ctx, instance_name:str, template_name:str ) :
     log.print( '\n', term.pink( '~~~~~~~~~~~~~~~~~~~~' ), term.cyan(' DONE '), '...' )
 
 
-##############################
-@console.command()
-def pack() :
-    ''' build executable distribution archive '''
 
 
 ##############################
+Set = set
 @console.command()
-def test() :
-    ''' run deployment tests on an instance or an archive '''
+def set() :
+    ''' new environment inside current instance '''
 
+
+##############################
+@console.command()
+def new() :
+    ''' new environment inside current instance '''
+
+##############################
+@console.command()
+def track() :
+    '''  '''
+
+##############################
+@console.command()
+def clone() :
+    ''' pull an instance archive from the deployment registry and extract it to a new directory '''
 
 ##############################
 @console.command()
@@ -90,20 +102,18 @@ def push() :
 
 ##############################
 @console.command()
-def new() :
-    ''' new environment inside current instance '''
-
-##############################
-Set = set
-@console.command()
-def set() :
-    ''' new environment inside current instance '''
+def pull() :
+    ''' '''
 
 ##############################
 @console.command()
-def clone() :
-    ''' pull an instance archive from the deployment registry and extract it to a new directory '''
+def pack() :
+    ''' build executable distribution archive '''
 
+##############################
+@console.command()
+def test() :
+    ''' run deployment tests on an instance or an archive '''
 
 ##############################
 if __name__ == '__main__' :

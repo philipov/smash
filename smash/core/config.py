@@ -700,8 +700,9 @@ class ConfigSectionView:
         return result
 
 
+    ###################
     def _add2cache(self, key, value):
-        # raise NotImplementedError
+        ''' used to add a list to the config's finalized-value cache '''
         keys = []
         item = self.config._final_cache
         for key in self.section_keys:
@@ -712,12 +713,11 @@ class ConfigSectionView:
             except KeyError as e:
                 new_item    = OrderedDict()
                 item[key]   = new_item
-
-
-            item            = new_item
+            item = new_item
 
         item[key] = value
         # log.info(key,': ' ,value,' | ', keys, ' ', item )
+
 
     ###################
     class CouldNotGetItem(Exception):
@@ -733,25 +733,12 @@ class ConfigSectionView:
             final_value = getdeepitem( self.config._final_cache, self.section_keys )[key]
         except KeyError :
             pass
-        # except RecursionError:
-        #     pass
-        #
-        # except ConfigSectionView.CouldNotGetItem:
-        #     pass
         else:
             # log.info(term.dcyan('FOUND IN CACHE'), self.config.name)
             if isinstance(final_value, (str, int, float)):
                 return final_value
-            # elif isinstance(final_value, OrderedDict) \
-            # and len(final_value) > 0 \
-            # and all(isinstance(k, int) for k in final_value):
-            #     return list(final_value)
 
 
-
-
-        # if 'db' in self.section_keys:
-        # log.dinfo(term.dred('GETITEM'), self.config,term.dred(' | '), key, term.dred( ' | ' ), list(str(p) for p in kro))
         ### construct the current state of the inheritence chain
         if len(kro) == 0:
             pruned_kro = self.config.parents
@@ -768,8 +755,6 @@ class ConfigSectionView:
 
 
         ### check current node
-        # if 'db' in self.section_keys:
-        #     log.info( term.pink( 'CHECK SELF ' ), self.config.filepath, ' keys ', self.section_keys, ' ', term.white( key ) )
         try:
             raw_value = getdeepitem( self.config._yaml_data, self.section_keys )[key]
         except KeyError:
@@ -786,12 +771,6 @@ class ConfigSectionView:
                 # log.info( 'list ', raw_value )
                 try:
                     parsed_list = self.evaluate_list(key, raw_value, kro=pruned_kro)
-                # except Config.SubstitutionValueTypeError as e: #todo: this works but hides a deeper structural error
-                #     pass
-
-                    # log.info( term.cyan('~~~Cache List Result'), self.section_keys, key, self.config , parsed_list)
-                    # getdeepitem( self.config._final_cache, self.section_keys)[key] = \
-                    #     OrderedDict({k : v for k, v in enumerate(parsed_list)})         # CACHE LIST ###
                     if all(isinstance(v, str) for v in parsed_list):
                         getdeepitem( self.config._final_cache, self.section_keys )[key] = parsed_list
                         self._add2cache(key, OrderedDict({k:v for k,v in enumerate(parsed_list)}))
@@ -814,12 +793,6 @@ class ConfigSectionView:
 
 
         ### check parents
-        # if 'db' in self.section_keys:
-        #     log.print(term.pink('CHECK PARENTS '), self.config.filepath, ' keys ', self.section_keys, term.white(key))
-        #     print('parents')
-        #     listprint(self.config.parents)
-        #     print('kro')
-        #     listprint(pruned_kro )
         for node in self.config.parents:
             # if 'db' in self.section_keys:
             #     log.info("look in parent: ", node)
@@ -830,14 +803,6 @@ class ConfigSectionView:
                 parent_value = parent_value_root._getitem( key, kro )
             except ConfigSectionView.CouldNotGetItem as e:
                 continue
-            # except AttributeError:
-            #     pprint(self.config._final_cache)
-            #
-            #     log.info(parent_value_root, ' ', key)
-            #     return parent_value_root[key]
-                # return parent_value_root[key]
-            # except Config.SubstitutionValueTypeError as e:
-            #     continue
             else:
                 # print(term.blue('parent_value:'), self.section_keys, key, parent_value, self.config.filepath)
                 return parent_value
