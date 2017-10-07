@@ -1,16 +1,16 @@
 # smash.bang
 
 - [`smash.bang.console`](#console)
-  - [`smash.bang.init`](#smashbanginit)
-  - [`smash.bang.set`](#smashbangset)
-  - [`smash.bang.box`](#smashbangbox)
-  - [`smash.bang.link`](#smashbanglink)
-  - [`smash.bang.spawn`](#smashbangspawn)
-  - [`smash.bang.clone`](#smashbangclone)
-  - [`smash.bang.push`](#smashbangpush)
-  - [`smash.bang.pull`](#smashbangpull)
-  - [`smash.bang.pack`](#smashbangpack)
-  - [`smash.bang.test`](#smashbangtest)
+  - [`smash.bang.init`](#smashbang-init)
+  - [`smash.bang.set`](#smashbang-set)
+  - [`smash.bang.box`](#smashbang-box)
+  - [`smash.bang.link`](#smashbang-link)
+  - [`smash.bang.spawn`](#smashbang-spawn)
+  - [`smash.bang.clone`](#smashbang-clone)
+  - [`smash.bang.push`](#smashbang-push)
+  - [`smash.bang.pull`](#smashbang-pull)
+  - [`smash.bang.pack`](#smashbang-pack)
+  - [`smash.bang.test`](#smashbang-test)
 ---
 
 ### console
