@@ -29,8 +29,8 @@ class UnknownTemplateError( Exception ) :
 @click.option( '--simulation', '-S',    default=False, is_flag=True )
 @click.pass_context
 def console( ctx , verbose, simulation ) :
-    ''' basic utilities for managing smash instances on a host '''
-
+    ''' basic utilities for managing smash instances on a host
+    '''
     term.init_color()
 
     log.print( term.cyan( '\n~~~~~~~~~~~~~~~~~~~~ ' ), term.pink( 'SMASH'),term.cyan('.'), term.pink('BANG' ) )
@@ -50,10 +50,11 @@ def console( ctx , verbose, simulation ) :
 @click.argument( 'instance_name' )
 @click.argument( 'template_name', default = 'smash' )
 @click.pass_context
-def spawn( ctx, instance_name:str, template_name:str ) :
-    ''' create new instance root in target directory using a registered template '''
-
+def init( ctx, instance_name:str, template_name:str ) :
+    ''' create new instance root in target directory using a registered template
+    '''
     from ..core.plugins import instance_templates
+
     try:
         parent_args     = ctx.obj
         template        = instance_templates[template_name]
@@ -71,49 +72,104 @@ def spawn( ctx, instance_name:str, template_name:str ) :
     log.print( '\n', term.pink( '~~~~~~~~~~~~~~~~~~~~' ), term.cyan(' DONE '), '...' )
 
 
-
-
 ##############################
 Set = set
 @console.command()
-def set() :
+@click.argument( 'token' )
+@click.argument( 'value' )
+@click.pass_context
+def set( ctx, token, value ) :
+    ''' new environment inside current instance
+    '''
+    from ..core.env import InstanceEnvironment
+    from ..core.env import VirtualEnvironment
+
+    parent_args = ctx.obj
+    context_env = parent_args.context_env
+    with context_env as context:
+        with InstanceEnvironment(parent=context) as instance:
+            with VirtualEnvironment( instance ) as interior :
+                configpath = None
+                sections = None
+                key = None
+                ## configfile::
+                try:
+                    (configpath, rest) = token.split('::')[0]
+                except ValueError as e:
+                    (configpath, rest) = interior.config.filepath, token
+                #
+                # ### section:section:key
+
+                keys = rest.split(':')
+
+                if len(keys) > 1:
+                    try:
+                        sections    = keys[:-1]
+                        key         = keys[-1:]
+                    except IndexError as e:
+                        raise e
+                elif len(keys) == 1:
+                    sections    = list()
+                    key         = keys[0]
+                else:
+                    raise IndexError(token)
+
+                log.print( "\n", term.green('SET '), configpath, '::', sections, ':', key, term.green(' = '), value, '   ', keys )
+
+
+
+##############################
+@console.command()
+def box() :
     ''' new environment inside current instance '''
 
 
 ##############################
 @console.command()
-def new() :
-    ''' new environment inside current instance '''
+@click.argument( 'category', default='categories')
+@click.pass_context
+def look(ctx, category=None) :
+    ''' display information
+    '''
+    from ..core.env import InstanceEnvironment
+    from ..core.env import VirtualEnvironment
+
+    parent_args = ctx.obj
+    context_env = parent_args.context_env
+    with context_env as context:
+        with InstanceEnvironment(parent=context) as instance:
+            with VirtualEnvironment( instance ) as interior :
+                if category is 'categories':
+                    log.info( "\n", term.green('LIST CATEGORIES'))
+                else:
+                    log.info( "\n", term.green('LIST '), category )
+
+
+
+
 
 ##############################
 @console.command()
-def track() :
-    '''  '''
+def spawn() :
+    ''' launch a service '''
 
 ##############################
 @console.command()
 def clone() :
     ''' pull an instance archive from the deployment registry and extract it to a new directory '''
 
-##############################
-@console.command()
-def push() :
-    ''' upload archive to deployment registry '''
-
-##############################
-@console.command()
-def pull() :
-    ''' '''
 
 ##############################
 @console.command()
 def pack() :
     ''' build executable distribution archive '''
 
+
 ##############################
 @console.command()
 def test() :
     ''' run deployment tests on an instance or an archive '''
+
 
 ##############################
 if __name__ == '__main__' :

@@ -38,14 +38,12 @@ kwargs = dict(
         'smash.core',       # fundamental abstractions
         'smash.tool',       # extensive subapplications
         'smash.util',       # low-level utilities
+        'smash.test',       # testing plugins and utilities
         'smash.setup',      # arguments for setup.py
         'smash.templates',  # library of default files
 
-        'smash.boot',       # instance manager
-        'smash.pkg',        # package manager
-        'smash.env',        # environment manager
-        'smash.test',       # testing manager
-        'smash.dash',       # graphical user interface
+        'smash.bang',       # instance and box management cli
+        'smash.dash',       # graphical admin and monitoring interface
 
     ],
 
@@ -57,12 +55,12 @@ kwargs = dict(
     entry_points = {
         'console_scripts': [
             'smash      = smash:console',
-            #'smash.boot = smash.boot:console',
+
             'smash.bang = smash.bang:console',
             'smash!     = smash.bang:console',
 
             'smash.dash = smash.dash:console',
-            'smash.test = smash.test:console',
+            'smash-     = smash.dash:console',
         ],
     },
     install_requires = [
@@ -78,7 +76,7 @@ kwargs = dict(
         'dulwich',          # git
         'wget',             # downloader
 
-        'colored_traceback',
+        'colored_traceback',# depr.
         'colorama',
         'termcolor',
     ],

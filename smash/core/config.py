@@ -54,9 +54,6 @@ SHELL_VARS_SECTION  = 'var'
 
 #----------------------------------------------------------------------#
 
-
-
-
 def listdefault( l, key, default ) :
     try :
         return l[int( key )]
@@ -81,15 +78,9 @@ def getdeepitem( data, keys, kro=() ) :
         elif d is None:
             return OrderedDict()     # magical container dummyplug
         # return d
-        # raise TypeError(d, key)
+        raise TypeError(d, key)
 
-
-    return reduce( getlayer, #d[key],
-                   keys, data )
-
-
-
-
+    return reduce( getlayer, keys, data )
 
 
 #----------------------------------------------------------------------#

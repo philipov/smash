@@ -1,7 +1,7 @@
 #-- smash.tools.viper
 
 """
-version integration package environment repository
+version integrated package environment repository
 """
 
 from powertools import export
