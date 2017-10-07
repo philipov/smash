@@ -1,7 +1,7 @@
 #-- smash.tools.notify
 
 """
-send emails
+send emails in response to events
 """
 
 from powertools import export

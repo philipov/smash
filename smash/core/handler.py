@@ -76,7 +76,7 @@ class SubprocessHandler( Handler ) :
 
 @export
 class YamlispHandler( Handler ) :
-    ''' this allows using the python interpreter defined by the virtual environment'''
+    ''' execute a command word in the body of the target yaml file's __script__ section'''
 
     def __run__( self, target: Path, arguments, env: Environment, *, ctx=None ) :
         ''' read the file and do something with it'''

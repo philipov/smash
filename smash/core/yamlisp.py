@@ -49,17 +49,17 @@ class SubcommandNotFound( Exception ) :
     ''' could not find a tool or script to handle a line'''
 
 ####################
-def run_yamlisp(    env: Environment,
-                    config: Config,
+def run_yamlisp(    env:            Environment,
+                    config:         Config,
                     command_word:   str,
                     g_args:         list,
                     g_kwargs:       dict,
                     *,
-                    scripts_results=None,
-                ):
-    ''' execute a command word from a yamlisp file '''
+                    scripts_results:OrderedDict = None,
+                ) -> OrderedDict:
+    ''' execute a command-word from a yamlisp file '''
 
-    ### get the script data structure and select our command word
+    ### get a command-word from the config's __script__ section.
     scripts = config.__script__
     # dictprint(scripts)
     try :
@@ -67,10 +67,13 @@ def run_yamlisp(    env: Environment,
     except KeyError :
         raise MissingScriptError( command_word ) from None
 
+    ###
     scripts_data = OrderedDict()
-    scripts_data['current_script'] = command_word
-    scripts_data['current_line'] = list( script.items() )[0]
-    scripts_data['previous_line'] = None
+    scripts_data['current_script']  = command_word
+    scripts_data['current_line']    = list( script.items() )[0]
+    scripts_data['previous_line']   = None
+
+    ### keep track of results of previous command-words
     if scripts_results is None:
         scripts_results = OrderedDict()
         for script_name in scripts:

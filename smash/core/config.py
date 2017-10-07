@@ -80,7 +80,8 @@ def getdeepitem( data, keys, kro=() ) :
             return listdefault( d, key, [] )
         elif d is None:
             return OrderedDict()     # magical container dummyplug
-        raise TypeError(d, key)
+        # return d
+        # raise TypeError(d, key)
 
 
     return reduce( getlayer, #d[key],
@@ -694,13 +695,29 @@ class ConfigSectionView:
             supports dictionaries inside dictionaries by returning nested ConfigSectionView objects
         '''
         # print(term.blue("-----------------------------"), 'begin __getitem__', self.config, term.white(key))
-        return self._getitem(key, self.config.key_resolution_order)
+
+        result = self._getitem(key, self.config.key_resolution_order)
+        return result
 
 
     def _add2cache(self, key, value):
-        raise NotImplementedError
-        return getdeepitem( self.config._final_cache, self.section_keys )[key]
+        # raise NotImplementedError
+        keys = []
+        item = self.config._final_cache
+        for key in self.section_keys:
+            keys.append(key)
 
+            try:
+                new_item    = item[key]
+            except KeyError as e:
+                new_item    = OrderedDict()
+                item[key]   = new_item
+
+
+            item            = new_item
+
+        item[key] = value
+        # log.info(key,': ' ,value,' | ', keys, ' ', item )
 
     ###################
     class CouldNotGetItem(Exception):
@@ -711,22 +728,30 @@ class ConfigSectionView:
     def _getitem( self, key, kro) :
 
         ### check cache
-
-        # try :
-        #     # log.debug( self.config, term.red( ' | ' ), self.section_keys )
-        #     final_value = getdeepitem( self.config._final_cache, self.section_keys )[key]
-        # except KeyError :
-        #     pass
+        try :
+            # log.debug( self.config, term.red( ' | ' ), self.section_keys )
+            final_value = getdeepitem( self.config._final_cache, self.section_keys )[key]
+        except KeyError :
+            pass
         # except RecursionError:
         #     pass
-
+        #
         # except ConfigSectionView.CouldNotGetItem:
         #     pass
-        # else:
-            # print('else', self.config.name)
-            # return final_value
+        else:
+            # log.info(term.dcyan('FOUND IN CACHE'), self.config.name)
+            if isinstance(final_value, (str, int, float)):
+                return final_value
+            # elif isinstance(final_value, OrderedDict) \
+            # and len(final_value) > 0 \
+            # and all(isinstance(k, int) for k in final_value):
+            #     return list(final_value)
+
+
+
+
         # if 'db' in self.section_keys:
-        #     log.dinfo(term.dred('GETITEM'), self.config,term.dred(' | '), key, term.dred( ' | ' ), list(str(p) for p in kro))
+        # log.dinfo(term.dred('GETITEM'), self.config,term.dred(' | '), key, term.dred( ' | ' ), list(str(p) for p in kro))
         ### construct the current state of the inheritence chain
         if len(kro) == 0:
             pruned_kro = self.config.parents
@@ -763,19 +788,29 @@ class ConfigSectionView:
                     parsed_list = self.evaluate_list(key, raw_value, kro=pruned_kro)
                 # except Config.SubstitutionValueTypeError as e: #todo: this works but hides a deeper structural error
                 #     pass
-                except: raise
-                # print( term.cyan('~~~Cache List Result'), self.section_keys, key, self.config , parsed_list)
-                #getdeepitem( self.config._final_cache, self.section_keys)[key] = parsed_list   # CACHE LIST ###
+
+                    # log.info( term.cyan('~~~Cache List Result'), self.section_keys, key, self.config , parsed_list)
+                    # getdeepitem( self.config._final_cache, self.section_keys)[key] = \
+                    #     OrderedDict({k : v for k, v in enumerate(parsed_list)})         # CACHE LIST ###
+                    if all(isinstance(v, str) for v in parsed_list):
+                        getdeepitem( self.config._final_cache, self.section_keys )[key] = parsed_list
+                        self._add2cache(key, OrderedDict({k:v for k,v in enumerate(parsed_list)}))
+                except :
+                    raise
                 else:
                     return parsed_list
                 pass
 
-            else :                                                                              # Scalar Value Found
+            elif isinstance(raw_value, (str, int, float)) :                                                                              # Scalar Value Found
                 final_value = self.evaluate( key, raw_value , kro=pruned_kro)
 
-                # print( term.cyan('~~~Cache Scalar Result'), self.section_keys, key, final_value )
-                #getdeepitem( self.config._final_cache, self.section_keys )[key] = final_value   # CACHE VALUE ###
+                # log.info( term.cyan('~~~Cache Scalar Result'), self.section_keys, key, final_value )
+
+                getdeepitem( self.config._final_cache, self.section_keys )[key] = final_value   # CACHE VALUE ###
+                # self._add2cache(key, final_value)
                 return final_value
+            else:
+                raise TypeError(raw_value, key, self.section_keys)
 
 
         ### check parents
@@ -791,9 +826,16 @@ class ConfigSectionView:
             if node is self.config:
                 continue
             try:
-                parent_value = getdeepitem( node, self.section_keys, pruned_kro )._getitem( key, kro )
+                parent_value_root = getdeepitem( node, self.section_keys, pruned_kro )
+                parent_value = parent_value_root._getitem( key, kro )
             except ConfigSectionView.CouldNotGetItem as e:
                 continue
+            # except AttributeError:
+            #     pprint(self.config._final_cache)
+            #
+            #     log.info(parent_value_root, ' ', key)
+            #     return parent_value_root[key]
+                # return parent_value_root[key]
             # except Config.SubstitutionValueTypeError as e:
             #     continue
             else:
@@ -809,10 +851,13 @@ class ConfigSectionView:
                 parent_value = getdeepitem( node, self.section_keys, pruned_kro )._getitem( key, kro )
             except ConfigSectionView.CouldNotGetItem as e :
                 continue
+            # except AttributeError:
+            #     continue
             # except Config.SubstitutionValueTypeError as e:
             #     continue
             else :
                 return parent_value
+
 
         # not found
         # print('__getitem__', key, term.red('|'), self.config, term.red( '|' ),self.section_keys)
@@ -1061,10 +1106,10 @@ class ConfigSectionView:
 
             ###################
             elif not isinstance(result, str):
-                log.info( term.red( 'result ' ), result )
-                log.info( term.red('result.keys() '), result.keys())
-                log.info( term.red( 'result[0] ' ), result[0] )
-                log.info( term.red( '@ ' ), match, ' | ', orig_value, ' | ', listeval, ' | ', token )
+                # log.info( term.red( 'result ' ), result )
+                # log.info( term.red('result.keys() '), result.keys())
+                # log.info( term.red( 'result[0] ' ), result[0] )
+                # log.info( term.red( '@ ' ), match, ' | ', orig_value, ' | ', listeval, ' | ', token )
                 raise Config.SubstitutionValueTypeError(
                     namedtuple('token', ['section', 'key', 'result'])
                             (target_sections, target_key, str(result)),
@@ -1095,9 +1140,9 @@ class ConfigSectionView:
 token_expression_regex = re.compile(
     r"""(   (?P<token>[$@%])
           {                                     # ${
-            ((?P<configpath>[^${}]+?)::)?       #   configpath@         [optional]
+            ((?P<configpath>[^${}]+?)::)?       #   configpath::        [optional]
             ((?P<sections>[^${}]+):)?           #   sections:           [optional]
-            #((?P<objects>[^${}]+).)?            #   objects.            [optional]
+            #((?P<object>[^${}]+).)?             #   object.             [optional]
             (?P<key>[^$:{}]+?)                  #   key                 -required-
           })                                    #  }
     """, re.VERBOSE )

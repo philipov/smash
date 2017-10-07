@@ -1,7 +1,7 @@
-#-- smash.tools.repo
+#-- smash.tools.viper
 
 """
-methods for manipulating repositories using choice of backend (github, gitlab, bare git)
+version integration package environment repository
 """
 
 from powertools import export

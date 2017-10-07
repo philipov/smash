@@ -33,7 +33,7 @@ def console( ctx , verbose, simulation ) :
 
     term.init_color()
 
-    log.print( term.cyan( '\n~~~~~~~~~~~~~~~~~~~~ ' ), term.pink( 'SMASH'),term.cyan('.'), term.pink('BOOT' ) )
+    log.print( term.cyan( '\n~~~~~~~~~~~~~~~~~~~~ ' ), term.pink( 'SMASH'),term.cyan('.'), term.pink('BANG' ) )
     log.print( 'SCRIPT:  ', __file__ )
     cwd = Path( os.getcwd() )
     log.print( 'WORKDIR: ', cwd )
@@ -50,8 +50,9 @@ def console( ctx , verbose, simulation ) :
 @click.argument( 'instance_name' )
 @click.argument( 'template_name', default = 'smash' )
 @click.pass_context
-def create( ctx, instance_name:str, template_name:str ) :
+def spawn( ctx, instance_name:str, template_name:str ) :
     ''' create new instance root in target directory using a registered template '''
+
     from ..core.plugins import instance_templates
     try:
         parent_args     = ctx.obj
@@ -60,9 +61,9 @@ def create( ctx, instance_name:str, template_name:str ) :
 
         ### template creates the instance
         instance        = template( install_root,
-                                    simulation  = parent_args.simulation,
-                                    parent      = parent_args.context_env
-                                    ).instance
+            simulation  = parent_args.simulation,
+            parent      = parent_args.context_env
+        ).instance
 
     except KeyError as e:
         raise UnknownTemplateError(e)
@@ -72,7 +73,7 @@ def create( ctx, instance_name:str, template_name:str ) :
 
 ##############################
 @console.command()
-def build() :
+def pack() :
     ''' build executable distribution archive '''
 
 
@@ -87,6 +88,16 @@ def test() :
 def push() :
     ''' upload archive to deployment registry '''
 
+##############################
+@console.command()
+def new() :
+    ''' new environment inside current instance '''
+
+##############################
+Set = set
+@console.command()
+def set() :
+    ''' new environment inside current instance '''
 
 ##############################
 @console.command()

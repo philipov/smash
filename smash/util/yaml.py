@@ -92,7 +92,6 @@ def load( filename:Path ) :
 
 #----------------------------------------------------------------------#
 
-
 def make_yml() :
     yml = yaml.YAML()
     yml.explicit_start      = False
@@ -113,7 +112,13 @@ def make_yml() :
 def dump( filename: Path, data ) :
     yml = make_yml()
     with open( str(filename), 'w' ) as file :
-        yaml.dump( data, file, Dumper=yaml.RoundTripDumper, indent=2, block_seq_indent=0, explicit_start=False, tags=None, canonical=False)
+        yaml.dump( data, file, Dumper=yaml.RoundTripDumper,
+                   indent=2,
+                   block_seq_indent=0,
+                   explicit_start=False,
+                   tags=None,
+                   canonical=False
+               )
     yml.dump( data, sys.stdout  )
 
 #----------------------------------------------------------------------#

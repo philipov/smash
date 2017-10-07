@@ -57,10 +57,11 @@ kwargs = dict(
     entry_points = {
         'console_scripts': [
             'smash      = smash:console',
-            'smash.boot = smash.boot:console',
-            'smash.env  = smash.env:console',
-            'smash.pkg  = smash.pkg:console',
-            'smash.git  = smash.git:console',
+            #'smash.boot = smash.boot:console',
+            'smash.bang = smash.bang:console',
+            'smash!     = smash.bang:console',
+
+            'smash.dash = smash.dash:console',
             'smash.test = smash.test:console',
         ],
     },
