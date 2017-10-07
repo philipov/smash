@@ -1,0 +1,7 @@
+# smash.tool
+---
+
+### notify
+
+
+---
