@@ -1,6 +1,6 @@
 # smash.test
 
-- [`smash.boot.console`](#console)
+- [`smash.test.console`](#console)
 
 
 
