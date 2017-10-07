@@ -2,7 +2,7 @@
 
 - [`smash!`](#console)
   - [`smash! init`](#smashbang-init) `instance name` `[template]`
-  - [`smash! set`](#smashbang-set) \<`configfile`::`section`:`key` `value`
+  - [`smash! set`](#smashbang-set) `configfile`::`section`:`key` `value`
   - [`smash! box`](#smashbang-box)
     - [`new`](#smashbang-box-new) `box route` `[template]`
     - [`link`](#smashbang-box-link) `remote git` 
