@@ -5,13 +5,13 @@
 
  
 ---
-- [`smash.config`](#smashconfigtree)
-- [`smash.core.platform`](#smashcoreplatform)
-- [`smash.core.plugins`](#smashcoreplugins)
-- [`smash.core.env`](#smashcoreenv)
 - [`smash.core.instance`](#smashcoreinstance)
-- [`smash.core.pkg`](#smashcorepkg)
+- [`smash.config`](#smashconfigtree)
+- [`smash.core.env`](#smashcoreenv)
+- [`smash.core.box`](#smashcorebox)
+- [`smash.core.plugins`](#smashcoreplugins)
 - [`smash.core.tool`](#smashcoretool)
+- [`smash.core.platform`](#smashcoreplatform)
 - [`smash.core.exporter`](#smashcoreexporter)
 - [`smash.core.handler`](#smashcorehandler)
 - [`smash.core.user`](#smashcoreuser)
@@ -54,7 +54,7 @@
 
  
 ---
-### smash.core.pkg
+### smash.core.box
 
  
 ---
