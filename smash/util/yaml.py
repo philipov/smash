@@ -139,12 +139,16 @@ def alignment_and_breaks( yaml_output:str ):
     for line in lines:
         line:LineFields
 
-        empty_line  = '' if not any(case(line, prevline)
+        empty_line  = '\n' if any(case(line, prevline)    # todo: make this pluggable
             for case in [
                 lambda l, p: p.rank > l.rank,
                 lambda l, p: p.key.startswith('~') and len(l.dash) > 0,
+                lambda l, p: p.key in (
+                    '__protocol__:',
+                    '__inherit__',
+                ),
             ]
-        )        else '\n'
+        )        else ''
 
         padding     = maxpadding[line.rank]
         left        = f'{line.indent}{line.dash}{line.key}'

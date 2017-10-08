@@ -77,31 +77,41 @@ def boot( ctx, instance_name:str, template_name:str ) :
 
 
 ##############################
-OP_SET              = '='
-OP_LIST_LEFT        = '['
-OP_LIST_RIGHT       = ']'
-TOKEN_SEP_FILE      = '::'
-TOKEN_SEP_SECTION   = ':'
-VALID_OPS           = (
-    None,
-    OP_SET,
-    OP_LIST_LEFT,
-    OP_LIST_RIGHT
-)
+
 @console.command()
-@click.argument( 'token' )
-@click.argument( 'operator',    default=lambda:None )
-@click.argument( 'value',       default=lambda:None )
+@click.argument( 'token' )                              # `configfile::section1:section2:...:key`, key may be None
+@click.argument( 'operator',    default=lambda:None )   # `=`, `[`, `]`, None
+@click.argument( 'value',       default=lambda:None )   # str, int, None
 @click.pass_context
 def set( ctx, token, operator, value ) :
     ''' view or modify a value in a yamilsp config file
-        stores a timestamped backup of the old file in the .bak directory
+
+        the config object to use is either the environment config, or specified in the token using `::`
+
+        if a value is specified:
+
+            `=` will assign a scalar to a key
+
+            `=` will create a new section, value can be 'list' or 'map'
+
+            `[` and `]` on a key inserts the value next to the key, if section is a list
+
+            `[` or `]` on a section append the value to the section, if section is a list
+
+        if value is ommitted:
+
+            `=` will delete a key
+
+            `[` and `]` on a key move it up or down in its container
+
+            `[` or `]` on a section pop a value, if section is a list
+
+            ommitting an operator will print the token's value and exit without making changes
+
+        if a change is made, a timestamped backup of the old file is stored in the .bak directory
     '''
-    from ..core.env import InstanceEnvironment
-    from ..core.env import VirtualEnvironment
-    from ..core.config import Config
-    from ..core.config import getdeepitem
-    import time
+    from ..core.env import InstanceEnvironment, VirtualEnvironment
+    from .set import VALID_OPS, token_set, NothingToDo
 
     if operator not in VALID_OPS:
         raise ValueError(f'Invalid smash! set operator. Must be one of {VALID_OPS}')
@@ -110,152 +120,24 @@ def set( ctx, token, operator, value ) :
     context_env = parent_args.context_env
     with context_env as context:
         with InstanceEnvironment(parent=context) as instance:
-            interior = VirtualEnvironment( instance )
-
-            ## configfile::
+            interior    = VirtualEnvironment( instance )
             try:
-                (configpath, rest) = token.split(TOKEN_SEP_FILE)[0]
-            except ValueError as e:
-                (configpath, rest) = interior.config.filepath, token
-            config:Config = interior.configtree[configpath]
-
-            # ### section:section:key
-            keys = rest.split(TOKEN_SEP_SECTION)
-            if len(keys) > 1:
-                try:
-                    sections    = keys[:-1]
-                    key         = keys[-1]
-                except IndexError as e:
-                    raise e
-            elif len(keys) == 1:
-                sections    = list()
-                key         = keys[0]
+                config              = token_set( token, operator, value, interior.configtree )
+            except NothingToDo:
+                pass
             else:
-                raise IndexError(token)
+                import time
+                ### backup
+                path:Path           = config.filepath
+                timestamp           = time.strftime('%Y%m%d-%H%M%S.', time.localtime())
+                new_filepath:Path   = config.path / '.bak' / (timestamp+str(config.filename))
+                backup_path:Path    = new_filepath.parent
+                if not backup_path.exists():
+                    backup_path.mkdir()
+                path.rename(new_filepath)
 
-            ### display value
-            try:
-                view = getdeepitem(config._yaml_data, sections)
-                if key is '':
-                    key             = None
-                    current_value   = view
-                elif isinstance(view, list):
-                    key = int(key)
-                    if key < 0:
-                        key = len(view) + key
-                    current_value = view[key]
-                else:
-                    current_value = view[key]
-            except KeyError as e:
-                raise e
-            log.print( "\n", term.green('SHOW: '), configpath, TOKEN_SEP_FILE, sections, TOKEN_SEP_SECTION, key, term.green(f' {OP_SET} '), current_value )
-
-            ### early exit
-            if operator is value is None:
-                return
-
-            ### apply operator
-            new_value = NotImplemented
-
-            try:
-                value = int(value)
-            except TypeError as e:
-                pass
-            except ValueError as e:
-                pass
-
-            ###     SET SCALAR VALUE
-            if operator == OP_SET:
-                ### delete item
-                if value is None:
-                    del view[key]
-                    new_value = None
-
-                ### assign item
-                else:
-                    view[key]:str = value
-                    new_value = view[key]
-
-            ###     LIST OPERATIONS
-            elif operator in (OP_LIST_LEFT, OP_LIST_RIGHT):
-
-                if value is None \
-                and isinstance(view, (list, CommentedMap)): ### null-op on sequence
-
-                    ### pop the left or right of list
-                    if key is None:
-                        {   OP_LIST_LEFT:   partial(view.pop,  0),
-                            OP_LIST_RIGHT:  view.pop,
-                        }[operator]()
-                        new_value = None
-
-                    ### move key up or down in order
-                    else:
-                        if isinstance(view, CommentedMap):
-                            def convert(k):
-                                i = list( view.items() ).index( (k, view[k]) )
-                                if i < 0:
-                                    i = len(view) - i
-                                return i
-                        else:
-                            convert = int
-
-                        if operator == OP_LIST_LEFT:
-                            if convert(key) == 0:
-                                new = len(view)
-                            else:
-                                new = convert(key)-1
-                        elif operator == OP_LIST_RIGHT:
-                            if convert(key) == len(view)-1:
-                                new = 0
-                            else:
-                                new = convert(key)+1
-                        else:
-                            raise RuntimeError('move left or right')
-
-                        if isinstance(view,CommentedMap):
-                            log.info(f'new:{new} key:{key} = {current_value}')
-                            del view[key]
-                            view.insert(new, key, current_value)
-                            new_value = view[key]
-                        else:
-                            view.pop(key)
-                            view.insert(new, current_value)
-                            new_value = view[new-1]
-
-                # todo: finish operator consistency, then document
-                ### append to left or right of list
-                elif isinstance(current_value, list):
-                    {   OP_LIST_LEFT:   partial(current_value.insert, 0),
-                        OP_LIST_RIGHT:  current_value.append,
-                    }[operator](value)
-                    new_value = view[key]
-
-                ### insert value next to key
-                elif isinstance(current_value, str) \
-                and isinstance(view, list):
-                    {   OP_LIST_LEFT:   partial(view.insert, key),
-                        OP_LIST_RIGHT:  partial(view.insert, key+1),
-                    }[operator](value)
-                else:
-                    raise TypeError(f'invalid type ({type(view)}, {type(current_value)}) for list setters')
-
-            log.print(
-                "\n", term.green('SET:  '),
-                configpath, TOKEN_SEP_FILE,
-                sections, TOKEN_SEP_SECTION,
-                key, term.green(f' {OP_SET} '), new_value
-            )
-            ### backup
-            path:Path           = config.filepath
-            timestamp           = time.strftime('%Y%m%d-%H%M%S.', time.localtime())
-            new_filepath:Path   = config.path / '.bak' / (timestamp+str(config.filename))
-            backup_path:Path    = new_filepath.parent
-            if not backup_path.exists():
-                backup_path.mkdir()
-            path.rename(new_filepath)
-            ### write
-            config.dump()
+                ### write
+                config.dump()
 
 
 
