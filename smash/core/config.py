@@ -18,7 +18,8 @@ import re
 
 from collections import defaultdict
 from collections import ChainMap
-from collections import OrderedDict
+# from collections import OrderedDict
+from ruamel.yaml.comments import CommentedMap as OrderedDict
 from collections import namedtuple
 from collections import deque
 from ordered_set import OrderedSet
@@ -34,6 +35,7 @@ import hashlib
 import types
 
 from ..util.yaml import load as load_yaml
+from ..util.yaml import dump as dump_yaml
 from ..util.path import stack_of_files
 from ..util.path import temporary_working_directory
 from ..util.path import try_resolve
@@ -217,6 +219,16 @@ class Config:
                 self.tree.add_node(path)
                 self.tree[path].load_parents()
 
+    def dump(self, filepath=None):
+        if filepath is None:
+            filepath = self.filepath
+        for name, section in copy(self._yaml_data.items()):
+            if isinstance(section, (dict, list)) \
+            and len(section) == 0:
+                del self._yaml_data[name]
+
+        dump_yaml(filepath, self._yaml_data)
+
 
     #----------------------------------------------------------------#
     #----------------------------------------------------------------#
@@ -233,7 +245,6 @@ class Config:
     @property
     def name( self ) :
         return self._yaml_data['__name__']
-
 
     @property
     def protocol( self ) :

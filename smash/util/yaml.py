@@ -51,7 +51,7 @@ class OrderedDictYAMLLoader(  Loader ) :
         self.add_constructor( u'tag:yaml.org,2002:omap', type( self ).construct_yaml_map )
 
     def construct_yaml_map( self, node ) :
-        data = OrderedDict( )
+        data = CommentedMap( )
         yield data
         value = self.construct_mapping( node )
         data.update( value )
@@ -65,7 +65,7 @@ class OrderedDictYAMLLoader(  Loader ) :
                 'expected a mapping node, but found %s' % node.id,
                 node.start_mark )
 
-        mapping = OrderedDict( )
+        mapping = CommentedMap( )
         for key_node, value_node in node.value :
             key = self.construct_object( key_node, deep=deep )
             try :
@@ -106,6 +106,7 @@ def make_yml() :
 
 #----------------------------------------------------------------------#
 
+# todo: custom dict that keeps the original file cached and associates values to lines in the file.
 
 #----------------------------------------------------------------------#
 

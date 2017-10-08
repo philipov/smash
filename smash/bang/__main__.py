@@ -12,10 +12,13 @@ from powertools import term
 
 from pathlib import Path
 from collections import namedtuple
+from functools import partial, partialmethod
 
 import os
 import sys
 import click
+
+Set = set # I really want to override 'set' below...
 
 #----------------------------------------------------------------------#
 
@@ -73,49 +76,160 @@ def init( ctx, instance_name:str, template_name:str ) :
 
 
 ##############################
-Set = set
+OP_SET              = '='
+OP_LIST_LEFT        = '['
+OP_LIST_RIGHT       = ']'
+TOKEN_SEP_FILE      = '::'
+TOKEN_SEP_SECTION   = ':'
+VALID_OPS           = (
+    None,
+    OP_SET,
+    OP_LIST_LEFT,
+    OP_LIST_RIGHT
+)
 @console.command()
 @click.argument( 'token' )
-@click.argument( 'value' )
+@click.argument( 'operator',default=lambda:None )
+@click.argument( 'value',   default=lambda:None )
 @click.pass_context
-def set( ctx, token, value ) :
-    ''' new environment inside current instance
+def set( ctx, token, operator, value ) :
+    ''' view or modify a value in a yamilsp config file
+        stores a timestamped backup of the old file in the .bak directory
     '''
     from ..core.env import InstanceEnvironment
     from ..core.env import VirtualEnvironment
+    from ..core.config import Config
+    from ..core.config import getdeepitem
+    import time
+
+    if operator not in VALID_OPS:
+        raise ValueError(f'Invalid smash! set operator. Must be one of {VALID_OPS}')
 
     parent_args = ctx.obj
     context_env = parent_args.context_env
     with context_env as context:
         with InstanceEnvironment(parent=context) as instance:
-            with VirtualEnvironment( instance ) as interior :
-                configpath = None
-                sections = None
-                key = None
-                ## configfile::
+            interior = VirtualEnvironment( instance )
+
+            ## configfile::
+            try:
+                (configpath, rest) = token.split(TOKEN_SEP_FILE)[0]
+            except ValueError as e:
+                (configpath, rest) = interior.config.filepath, token
+            config:Config = interior.configtree[configpath]
+
+            # ### section:section:key
+            keys = rest.split(TOKEN_SEP_SECTION)
+            if len(keys) > 1:
                 try:
-                    (configpath, rest) = token.split('::')[0]
-                except ValueError as e:
-                    (configpath, rest) = interior.config.filepath, token
-                #
-                # ### section:section:key
+                    sections    = keys[:-1]
+                    key         = keys[-1]
+                except IndexError as e:
+                    raise e
+            elif len(keys) == 1:
+                sections    = list()
+                key         = keys[0]
+            else:
+                raise IndexError(token)
 
-                keys = rest.split(':')
+            ### display value
+            try:
+                view = getdeepitem(config._yaml_data, sections)
+                if isinstance(view, list):
+                    key = int(key)
+                    if key < 0:
+                        key = len(view) + key
+                current_value = view[key]
+            except KeyError as e:
+                raise e
+            log.print( "\n", term.green('SHOW: '), configpath, TOKEN_SEP_FILE, sections, TOKEN_SEP_SECTION, key, term.green(f' {OP_SET} '), current_value )
 
-                if len(keys) > 1:
-                    try:
-                        sections    = keys[:-1]
-                        key         = keys[-1:]
-                    except IndexError as e:
-                        raise e
-                elif len(keys) == 1:
-                    sections    = list()
-                    key         = keys[0]
+            ### early exit
+            if operator is value is None:
+                return
+
+            ### apply operator
+
+            ###     SET SCALAR VALUE
+            if operator == OP_SET:
+                ### delete item
+                if value is None:
+                    del view[key]
+                ### assign item
                 else:
-                    raise IndexError(token)
+                    view[key]:str = value
 
-                log.print( "\n", term.green('SET '), configpath, '::', sections, ':', key, term.green(' = '), value, '   ', keys )
+            ###     LIST OPERATIONS
+            elif operator in (OP_LIST_LEFT, OP_LIST_RIGHT):
+                ### pop the left or right of list
+                if value is None \
+                and isinstance(current_value, list):
+                    {   OP_LIST_LEFT:   partial(current_value.pop,  0),
+                        OP_LIST_RIGHT:  current_value.pop,
+                    }[operator]()
 
+                ### append to left or right of list
+                elif isinstance(current_value, list):
+                    {   OP_LIST_LEFT:   partial(current_value.insert, 0),
+                        OP_LIST_RIGHT:  current_value.append,
+                    }[operator](value)
+
+                ### move key left or right
+                elif value is None \
+                and isinstance(current_value, str) \
+                and isinstance(view, list):
+                    if operator == OP_LIST_LEFT:
+                        if key == 0:
+                            new = len(view)
+                            old = 0
+                        else:
+                            new = key-1
+                            old = key+1
+                    elif operator == OP_LIST_RIGHT:
+                        if key == len(view)-1:
+                            new = 0
+                            old = key+1
+                        else:
+                            new = key+2
+                            old = key
+                    else:
+                        raise RuntimeError('move left or right')
+
+                    view.insert(new, current_value)
+                    view.pop(old)
+
+                ### insert value next to key
+                elif isinstance(current_value, str) \
+                and isinstance(view, list):
+                    {   OP_LIST_LEFT:   partial(view.insert, key),
+                        OP_LIST_RIGHT:  partial(view.insert, key+1),
+                    }[operator](value)
+                else:
+                    raise TypeError(f'invalid type ({type(view)}, {type(current_value)}) for list setters')
+
+            log.print(
+                "\n", term.green('SET:  '),
+                configpath, TOKEN_SEP_FILE,
+                sections, TOKEN_SEP_SECTION,
+                key, term.green(f' {OP_SET} '), view[key]
+            )
+            ### backup
+            path:Path           = config.filepath
+            timestamp           = time.strftime('%Y%m%d-%H%M%S.', time.localtime())
+            new_filepath:Path   = config.path / '.bak' / (timestamp+str(config.filename))
+            backup_path:Path    = new_filepath.parent
+            if not backup_path.exists():
+                backup_path.mkdir()
+            path.rename(new_filepath)
+            ### write
+            config.dump()
+
+
+
+##############################
+@console.command()
+def undo() :
+    ''' undo the previous modification by set '''
 
 
 ##############################
