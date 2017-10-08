@@ -105,7 +105,8 @@ class LineFields(namedtuple('LineFields', ['indent', 'dash', 'key', 'value'])):
     rank        = property( lambda self: len( self.indent ) + len( self.dash ) )
     min_padding = property( lambda self: self.rank + len( self.key ) + 2 )
 
-COMMENT_BAR = '############################################################\n'
+COMMENT_BAR = '################################################################################################\n'
+
 
 ##############################
 def alignment_and_breaks( yaml_output:str ):
@@ -135,6 +136,7 @@ def alignment_and_breaks( yaml_output:str ):
     ### reconstruct
     result      = COMMENT_BAR
     prevline    = LineFields(' ','','','')
+    header_keys = [f'{k}:' for k in ['__name__', '__version__', '__protocol__']]
 
     for line in lines:
         line:LineFields
@@ -143,10 +145,7 @@ def alignment_and_breaks( yaml_output:str ):
             for case in [
                 lambda l, p: p.rank > l.rank,
                 lambda l, p: p.key.startswith('~') and len(l.dash) > 0,
-                lambda l, p: p.key in (
-                    '__protocol__:',
-                    '__inherit__',
-                ),
+                lambda l, p: p.key in header_keys and l.key not in header_keys,
             ]
         )        else ''
 
@@ -160,7 +159,7 @@ def alignment_and_breaks( yaml_output:str ):
         # log.info(f'{line.indent_len:>3} {line.padding:>3} {maxpadding[line.indent_len]:>3} {lens} {line}')
         # log.info('') if empty_line == '\n' else None
 
-    result += '\n' + COMMENT_BAR
+    result += '\n\n' + COMMENT_BAR
     return result
 
 

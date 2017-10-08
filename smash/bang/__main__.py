@@ -106,7 +106,7 @@ def set( ctx, token, operator, value ) :
 
             `[` or `]` on a section pop a value, if section is a list
 
-            ommitting an operator will print the token's value and exit without making changes
+            ommitting the operator will print the token's value and exit without making changes
 
         if a change is made, a timestamped backup of the old file is stored in the .bak directory
     '''
@@ -120,11 +120,11 @@ def set( ctx, token, operator, value ) :
     context_env = parent_args.context_env
     with context_env as context:
         with InstanceEnvironment(parent=context) as instance:
-            interior    = VirtualEnvironment( instance )
             try:
+                interior            = VirtualEnvironment( instance )
                 config              = token_set( token, operator, value, interior.configtree )
             except NothingToDo:
-                pass
+                log.print( '\n', term.pink( '~~~~~~~~~~~~~~~~~~~~' ) )
             else:
                 import time
                 ### backup
@@ -138,6 +138,8 @@ def set( ctx, token, operator, value ) :
 
                 ### write
                 config.dump()
+
+                log.print( '\n', term.pink( '~~~~~~~~~~~~~~~~~~~~' ), term.cyan(' DONE '), '...' )
 
 
 
