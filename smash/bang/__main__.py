@@ -142,7 +142,6 @@ def set( ctx, token, operator, value ) :
                 log.print( '\n', term.pink( '~~~~~~~~~~~~~~~~~~~~' ), term.cyan(' DONE '), '...' )
 
 
-
 ##############################
 @console.command()
 def undo() :

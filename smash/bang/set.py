@@ -11,6 +11,7 @@ log = AutoLogger()
 from powertools import term
 
 from functools import partial
+from contextlib import suppress
 from ruamel.yaml.comments import CommentedMap
 
 
@@ -37,10 +38,11 @@ VALID_OPS           = (
 class NothingToDo(Exception):
     ''' no operator and value were specified, catch the early exit '''
 
+# todo: input_value validation; should be pluggable
 
 ##############################
 @export
-def token_set( token:str, operator:str, value:str, configtree:ConfigTree ) -> Config:
+def token_set( token:str, operator:str, input_value:str, configtree:ConfigTree ) -> Config:
     ''' perform a set operation on a config object
         the config object to use is either the environment config,
             or specified in the token using ::
@@ -55,14 +57,14 @@ def token_set( token:str, operator:str, value:str, configtree:ConfigTree ) -> Co
             `[` or `]` on a section pop a value, if section is a list
     '''
 
-    ## configfile::
+    ### parse token `configfile::`
     try:
         (configpath, rest) = token.split(TOKEN_SEP_FILE)[0]
     except ValueError as e:
         (configpath, rest) = configtree.env.filepath, token
     config:Config = configtree[configpath]
 
-    # ### section:section:key
+    ### parse token `section:section:key`
     keys = rest.split(TOKEN_SEP_SECTION)
     if len(keys) > 1:
         try:
@@ -76,7 +78,7 @@ def token_set( token:str, operator:str, value:str, configtree:ConfigTree ) -> Co
     else:
         raise IndexError(token)
 
-    ### display value
+    ### op: display value
     try:
         view = getdeepitem(config._yaml_data, sections)
         if key is '':
@@ -93,48 +95,57 @@ def token_set( token:str, operator:str, value:str, configtree:ConfigTree ) -> Co
         raise e
     log.print( "\n", term.green('SHOW: '), configpath, TOKEN_SEP_FILE, sections, TOKEN_SEP_SECTION, key, term.green(f' {OP_SET} '), current_value )
 
-    ### early exit
-    if operator is value is None:
+
+    if operator is input_value is None:
         raise NothingToDo(config)
 
-    ### apply operator
-    new_value = NotImplemented
+    ### else: apply operator
+    new_value= NotImplemented
 
-    try:
-        value = int(value)
-    except TypeError as e:
-        pass
-    except ValueError as e:
-        pass
+    int_value, float_value = (None, None)   ### infer <value> type: int > float > str
+    with suppress(TypeError, ValueError):
+        int_value = int( input_value )
+    with suppress(TypeError, ValueError):
+        float_value = float( input_value )
 
-    ###     SET SCALAR VALUE
+    if int_value is not None:       # int
+        input_value = int_value
+    elif float_value is not None:   # float
+        input_value = float_value
+
+    ###     SET/DELETE SCALAR VALUE
     if operator == OP_SET:
-        ### delete item
-        if value is None:
+        ### op: delete item -- s1:s2:k =
+        if input_value is None:
             del view[key]
             new_value = None
 
-        ### assign item
+
         else:
-            view[key]:str = value
-            new_value = view[key]
+            if key is None:
+                pass
+            ### op: assign item to key -- s1:s2:k = val
+            else:
+                view[key]:str = input_value
+                new_value = view[key]
 
     ###     LIST OPERATIONS
     elif operator in (OP_LIST_LEFT, OP_LIST_RIGHT):
 
-        if value is None \
-        and isinstance(view, (list, CommentedMap)): ### null-op on sequence
+        ### null input:
+        if input_value is None \
+        and isinstance(view, (list, CommentedMap)):
 
-            ### pop the left or right of list
+            ### op: pop the left or right of list -- s1:s2: [ None
             if key is None:
                 {   OP_LIST_LEFT:   partial(view.pop,  0),
                     OP_LIST_RIGHT:  view.pop,
                 }[operator]()
                 new_value = None
 
-            ### move key up or down in order
+            ### op: move key's position left or right in its container -- s1:s2:k [ None
             else:
-                if isinstance(view, CommentedMap):
+                if isinstance(view, CommentedMap): ### mappings have different key structure
                     def convert(k):
                         i = list( view.items() ).index( (k, view[k]) )
                         if i < 0:
@@ -143,20 +154,16 @@ def token_set( token:str, operator:str, value:str, configtree:ConfigTree ) -> Co
                 else:
                     convert = int
 
+                ### calculate new position
                 if operator == OP_LIST_LEFT:
-                    if convert(key) == 0:
-                        new = len(view)
-                    else:
-                        new = convert(key)-1
+                    if convert(key) == 0:           new = len(view)
+                    else:                           new = convert(key)-1
                 elif operator == OP_LIST_RIGHT:
-                    if convert(key) == len(view)-1:
-                        new = 0
-                    else:
-                        new = convert(key)+1
-                else:
-                    raise RuntimeError('move left or right')
+                    if convert(key) == len(view)-1: new = 0
+                    else:                           new = convert(key)+1
 
-                if isinstance(view,CommentedMap):
+                ###
+                if isinstance(view,CommentedMap): ### which requires a different execution
                     log.info(f'new:{new} key:{key} = {current_value}')
                     del view[key]
                     view.insert(new, key, current_value)
@@ -166,22 +173,38 @@ def token_set( token:str, operator:str, value:str, configtree:ConfigTree ) -> Co
                     view.insert(new, current_value)
                     new_value = view[new-1]
 
-        # todo: finish operator consistency, then document
-        ### append to left or right of list
-        elif isinstance(current_value, list):
-            {   OP_LIST_LEFT:   partial(current_value.insert, 0),
-                OP_LIST_RIGHT:  current_value.append,
-            }[operator](value)
-            new_value = view[key]
+        ### given input:
 
-        ### insert value next to key
-        elif isinstance(current_value, str) \
-        and isinstance(view, list):
-            {   OP_LIST_LEFT:   partial(view.insert, key),
-                OP_LIST_RIGHT:  partial(view.insert, key+1),
-            }[operator](value)
+        elif isinstance(current_value, list):                   ### token points to list
+            ### op: append <value> to left or right of end of a list -- s1:s2: [ val
+            if key is None:
+                {   OP_LIST_LEFT:   partial(view.insert,  0),
+                    OP_LIST_RIGHT:  view.append,
+                }[operator]( input_value)
+            ### todo: op: move key's position left or right by <value:int> indices -- s1:s2:k [ int
+            else:
+                {   OP_LIST_LEFT:   partial(current_value.insert, 0),
+                    OP_LIST_RIGHT:  current_value.append,
+                }[operator]( input_value )
+                raise NotImplementedError('todo: move item V spaces')
+                new_value = view[key]
+
+        elif isinstance(current_value, (str, int, float)) \
+        and isinstance(view, list):                             # token points to scalar
+            ### op: insert <value> next to <key> in a list -- s1:s2: [ val
+            if key is None:
+                {   OP_LIST_LEFT:   partial(view.insert, key),
+                    OP_LIST_RIGHT:  partial(view.insert, key+1),
+                }[operator]( input_value )
+            ### op: insert <value> next to <key> in a list -- s1:s2:k [ val
+            else:
+                {   OP_LIST_LEFT:   partial(view.insert, key),
+                    OP_LIST_RIGHT:  partial(view.insert, key+1),
+                }[operator]( input_value )
+
         else:
             raise TypeError(f'invalid type ({type(view)}, {type(current_value)}) for list setters')
+
 
     log.print(
         "\n", term.green('SET:  '),
