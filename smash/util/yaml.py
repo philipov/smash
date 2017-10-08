@@ -6,11 +6,18 @@ process yaml files
 
 from powertools import AutoLogger
 log = AutoLogger()
+from powertools.print import rprint
+
 from collections import OrderedDict
+from collections import namedtuple
+from collections import defaultdict
 from pathlib import Path
 
-import ruamel.yaml as yaml
 
+#----------------------------------------------------------------------#
+### YAML Anchors, references, nested values    - https://gist.github.com/bowsersenior/979804
+
+import ruamel.yaml as yaml
 try :
     from ruamel.yaml import CLoader as Loader, CDumper as Dumper
 except ImportError :
@@ -23,22 +30,13 @@ yaml.representer.RoundTripRepresenter.add_representer(
 
 from ruamel.yaml.comments import CommentedMap
 
-# YAML Anchors, references, nested values    - https://gist.github.com/bowsersenior/979804
+from ruamel.yaml import dump as yaml_dump
+
 
 #----------------------------------------------------------------------#
+### LOAD YAMLISP
 
-__all__ = []
-
-def export( obj ) :
-    try :
-        __all__.append( obj.__name__ )
-    except AttributeError :
-        __all__.append( obj.__main__.__name__ )
-    return obj
-
-#----------------------------------------------------------------------#
-
-# OrderedDictYYAMLLoader - https://gist.github.com/enaeseth/844388
+### OrderedDictYYAMLLoader - https://gist.github.com/enaeseth/844388
 class OrderedDictYAMLLoader(  Loader ) :
     """
     A YAML loader that loads mappings into ordered dictionaries.
@@ -79,8 +77,7 @@ class OrderedDictYAMLLoader(  Loader ) :
         return mapping
 
 
-#----------------------------------------------------------------------#
-
+##############################
 def load( filename:Path ) :
     result = None
     with filename.open( ) as file:
@@ -88,10 +85,82 @@ def load( filename:Path ) :
 
     return result
 
-
-
 #----------------------------------------------------------------------#
 
+# todo: custom dict that keeps the original file cached and associates values to lines in the file.
+
+#----------------------------------------------------------------------#
+#### DUMP YAMLISP
+
+import re
+split_fields = re.compile(
+r"""
+    (?P<indent>\s*)
+    (?P<dash>-?\s*)
+    (?P<key>[^\s]*)\s?
+    (?P<value>[^\s]*)
+""", re.VERBOSE)
+
+class LineFields(namedtuple('LineFields', ['indent', 'dash', 'key', 'value'])):
+    rank        = property( lambda self: len( self.indent ) + len( self.dash ) )
+    min_padding = property( lambda self: self.rank + len( self.key ) + 2 )
+
+COMMENT_BAR = '############################################################\n'
+
+##############################
+def alignment_and_breaks( yaml_output:str ):
+
+    ### parse
+    lines   = list()
+    for line in yaml_output.splitlines(True):
+        m       = split_fields.match(line)
+        lf = LineFields(
+            m.group('indent'),
+            m.group('dash'),
+            m.group('key'),
+            m.group('value')
+        )
+        lines.append(lf)
+
+    ### find padding
+    maxpadding  = defaultdict(int)
+    for line in lines:
+        line:LineFields
+        is_list     = len(line.dash) == len(line.value) == 0
+        if not is_list and maxpadding[line.rank] < line.min_padding:
+            maxpadding[line.rank] = line.min_padding
+    # log.info('max_len:')
+    # rprint(maxpadding)
+
+    ### reconstruct
+    result      = COMMENT_BAR
+    prevline    = LineFields(' ','','','')
+
+    for line in lines:
+        line:LineFields
+
+        empty_line  = '' if not any(case(line, prevline)
+            for case in [
+                lambda l, p: p.rank > l.rank,
+                lambda l, p: p.key.startswith('~') and len(l.dash) > 0,
+            ]
+        )        else '\n'
+
+        padding     = maxpadding[line.rank]
+        left        = f'{line.indent}{line.dash}{line.key}'
+        padded_line = f'{left:<{padding}} {line.value}'
+        result     += f'{empty_line}{padded_line}\n'
+
+        prevline = line
+        # lens        = LineFields(*(len(v) for v in line))
+        # log.info(f'{line.indent_len:>3} {line.padding:>3} {maxpadding[line.indent_len]:>3} {lens} {line}')
+        # log.info('') if empty_line == '\n' else None
+
+    result += '\n' + COMMENT_BAR
+    return result
+
+
+##############################
 def make_yml() :
     yml = yaml.YAML()
     yml.explicit_start      = False
@@ -100,26 +169,14 @@ def make_yml() :
     yml.typ                 = 'safe'
     yml.tags                = False
 
-
     return yml
-
-
-#----------------------------------------------------------------------#
-
-# todo: custom dict that keeps the original file cached and associates values to lines in the file.
-
-#----------------------------------------------------------------------#
 
 def dump( filename: Path, data ) :
     yml = make_yml()
+
     with open( str(filename), 'w' ) as file :
-        yaml.dump( data, file, Dumper=yaml.RoundTripDumper,
-                   indent=2,
-                   block_seq_indent=0,
-                   explicit_start=False,
-                   tags=None,
-                   canonical=False
-               )
-    yml.dump( data, sys.stdout  )
+        yml.dump( data, file, transform=alignment_and_breaks )
+    # yml.dump( data, sys.stdout, transform=transformer)
+
 
 #----------------------------------------------------------------------#

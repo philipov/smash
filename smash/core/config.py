@@ -137,6 +137,7 @@ class Config:
     class DelayedEvaluationTokenNotDuringScript( Exception ) :
         ''' avoid infinite substitution loop for delayed tokens'''
 
+    # todo: add exception for empty root file
 
     ####################
     def __init__( self, tree=None ) :
@@ -245,6 +246,7 @@ class Config:
     @property
     def name( self ) :
         return self._yaml_data['__name__']
+
 
     @property
     def protocol( self ) :

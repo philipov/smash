@@ -13,6 +13,7 @@ from powertools import term
 from pathlib import Path
 from collections import namedtuple
 from functools import partial, partialmethod
+from ruamel.yaml.comments import CommentedMap
 
 import os
 import sys
@@ -53,7 +54,7 @@ def console( ctx , verbose, simulation ) :
 @click.argument( 'instance_name' )
 @click.argument( 'template_name', default = 'smash' )
 @click.pass_context
-def init( ctx, instance_name:str, template_name:str ) :
+def boot( ctx, instance_name:str, template_name:str ) :
     ''' create new instance root in target directory using a registered template
     '''
     from ..core.plugins import instance_templates
@@ -89,8 +90,8 @@ VALID_OPS           = (
 )
 @console.command()
 @click.argument( 'token' )
-@click.argument( 'operator',default=lambda:None )
-@click.argument( 'value',   default=lambda:None )
+@click.argument( 'operator',    default=lambda:None )
+@click.argument( 'value',       default=lambda:None )
 @click.pass_context
 def set( ctx, token, operator, value ) :
     ''' view or modify a value in a yamilsp config file
@@ -135,11 +136,16 @@ def set( ctx, token, operator, value ) :
             ### display value
             try:
                 view = getdeepitem(config._yaml_data, sections)
-                if isinstance(view, list):
+                if key is '':
+                    key             = None
+                    current_value   = view
+                elif isinstance(view, list):
                     key = int(key)
                     if key < 0:
                         key = len(view) + key
-                current_value = view[key]
+                    current_value = view[key]
+                else:
+                    current_value = view[key]
             except KeyError as e:
                 raise e
             log.print( "\n", term.green('SHOW: '), configpath, TOKEN_SEP_FILE, sections, TOKEN_SEP_SECTION, key, term.green(f' {OP_SET} '), current_value )
@@ -149,54 +155,81 @@ def set( ctx, token, operator, value ) :
                 return
 
             ### apply operator
+            new_value = NotImplemented
+
+            try:
+                value = int(value)
+            except TypeError as e:
+                pass
+            except ValueError as e:
+                pass
 
             ###     SET SCALAR VALUE
             if operator == OP_SET:
                 ### delete item
                 if value is None:
                     del view[key]
+                    new_value = None
+
                 ### assign item
                 else:
                     view[key]:str = value
+                    new_value = view[key]
 
             ###     LIST OPERATIONS
             elif operator in (OP_LIST_LEFT, OP_LIST_RIGHT):
-                ### pop the left or right of list
-                if value is None \
-                and isinstance(current_value, list):
-                    {   OP_LIST_LEFT:   partial(current_value.pop,  0),
-                        OP_LIST_RIGHT:  current_value.pop,
-                    }[operator]()
 
+                if value is None \
+                and isinstance(view, (list, CommentedMap)): ### null-op on sequence
+
+                    ### pop the left or right of list
+                    if key is None:
+                        {   OP_LIST_LEFT:   partial(view.pop,  0),
+                            OP_LIST_RIGHT:  view.pop,
+                        }[operator]()
+                        new_value = None
+
+                    ### move key up or down in order
+                    else:
+                        if isinstance(view, CommentedMap):
+                            def convert(k):
+                                i = list( view.items() ).index( (k, view[k]) )
+                                if i < 0:
+                                    i = len(view) - i
+                                return i
+                        else:
+                            convert = int
+
+                        if operator == OP_LIST_LEFT:
+                            if convert(key) == 0:
+                                new = len(view)
+                            else:
+                                new = convert(key)-1
+                        elif operator == OP_LIST_RIGHT:
+                            if convert(key) == len(view)-1:
+                                new = 0
+                            else:
+                                new = convert(key)+1
+                        else:
+                            raise RuntimeError('move left or right')
+
+                        if isinstance(view,CommentedMap):
+                            log.info(f'new:{new} key:{key} = {current_value}')
+                            del view[key]
+                            view.insert(new, key, current_value)
+                            new_value = view[key]
+                        else:
+                            view.pop(key)
+                            view.insert(new, current_value)
+                            new_value = view[new-1]
+
+                # todo: finish operator consistency, then document
                 ### append to left or right of list
                 elif isinstance(current_value, list):
                     {   OP_LIST_LEFT:   partial(current_value.insert, 0),
                         OP_LIST_RIGHT:  current_value.append,
                     }[operator](value)
-
-                ### move key left or right
-                elif value is None \
-                and isinstance(current_value, str) \
-                and isinstance(view, list):
-                    if operator == OP_LIST_LEFT:
-                        if key == 0:
-                            new = len(view)
-                            old = 0
-                        else:
-                            new = key-1
-                            old = key+1
-                    elif operator == OP_LIST_RIGHT:
-                        if key == len(view)-1:
-                            new = 0
-                            old = key+1
-                        else:
-                            new = key+2
-                            old = key
-                    else:
-                        raise RuntimeError('move left or right')
-
-                    view.insert(new, current_value)
-                    view.pop(old)
+                    new_value = view[key]
 
                 ### insert value next to key
                 elif isinstance(current_value, str) \
@@ -211,7 +244,7 @@ def set( ctx, token, operator, value ) :
                 "\n", term.green('SET:  '),
                 configpath, TOKEN_SEP_FILE,
                 sections, TOKEN_SEP_SECTION,
-                key, term.green(f' {OP_SET} '), view[key]
+                key, term.green(f' {OP_SET} '), new_value
             )
             ### backup
             path:Path           = config.filepath
