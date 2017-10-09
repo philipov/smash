@@ -169,7 +169,7 @@ class Config:
         self.filename   = target.name
 
         ### compute hash # https://stackoverflow.com/questions/36873485/compare-md5-hashes-of-two-files-in-python
-        hasher = hashlib.md5()
+        hasher = hashlib.sha1()
         with open(target, 'rb') as file:
             buffer = file.read()
             hasher.update(buffer)
@@ -220,12 +220,15 @@ class Config:
                 self.tree.add_node(path)
                 self.tree[path].load_parents()
 
+
+    ####################
     def dump(self, filepath=None):
         if filepath is None:
             filepath = self.filepath
+
         for name, section in copy(self._yaml_data.items()):
-            if isinstance(section, (dict, list)) \
-            and len(section) == 0:
+            if  isinstance(section, (dict, )) \
+            and len(section) == 0 :
                 del self._yaml_data[name]
 
         dump_yaml(filepath, self._yaml_data)

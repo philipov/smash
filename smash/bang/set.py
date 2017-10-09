@@ -9,17 +9,19 @@ from powertools import AutoLogger
 log = AutoLogger()
 
 from powertools import term
+from powertools.print import rprint, listprint, dictprint, pprint
 
 from functools import partial
 from contextlib import suppress
 from ruamel.yaml.comments import CommentedMap
+from copy import copy
 
 
 from ..core.config import Config, ConfigTree
 from ..core.config import getdeepitem
 
 #----------------------------------------------------------------------------------------------#
-__all__ = ['VALID_OPS']
+__all__ = ['VALID_OPS'] # ...
 
 OP_SET              = '='
 OP_LIST_LEFT        = '['
@@ -44,23 +46,15 @@ class NothingToDo(Exception):
 @export
 def token_set( token:str, operator:str, input_value:str, configtree:ConfigTree ) -> Config:
     ''' perform a set operation on a config object
-        the config object to use is either the environment config,
-            or specified in the token using ::
-        if a value is specified
-            `=` will assign a scalar to a key
-            `=` will create a new section, value can be 'list' or 'map'
-            `[` and `]` on a key inserts the value next to the key, if section is a list
-            `[` or `]` on a section append the value to the section, if section is a list
-        if there is no value to set:
-            `=` will delete a key
-            `[` and `]` on a key move it up or down in its container
-            `[` or `]` on a section pop a value, if section is a list
     '''
 
     ### parse token `configfile::`
     try:
-        (configpath, rest) = token.split(TOKEN_SEP_FILE)[0]
+        (configpath, rest) = token.split(TOKEN_SEP_FILE)
+        print(configpath, rest)
+        print(1)
     except ValueError as e:
+        print(2)
         (configpath, rest) = configtree.env.filepath, token
     config:Config = configtree[configpath]
 
@@ -78,9 +72,13 @@ def token_set( token:str, operator:str, input_value:str, configtree:ConfigTree )
     else:
         raise IndexError(token)
 
-    ### op: display value
+    ################################
+    ### op: get and display value
     try:
         view = getdeepitem(config._yaml_data, sections)
+    except KeyError as e:
+        view = None #getdeepitem(config._yaml_data, copy(sections).pop())
+    try:
         if key is '':
             key             = None
             current_value   = view
@@ -92,50 +90,74 @@ def token_set( token:str, operator:str, input_value:str, configtree:ConfigTree )
         else:
             current_value = view[key]
     except KeyError as e:
-        raise e
-    log.print( "\n", term.green('SHOW: '), configpath, TOKEN_SEP_FILE, sections, TOKEN_SEP_SECTION, key, term.green(f' {OP_SET} '), current_value )
+        current_value = None
 
+    log.print(
+        "\n", term.green('SHOW: '),
+       configpath, TOKEN_SEP_FILE,
+       sections, TOKEN_SEP_SECTION,
+       key, term.green(f' {OP_SET} '), current_value
+    )
 
+    ################################
     if operator is input_value is None:
         raise NothingToDo(config)
 
+    ################################
     ### else: apply operator
-    new_value= NotImplemented
+    new_value = NotImplemented
 
-    int_value, float_value = (None, None)   ### infer <value> type: int > float > str
-    with suppress(TypeError, ValueError):
-        int_value = int( input_value )
-    with suppress(TypeError, ValueError):
-        float_value = float( input_value )
+    int_value, float_value = (None, None)   ### infer <value> type: int > float > str|None
+    with suppress(TypeError, ValueError):   int_value   = int( input_value )
+    with suppress(TypeError, ValueError):   float_value = float( input_value )
 
-    if int_value is not None:       # int
-        input_value = int_value
-    elif float_value is not None:   # float
-        input_value = float_value
+    if   int_value is not None:             input_value = int_value
+    elif float_value is not None:           input_value = float_value
 
     ###     SET/DELETE SCALAR VALUE
     if operator == OP_SET:
-        ### op: delete item -- s1:s2:k = None
-        if input_value is None:
-            del view[key]
-            new_value = None
-            if key is None:
-                    pass
 
-        else:
-            ### op: assign container to section -- s1:s2:s3: = seq|map
+        ### [null input]
+        if input_value is None:
+
+            ### todo: op: delete section -- s1:s2: = None
             if key is None:
-                pass
+                raise NotImplementedError('todo: delete section')
+
+            ### op: delete item -- s1:s2:k = None
+            else:
+                del view[key]
+                new_value = None
+
+        ### [given input]
+        else:
+
+            ### todo: op: assign container to section -- s1:s2:s3: = seq|map
+            if key is None:
+                if   input_value.lower() in ('seq', 'list'):  view = list()
+                elif input_value.lower() in ('map', 'dict'):  view = CommentedMap()
+                else:
+                    raise ValueError("value must be 'map' or 'seq' when assigning to a section")
+                if len(sections) == 1:
+                    config._yaml_data[sections[0]] = view
+                else:
+                    outer       = copy(sections)
+                    section     = outer.pop()
+                    getdeepitem(config._yaml_data, outer)[section] \
+                                = view
+                new_value = view
+                rprint(config._yaml_data)
 
             ### op: assign item to key -- s1:s2:k = str|int|float
             else:
-                view[key]:str = input_value
-                new_value = view[key]
+                view[key]:str   = input_value
+                new_value       = view[key]
 
+    ################################
     ###     LIST OPERATIONS
     elif operator in (OP_LIST_LEFT, OP_LIST_RIGHT):
 
-        ### null input:
+        ### [null input]
         if input_value is None \
         and isinstance(view, (list, CommentedMap)):
 
@@ -148,7 +170,7 @@ def token_set( token:str, operator:str, input_value:str, configtree:ConfigTree )
 
             ### op: move key's position left or right in its container -- s1:s2:k [ None
             else:
-                if isinstance(view, CommentedMap): ### mappings have different key structure
+                if isinstance(view, CommentedMap): ### mappings have different key structure from sequences
                     def convert(k):
                         i = list( view.items() ).index( (k, view[k]) )
                         if i < 0:
@@ -158,7 +180,7 @@ def token_set( token:str, operator:str, input_value:str, configtree:ConfigTree )
                     convert = int
 
                 ### calculate new position
-                if operator == OP_LIST_LEFT:
+                if   operator == OP_LIST_LEFT:
                     if convert(key) == 0:           new = len(view)
                     else:                           new = convert(key)-1
                 elif operator == OP_LIST_RIGHT:
@@ -176,14 +198,21 @@ def token_set( token:str, operator:str, input_value:str, configtree:ConfigTree )
                     view.insert(new, current_value)
                     new_value = view[new-1]
 
-        ### given input:
+        ### [given input]
 
         elif isinstance(current_value, list):                   ### token points to list
-            ### op: append <value> to left or right of end of a list -- s1:s2: [ val
+
+            ### op: append <value> to left or right of end of a list -- s1:s2: [ str|int|float
             if key is None:
                 {   OP_LIST_LEFT:   partial(view.insert,  0),
                     OP_LIST_RIGHT:  view.append,
-                }[operator]( input_value)
+                }[operator]( input_value )
+
+                outer       = copy(sections)
+                section     = outer.pop()
+                new_value   = getdeepitem(config._yaml_data, outer)[section]
+
+
             ### todo: op: move key's position left or right by <value:int> indices -- s1:s2:k [ int
             else:
                 {   OP_LIST_LEFT:   partial(current_value.insert, 0),
@@ -193,22 +222,27 @@ def token_set( token:str, operator:str, input_value:str, configtree:ConfigTree )
                 new_value = view[key]
 
         elif isinstance(current_value, (str, int, float)) \
-        and isinstance(view, list):                             # token points to scalar
-            ### op: insert <value> next to <key> in a list -- s1:s2: [ val
+        and isinstance(view, list):                             # token points to scalar, in a list
+
+            ### op: insert <value> next to <key> in a list -- s1:s2: [ str|int|float
             if key is None:
-                {   OP_LIST_LEFT:   partial(view.insert, key),
-                    OP_LIST_RIGHT:  partial(view.insert, key+1),
+                {   OP_LIST_LEFT:   partial(view.insert,  0),
+                    OP_LIST_RIGHT:  view.append,
                 }[operator]( input_value )
-            ### op: insert <value> next to <key> in a list -- s1:s2:k [ val
+
+
+            ### op: insert <value> next to <key> in a list -- s1:s2:k [ str|int|float
             else:
                 {   OP_LIST_LEFT:   partial(view.insert, key),
                     OP_LIST_RIGHT:  partial(view.insert, key+1),
                 }[operator]( input_value )
 
+        ### [exception]
         else:
-            raise TypeError(f'invalid type ({type(view)}, {type(current_value)}) for list setters')
+            raise TypeError(f'invalid type (view={type(view)}, current_value={type(current_value)}) for sequence setters')
 
 
+    ################################
     log.print(
         "\n", term.green('SET:  '),
         configpath, TOKEN_SEP_FILE,

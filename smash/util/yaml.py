@@ -110,6 +110,10 @@ COMMENT_BAR = '#################################################################
 
 ##############################
 def alignment_and_breaks( yaml_output:str ):
+    '''
+        align key-values in mappings at the same depth,
+        add line breaks between
+    '''
 
     ### parse
     lines   = list()
@@ -124,12 +128,12 @@ def alignment_and_breaks( yaml_output:str ):
         lines.append(lf)
 
     ### find padding: max of mins
-    padding  = defaultdict(int)
+    rankpadding  = defaultdict(int)
     for line in lines:
         line:LineFields
         is_list     = len(line.dash) == len(line.value) == 0
-        if not is_list and padding[line.rank] < line.min_padding:
-            padding[line.rank] = line.min_padding
+        if not is_list and rankpadding[line.rank] < line.min_padding:
+            rankpadding[line.rank] = line.min_padding
     # log.info('max_len:')
     # rprint(padding)
 
@@ -149,7 +153,7 @@ def alignment_and_breaks( yaml_output:str ):
             ]
         )        else ''
 
-        padding     = padding[line.rank]
+        padding     = rankpadding[line.rank]
         left        = f'{line.indent}{line.dash}{line.key}'
         padded_line = f'{left:<{padding}} {line.value}'
         result     += f'{empty_line}{padded_line}\n'
