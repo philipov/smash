@@ -12,7 +12,7 @@ from pprint import pprint, pformat
 from smash.util.out import rprint, listprint, dictprint #ToDo: move these functions outside the package under test
 
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 def test__Config( ) :
     from smash.core.config import Config
@@ -21,7 +21,7 @@ def test__Config( ) :
 
     # assert False
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 def test__ConfigSectionView( conftree ) :
     from smash.core.config import Config
@@ -49,7 +49,7 @@ def test__ConfigSectionView( conftree ) :
     # assert False
 
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 @pytest.fixture( scope='session' )
 def conftree( path_root_config ) :
@@ -209,7 +209,7 @@ def test__Config_env_fields2( path_env00_config, conftree ) :
 
 
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 ####################
 
@@ -293,7 +293,7 @@ def test__ConfigTree_from_tasks( path_tasks ) :
     # assert False
 
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 def try_export( conftree ) :
     from smash.util import out
@@ -359,4 +359,4 @@ def test__ConfigTree_env_export( path_env00 ) :
     # assert False
 
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#

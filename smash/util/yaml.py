@@ -14,7 +14,7 @@ from collections import defaultdict
 from pathlib import Path
 
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 ### YAML Anchors, references, nested values    - https://gist.github.com/bowsersenior/979804
 
 import ruamel.yaml as yaml
@@ -33,7 +33,7 @@ from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml import dump as yaml_dump
 
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 ### LOAD YAMLISP
 
 ### OrderedDictYYAMLLoader - https://gist.github.com/enaeseth/844388
@@ -85,11 +85,11 @@ def load( filename:Path ) :
 
     return result
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 # todo: custom dict that keeps the original file cached and associates values to lines in the file.
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 #### DUMP YAMLISP
 
 import re
@@ -123,15 +123,15 @@ def alignment_and_breaks( yaml_output:str ):
         )
         lines.append(lf)
 
-    ### find padding
-    maxpadding  = defaultdict(int)
+    ### find padding: max of mins
+    padding  = defaultdict(int)
     for line in lines:
         line:LineFields
         is_list     = len(line.dash) == len(line.value) == 0
-        if not is_list and maxpadding[line.rank] < line.min_padding:
-            maxpadding[line.rank] = line.min_padding
+        if not is_list and padding[line.rank] < line.min_padding:
+            padding[line.rank] = line.min_padding
     # log.info('max_len:')
-    # rprint(maxpadding)
+    # rprint(padding)
 
     ### reconstruct
     result      = COMMENT_BAR
@@ -149,14 +149,14 @@ def alignment_and_breaks( yaml_output:str ):
             ]
         )        else ''
 
-        padding     = maxpadding[line.rank]
+        padding     = padding[line.rank]
         left        = f'{line.indent}{line.dash}{line.key}'
         padded_line = f'{left:<{padding}} {line.value}'
         result     += f'{empty_line}{padded_line}\n'
 
         prevline = line
         # lens        = LineFields(*(len(v) for v in line))
-        # log.info(f'{line.indent_len:>3} {line.padding:>3} {maxpadding[line.indent_len]:>3} {lens} {line}')
+        # log.info(f'{line.indent_len:>3} {line.padding:>3} {padding[line.indent_len]:>3} {lens} {line}')
         # log.info('') if empty_line == '\n' else None
 
     result += '\n\n' + COMMENT_BAR
@@ -182,4 +182,4 @@ def dump( filename: Path, data ) :
     # yml.dump( data, sys.stdout, transform=transformer)
 
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#

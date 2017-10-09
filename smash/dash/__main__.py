@@ -24,7 +24,7 @@ from ..core.env import ContextEnvironment
 from ..core.env import InstanceEnvironment
 from ..core.env import VirtualEnvironment
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 
 
@@ -71,7 +71,7 @@ def install( ctx, instance_name: str, template_name: str ) :
 
     log.print( '\n', term.pink( '~~~~~~~~~~~~~~~~~~~~' ), term.cyan( ' DONE ' ), '...' )
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 if __name__ == '__main__' :
     console()

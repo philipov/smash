@@ -36,7 +36,7 @@ from ..util.path import find_yamls
 # todo: factor out all yamlisp processing to separate project
 # todo: implement yamlisp in Rust and create python bindings for that library. Prefer it to the python version if available.
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 from .config import Config
 from .env import Environment
@@ -120,5 +120,5 @@ def run_yamlisp(    env:            Environment,
 
 ###
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 

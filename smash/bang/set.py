@@ -18,7 +18,7 @@ from ruamel.yaml.comments import CommentedMap
 from ..core.config import Config, ConfigTree
 from ..core.config import getdeepitem
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 __all__ = ['VALID_OPS']
 
 OP_SET              = '='
@@ -115,16 +115,19 @@ def token_set( token:str, operator:str, input_value:str, configtree:ConfigTree )
 
     ###     SET/DELETE SCALAR VALUE
     if operator == OP_SET:
-        ### op: delete item -- s1:s2:k =
+        ### op: delete item -- s1:s2:k = None
         if input_value is None:
             del view[key]
             new_value = None
-
+            if key is None:
+                    pass
 
         else:
+            ### op: assign container to section -- s1:s2:s3: = seq|map
             if key is None:
                 pass
-            ### op: assign item to key -- s1:s2:k = val
+
+            ### op: assign item to key -- s1:s2:k = str|int|float
             else:
                 view[key]:str = input_value
                 new_value = view[key]
@@ -218,4 +221,4 @@ def token_set( token:str, operator:str, input_value:str, configtree:ConfigTree )
 
 ##############################
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#

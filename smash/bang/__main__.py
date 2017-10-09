@@ -21,14 +21,16 @@ import click
 
 Set = set # I really want to override 'set' below...
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 class UnknownTemplateError( Exception ) :
     '''template_name argument was not found in the templates dictionary'''
 
 
 ##############################
-@click.group()
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+
+@click.group(context_settings=CONTEXT_SETTINGS)
 @click.option( '--verbose', '-v',       default=False, is_flag=True )
 @click.option( '--simulation', '-S',    default=False, is_flag=True )
 @click.pass_context
@@ -88,24 +90,16 @@ def set( ctx, token, operator, value ) :
 
         the config object to use is either the environment config, or specified in the token using `::`
 
+        \b
         if a value is specified:
-
             `=` will assign a scalar to a key
-
             `=` will create a new section, value can be 'list' or 'map'
-
             `[` and `]` on a key inserts the value next to the key, if section is a list
-
             `[` or `]` on a section append the value to the section, if section is a list
-
         if value is ommitted:
-
             `=` will delete a key
-
             `[` and `]` on a key move it up or down in its container
-
             `[` or `]` on a section pop a value, if section is a list
-
             ommitting the operator will print the token's value and exit without making changes
 
         if a change is made, a timestamped backup of the old file is stored in the .bak directory
@@ -175,9 +169,6 @@ def look(ctx, category=None) :
                     log.info( "\n", term.green('LIST '), category )
 
 
-
-
-
 ##############################
 @console.command()
 def spawn() :
@@ -206,4 +197,4 @@ if __name__ == '__main__' :
     console()
 
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#

@@ -26,7 +26,7 @@ from contextlib import suppress
 
 from powertools import export
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 @export
 class NoHandlerMatchedError(Exception):
@@ -60,7 +60,7 @@ class Handler:
         return self.__run__( self.target, self.arguments, self.env, ctx=ctx )
 
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 @export
 class SubprocessHandler( Handler ) :
@@ -72,7 +72,7 @@ class SubprocessHandler( Handler ) :
         return next(proc) # wait for termination
 
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 @export
 class YamlispHandler( Handler ) :
@@ -102,7 +102,7 @@ class YamlispHandler( Handler ) :
 
 
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 @export
 class Daemonizer( SubprocessHandler ):
@@ -117,7 +117,7 @@ class Daemonizer( SubprocessHandler ):
             time.sleep(self.RESTART_DELAY)
 
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 @export
 class ToolHandler( Handler ) :
@@ -134,7 +134,7 @@ class MouthHandler( Handler ) :
         env.run( command, *arguments )
 
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 @export
 class ScriptHandler( Handler ) :
@@ -158,7 +158,7 @@ class PythonHandler( ScriptHandler ) :
     '''this allows using the python interpreter defined by the virtual environment'''
     __interpreter__ = 'python'
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 @export
 class ConvertXML( Handler ) :
@@ -178,9 +178,9 @@ class ConvertXML( Handler ) :
             yaml.dump(output_path, purified_data)
 
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 ### last in first out; use the last handler whose key regex matches the filename
 builtin_handlers            = OrderedDict()
@@ -200,4 +200,4 @@ builtin_handlers['.*\.bat']    = BatchHandler
 builtin_handlers['.*\.py']     = PythonHandler
 
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#

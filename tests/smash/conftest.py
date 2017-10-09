@@ -12,14 +12,14 @@ logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger('conftest.unit')
 
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 @pytest.fixture( scope="session" )
 def path_root_config(path_testdata):
     return path_testdata/'__root__.yml'
 
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 
 @pytest.fixture( scope="session" )
@@ -48,7 +48,7 @@ def path_example_task( path_tasks ) :
     return path_tasks/'run_task.yml'
 
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 @pytest.fixture( scope="session" )
 def path_app( path_testdata ) :
@@ -59,7 +59,7 @@ def path_app_config( path_app ) :
     return path_app/'__pkg__.yml'
 
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 @pytest.fixture( scope="session" )
 def path_lib( path_testdata ) :
@@ -70,7 +70,7 @@ def path_lib_config( path_lib ) :
     return path_lib/'__pkg__.yml'
 
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 @pytest.fixture( scope="session" )
 def path_data( path_testdata ) :
@@ -81,7 +81,7 @@ def path_data_config( path_data ) :
     return path_data/'__pkg__.yml'
 
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 @pytest.fixture( scope="session" )
 def path_host( path_testdata ) :
@@ -92,7 +92,7 @@ def path_host_config( path_host ) :
     return path_host/'__pkg__.yml'
 
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 @pytest.fixture( scope="session" )
 def path_network( path_testdata ) :
@@ -102,7 +102,7 @@ def path_network( path_testdata ) :
 def path_network_config( path_network ) :
     return path_network/'__pkg__.yml'
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 @pytest.fixture( scope="session" )
 def path_counterexamples( path_testdata ) :
@@ -113,4 +113,4 @@ def path_bad_protocol( path_counterexamples ) :
     return path_counterexamples/'bad'/'protocol.yml'
 
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#

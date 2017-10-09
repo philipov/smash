@@ -15,7 +15,7 @@ from contextlib import suppress
 from powertools import term
 from powertools.print import rprint
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 ################################
 def _load_plugins():
@@ -45,7 +45,7 @@ def _select_class( cls, base ):
                         results[value.__key__]=value
     return results
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 from . import tool
 
@@ -63,7 +63,7 @@ builtin_tools = {
 
 }
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 from .exporter import Exporter, builtin_exporters
 from .handler import Handler, builtin_handlers
@@ -101,7 +101,7 @@ exporters           = _select_class( Exporter,          builtin_exporters )
 handlers            = _select_class( Handler,           builtin_handlers )
 
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 @export
 def report_plugins():
@@ -131,7 +131,7 @@ def report_plugins():
 
     print( term.dcyan( '~~~~~~~~~~~\n' ) )
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 # def plugin_decorator_template(cls, collection):
 #     def plugin_decorator_factory(key):
@@ -152,4 +152,4 @@ def report_plugins():
 # exporter            = plugin_decorator_template( Exporter,          exporters )
 # handler             = plugin_decorator_template( Handler,           handlers )
 
-#----------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------------#
