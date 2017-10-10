@@ -316,7 +316,7 @@ SUBPROCESS_DELAY = 0.01
 
 ################################
 @export
-class VirtualEnvironment(Environment):
+class BoxEnvironment( Environment ):
     ''' Environment that is launched as a child of the smash process
         shell variables are supplied by evaluating the 'Environment' __export__ process in the configtree
     '''
@@ -404,7 +404,7 @@ class VirtualEnvironment(Environment):
 
 ################################
 @export
-class CondaEnvironment( VirtualEnvironment ) :
+class CondaEnvironment( BoxEnvironment ) :
     ''' construct a conda environment, and run commands inside it '''
     __slots__ = ()
 
@@ -520,7 +520,7 @@ class RemoteEnvironment( Environment ):
 
 builtin_environment_types = {
     'context'   : ContextEnvironment,
-    'subenv'    : VirtualEnvironment,
+    'subenv'    : BoxEnvironment,
     'conda'     : CondaEnvironment,
     'docker'    : DockerEnvironment,
     'remote'    : RemoteEnvironment

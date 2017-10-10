@@ -103,7 +103,7 @@ def token_set( token:str, operator:str, input_value:str, configtree:ConfigTree )
     if operator is input_value is None:
         raise NothingToDo(config)
 
-    ################################
+
     ### else: apply operator
     new_value = NotImplemented
 
@@ -114,7 +114,8 @@ def token_set( token:str, operator:str, input_value:str, configtree:ConfigTree )
     if   int_value is not None:             input_value = int_value
     elif float_value is not None:           input_value = float_value
 
-    ###     SET/DELETE SCALAR VALUE
+    ################################
+    ###     EQUALS OPERATOR
     if operator == OP_SET:
 
         ### [null input]
@@ -137,7 +138,7 @@ def token_set( token:str, operator:str, input_value:str, configtree:ConfigTree )
                 if   input_value.lower() in ('seq', 'list'):  view = list()
                 elif input_value.lower() in ('map', 'dict'):  view = CommentedMap()
                 else:
-                    raise ValueError("value must be 'map' or 'seq' when assigning to a section")
+                    raise ValueError("value must be 'map', 'dict', or 'seq', 'list' when assigning to a section")
                 if len(sections) == 1:
                     config._yaml_data[sections[0]] = view
                 else:
@@ -154,7 +155,7 @@ def token_set( token:str, operator:str, input_value:str, configtree:ConfigTree )
                 new_value       = view[key]
 
     ################################
-    ###     LIST OPERATIONS
+    ###     BRACKET OPERATORS
     elif operator in (OP_LIST_LEFT, OP_LIST_RIGHT):
 
         ### [null input]

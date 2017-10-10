@@ -19,7 +19,7 @@ from collections import deque
 
 from .core.env import ContextEnvironment
 from .core.env import InstanceEnvironment
-from .core.env import VirtualEnvironment
+from .core.env import BoxEnvironment
 
 from .setup.arguments import __version__
 
@@ -71,7 +71,7 @@ def console( ctx, command, file, verbose ) :
             ### the wall that guards the lands of version control
             with InstanceEnvironment(parent=context) as instance:
                 ### virtual environments may use a different python version from instance
-                with VirtualEnvironment( instance ) as interior :
+                with BoxEnvironment( instance ) as interior :
                     import re
                     from smash.core.plugins import handlers
                     from smash.core.handler import NoHandlerMatchedError

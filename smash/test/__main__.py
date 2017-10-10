@@ -22,7 +22,7 @@ from collections import deque
 
 from ..core.env import ContextEnvironment
 from ..core.env import InstanceEnvironment
-from ..core.env import VirtualEnvironment
+from ..core.env import BoxEnvironment
 
 #----------------------------------------------------------------------------------------------#
 
@@ -64,7 +64,7 @@ def install( ctx, instance_name: str, template_name: str ) :
         ### the wall that guards the lands of version control
         with InstanceEnvironment( parent=context ) as instance :
             ### virtual environments may use a different python version from instance
-            with VirtualEnvironment( instance ) as interior :
+            with BoxEnvironment( instance ) as interior :
 
                 ...
 

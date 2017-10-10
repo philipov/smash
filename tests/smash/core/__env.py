@@ -15,7 +15,7 @@ def test__ContextEnvironment(path_env00 ):
 ################################
 def test__VirtualEnvironment( path_env00 ) :
     from smash.core.env import ContextEnvironment
-    from smash.core.env import VirtualEnvironment
+    from smash.core.env import BoxEnvironment
 
     # assert False
 
