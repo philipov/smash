@@ -1,24 +1,23 @@
 #-- smash.bang.__main__
 
-'''
-application entry point
+''' smash.bang
+    administration tool
 '''
 
 from powertools import AutoLogger
 log = AutoLogger()
 
 from powertools import term
+from powertools.print import pprint
 
 from pathlib import Path
 from collections import namedtuple
+from contextlib import contextmanager
 
 import os
 import click
 
-class Group(click.Group):
-    ''' group with subcommand order relying on python 3.6 dicts '''
-    def list_commands(self, ctx):   return self.commands
-# todo: color codes in doc strings need to be parsed by click. how shall I hook into that?
+from ..util.click import click_group, WithGroup, Group, subcommand_manager
 
 #----------------------------------------------------------------------------------------------#
 
@@ -27,20 +26,46 @@ class UnknownTemplateError( Exception ) :
 
 ###     SMASH!
 ##############################
-CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+CONTEXT_SETTINGS = dict(
+    help_option_names   = ['-h', '--help'],
+    terminal_width      = 97,
+    max_content_width   = 97,
+    color               = True
+)
 
 from ..setup.arguments import __version__
-@click.group(           name = 'smash!',        context_settings=CONTEXT_SETTINGS, cls=Group)
-@click.version_option(  __version__,
-                        '--version','-V',       prog_name='smash.bang')
-@click.option(          '--verbose', '-v',      default=False, is_flag=True, help='Display additional logging information.' )
-@click.option(          '--simulation', '-S',   default=False, is_flag=True, help='What if the world is just a dream?' )
-@click.pass_context
-def console( ctx , verbose, simulation ) :
-    ''' basic utilities for managing smash instances on a host
+@click_group(
+    name                    = 'smash!',
+    context_settings        = CONTEXT_SETTINGS,
+    cls                     = WithGroup,
+    # invoke_without_command  = True
+)
+@subcommand_manager
+@click.version_option(
+    __version__,
+    '--version','-V',
+    prog_name = 'smash.bang'
+)
+@click.option(
+    '--verbose', '-v',
+    default = False,
+    is_flag = True,
+    help    = 'Display additional logging information.'
+)
+@click.option(
+    '--simulation', '-S',
+    default = False,
+    is_flag = True,
+    help    = 'What if the world is just a dream?'
+)
+# @click.pass_obj
+def console( verbose, simulation ) :
+    ''' Boxes grow on Trees.
     '''
     from ..core.env import ContextEnvironment
     term.init_color()
+
+    # log.info('CONSOLE ')
 
     log.print( term.cyan( '\n~~~~~~~~~~~~~~~~~~~~ ' ), term.pink( 'SMASH'),term.cyan('.'), term.pink('BANG' ) )
     log.print( 'SCRIPT:  ', __file__ )
@@ -48,9 +73,16 @@ def console( ctx , verbose, simulation ) :
     log.print( 'WORKDIR: ', cwd )
 
     ### precreate context environment
-    context_env = ContextEnvironment( cwd )
-    ctx.obj     = namedtuple('Arguments', ['context_env', 'verbose', 'simulation'])(
-                                            context_env,   verbose,   simulation )
+    with ContextEnvironment(
+            cwd,
+            verbose=verbose,
+            simulation=simulation
+        ) as outer_env:
+        args, kwargs = yield outer_env
+
+    log.info('exit: ', args, ' | ', kwargs)
+
+    log.print( '\n', term.pink( '~~~~~~~~~~~~~~~~~~~~' ), term.cyan(' DONE'), '.' )
 
 
 #----------------------------------------------------------------------------------------------#
@@ -58,187 +90,204 @@ def console( ctx , verbose, simulation ) :
 ###     BOOT
 ##############################
 @console.group(name='tree', cls=Group)
-@click.pass_context
-def Tree( ctx ) :
-    ''' manage instances '''
+@subcommand_manager
+@click.pass_obj
+def Tree( outer_env ) :
+    ''' create and control the boxtree.  '''
 
 
 ##############################
 @Tree.command( name='new' )
+@click.confirmation_option()
 @click.argument( 'instance_name' )
 @click.argument( 'template_name', default = 'smash' )
-@click.pass_context
-def tree_new( ctx, instance_name:str, template_name:str ) :
+@click.pass_obj
+def tree_new( outer_env, instance_name:str, template_name:str ) :
     ''' create new instance root in target directory using a registered template
     '''
-    from ..core.plugins import instance_templates
+    from . import tree
 
-    try:
-        parent_args     = ctx.obj
-        template        = instance_templates[template_name]
-        install_root    = parent_args.context_env.homepath.resolve() / instance_name
+    install_root    = outer_env.homepath.resolve() / instance_name
 
-        ### template creates the instance
-        instance        = template( install_root,
-            simulation  = parent_args.simulation,
-            parent      = parent_args.context_env
-        ).instance
+    ### template creates the instance
+    instance        = tree.new( install_root )
 
-    except KeyError as e:
-        raise UnknownTemplateError(e)
-
-    log.print( '\n', term.pink( '~~~~~~~~~~~~~~~~~~~~' ), term.cyan(' DONE '), '...' )
 
 
 ##############################
-@Tree.command( name='pack' )
-def tree_pack() :
-    ''' build executable distribution archive
+@Tree.command('get')
+@click.pass_obj
+def tree_get( outer_env ) :
+    ''' get an existing box from a package index
     '''
+    log.info("BOX GET ", outer_env )
+
 
 ##############################
-@Tree.command( name='spoon' )
-def tree_spoon() :
-    ''' create the union of the boxes in two instances
+@Tree.command('list')
+@click.pass_obj
+def tree_list( outer_env ) :
+    ''' list installed boxes
     '''
+    log.info("TREE LIST ", outer_env )
 
-##############################
-@Tree.command( name='test' )
-def tree_test() :
-    ''' run deployment tests on an instance or an archive
-    '''
 
 ##############################
 @Tree.command('branches')
-@click.pass_context
-def tree_branches( ctx ) :
+@click.pass_obj
+def tree_branches( outer_env ) :
     ''' list branches
     '''
-    log.info("TREE SWITCH", ctx.obj.context_env, ' ', ctx.obj.interior_env )
+    log.info("TREE SWITCH", outer_env )
 
 
 ##############################
 @Tree.command('switch')
-@click.pass_context
-def tree_switch( ctx ) :
+@click.pass_obj
+def tree_switch( outer_env ) :
     ''' switch branches
     '''
-    log.info("TREE SWITCH", ctx.obj.context_env, ' ', ctx.obj.interior_env )
+    log.info("TREE SWITCH", outer_env )
 
 
 ##############################
 @Tree.command('sync')
-@click.pass_context
-def tree_sync( ctx ) :
+@click.pass_obj
+def tree_sync( outer_env ) :
     ''' synchronize your box with its source
     '''
-    log.info("BOX SYNC ", ctx.obj.context_env, ' ', ctx.obj.interior_env )
+    log.info("BOX SYNC ", outer_env )
+
+
+##############################
+@Tree.command( name='pack' )
+@click.pass_obj
+def tree_pack(outer_env) :
+    ''' build executable distribution archive
+    '''
+
+
+##############################
+@Tree.command( name='test' )
+def tree_test() :
+    ''' run deployment tests
+    '''
+
 
 #----------------------------------------------------------------------------------------------#
 
 ###     BOX
 ##############################
 
-@console.group('box', cls=Group)
-@click.pass_context
-def Box( ctx ) :
-    ''' control environment inside current instance
+@console.group('box', cls=WithGroup, short_help='manage individual boxes on a boxtree instance.')
+@subcommand_manager
+@click.pass_obj
+def Box( outer_env ) :
+    ''' manage individual boxes on a boxtree instance.
     '''
-    from ..core.env import InstanceEnvironment, BoxEnvironment
+    from ..core.env import InstanceEnvironment
 
-    parent_args     = ctx.obj
-    context_env     = parent_args.context_env
-    instance_env    = InstanceEnvironment(parent=context_env)
-    interior_env    = BoxEnvironment( instance_env )
+    log.info(term.pink('BOX '), outer_env)
 
-    ctx.obj = namedtuple('BoxArguments', [
-        'context_env', 'instance_env', 'interior_env'
-    ])(  context_env,   instance_env,   interior_env )
+    with InstanceEnvironment(parent=outer_env) as instance_env:
+        args, kwargs = yield instance_env
 
-
-##############################
-@Box.command('browse')
-@click.pass_context
-def box_browse( ctx ) :
-    ''' list boxes available on package indices
-    '''
-    log.info("BOX BROWSE ", ctx.obj.context_env, ' ', ctx.obj.interior_env )
-
-
-##############################
-@Box.command('get')
-@click.pass_context
-def box_get( ctx ) :
-    ''' get a box from a package index
-    '''
-    log.info("BOX GET ", ctx.obj.context_env, ' ', ctx.obj.interior_env )
-
-
-##############################
-@Box.command('list')
-@click.pass_context
-def box_list( ctx ) :
-    ''' list installed boxes
-    '''
-    log.info("BOX LIST ", ctx.obj.context_env, ' ', ctx.obj.interior_env )
+    log.info(f'exit {args}, {kwargs}')
+    return "BOX"
 
 
 ##############################
 @Box.command('new')
-@click.pass_context
-def box_new( ctx ) :
+@click.pass_obj
+def box_new( instance ) :
     ''' create a new box
     '''
-    log.info("BOX NEW ", ctx.obj.context_env, ' ', ctx.obj.interior_env )
+    from ..core.env import BoxEnvironment
+
+    log.info(term.pink("BOX NEW "), instance )#ctx.obj.context_env, ' ', ctx.obj.interior_env )
+    interior_env    = BoxEnvironment( instance )
+
+    # args, kwargs = yield
+    # log.info(args, ' ', kwargs)
+    #
+    return "BOX NEW"
+
+
+##############################
+@Box.command('get')
+@click.pass_obj
+def box_get( instance ) :
+    ''' get a box from a package index
+    '''
+    log.info("BOX GET " )
+
+
+##############################
+@Box.command('list')
+@click.pass_obj
+def box_list( instance ) :
+    ''' list box contents
+    '''
+    log.info("BOX LIST ")
+
+
+##############################
+@Box.command('browse')
+@click.pass_obj
+def box_browse( instance ) :
+    ''' list boxes available on package indices
+    '''
+    log.info("BOX BROWSE ", instance )
+
 
 ##############################
 @Box.command('test')
-@click.pass_context
-def box_test( ctx ) :
+@click.pass_obj
+def box_test( instance ) :
     ''' run a box's testing suite
     '''
-    log.info("BOX TEST ", ctx.obj.context_env, ' ', ctx.obj.interior_env )
+    log.info("BOX TEST ", instance )
+
 
 ##############################
 @Box.command('branches')
-@click.pass_context
-def box_branches( ctx ) :
+@click.pass_obj
+def box_branches( instance ) :
     ''' list branches
     '''
-    log.info("TREE SWITCH", ctx.obj.context_env, ' ', ctx.obj.interior_env )
+    log.info("TREE SWITCH", instance )
 
 
 ##############################
 @Box.command('switch')
-@click.pass_context
-def box_switch( ctx ) :
+@click.pass_obj
+def box_switch( instance ) :
     ''' switch branches
     '''
-    log.info("TREE SWITCH", ctx.obj.context_env, ' ', ctx.obj.interior_env )
+    log.info("TREE SWITCH", instance )
 
 
 ##############################
 @Box.command('sync')
-@click.pass_context
-def box_sync( ctx ) :
+@click.pass_obj
+def box_sync( instance ) :
     ''' synchronize your box with its source
     '''
-    log.info("BOX SYNC ", ctx.obj.context_env, ' ', ctx.obj.interior_env )
-
+    log.info("BOX SYNC ", instance )
 
 
 #----------------------------------------------------------------------------------------------#
 
 ###     SET
 ##############################
-@console.command(name='set')
+@console.command(name='set',    short_help='view or modify a node in the config tree.')
 # @click.confirmation_option()
-@click.argument( 'token' )                              # `configfile::section1:section2:...:key`, key may be None
+@click.argument( 'token',       default='env::')        # `configfile::section1:section2:...:key`, key may be None
 @click.argument( 'operator',    default=lambda:None )   # `=`, `[`, `]`, None
 @click.argument( 'value',       default=lambda:None )   # str, int, None
-@click.pass_context
-def Set( ctx, token, operator, value ) :
-    ''' view or modify a node in the config tree
+@click.pass_obj
+def Set( outer_env, token, operator, value ) :
+    ''' view or modify a node in the config tree.
 
         token syntax => configfile::section:section:...:key
 
@@ -273,29 +322,28 @@ def Set( ctx, token, operator, value ) :
     if operator not in VALID_OPS:
         raise ValueError(f'Invalid smash! set operator. Must be one of {VALID_OPS}')
 
-    parent_args = ctx.obj
-    context_env = parent_args.context_env
-    with context_env as context:
-        with InstanceEnvironment(parent=context) as instance:
-            try:
-                interior            = BoxEnvironment( instance )
-                config              = token_set( token, operator, value, interior.configtree )
-            except NothingToDo:
-                log.print( '\n', term.pink( '~~~~~~~~~~~~~~~~~~~~' ) )
-            else:
-                ### backup
-                path:Path           = config.filepath
-                timestamp           = time.strftime('%Y%m%d-%H%M%S.', time.localtime())
-                new_filepath:Path   = config.path / '.bak' / (timestamp+str(config.filename))
-                backup_path:Path    = new_filepath.parent
-                if not backup_path.exists():
-                    backup_path.mkdir()
-                path.rename(new_filepath)
+    with InstanceEnvironment(parent=outer_env) as instance:
+        try:
+            interior            = BoxEnvironment( instance )
+            config              = token_set( token, operator, value, interior.configtree )
+        except NothingToDo:
+            pass
+        else:
+            ### backup
+            path:Path           = config.filepath
+            timestamp           = time.strftime('%Y%m%d-%H%M%S.', time.localtime())
+            new_filepath:Path   = config.path / '.bak' / (timestamp+str(config.filename))
+            backup_path:Path    = new_filepath.parent
+            if not backup_path.exists():
+                backup_path.mkdir()
+            path.rename(new_filepath)
 
-                ### write
-                config.dump()
+            ### write
+            config.dump()
 
-                log.print( '\n', term.pink( '~~~~~~~~~~~~~~~~~~~~' ), term.cyan(' DONE '), '...' )
+
+    # args, kwargs = yield
+    # log.info(args, ' ', kwargs)
 
 
 ##############################
@@ -304,52 +352,12 @@ def undo() :
     ''' undo the previous modification by set
     '''
 
-#----------------------------------------------------------------------------------------------#
-
-
 
 #----------------------------------------------------------------------------------------------#
 
-###     Tree
-##############################
-# @console.group('tree')
-# @click.pass_context
-# def Tree( ctx ) :
-#     ''' control environment inside current instance
-#     '''
-#     from ..core.env import InstanceEnvironment, BoxEnvironment
-#
-#     parent_args     = ctx.obj
-#     context_env     = parent_args.context_env
-#     instance_env    = InstanceEnvironment(parent=context_env)
-#     interior_env    = BoxEnvironment( instance_env )
-#
-#     ctx.obj = namedtuple('BoxArguments', [
-#         'context_env', 'instance_env', 'interior_env'
-#     ])(  context_env,   instance_env,   interior_env )
 
 
 #----------------------------------------------------------------------------------------------#
-
-##############################
-# @console.command('look')
-@click.argument( 'category', default='categories')
-@click.pass_context
-def Look(ctx, category=None) :
-    ''' display information
-    '''
-    from ..core.env import InstanceEnvironment
-    from ..core.env import BoxEnvironment
-
-    parent_args = ctx.obj
-    context_env = parent_args.context_env
-    with context_env as context:
-        with InstanceEnvironment(parent=context) as instance:
-            interior = BoxEnvironment( instance )
-            if category is 'categories':
-                log.info( "\n", term.green('LIST CATEGORIES'))
-            else:
-                log.info( "\n", term.green('LIST '), category )
 
 
 # ##############################

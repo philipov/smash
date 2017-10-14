@@ -7,11 +7,13 @@ process yaml files
 from powertools import AutoLogger
 log = AutoLogger()
 from powertools.print import rprint
+from powertools import term
 
 from collections import OrderedDict
 from collections import namedtuple
 from collections import defaultdict
 from pathlib import Path
+from functools import partial
 
 
 #----------------------------------------------------------------------------------------------#
@@ -31,6 +33,7 @@ yaml.representer.RoundTripRepresenter.add_representer(
 from ruamel.yaml.comments import CommentedMap
 
 from ruamel.yaml import dump as yaml_dump
+
 
 
 #----------------------------------------------------------------------------------------------#
@@ -109,14 +112,27 @@ COMMENT_BAR = '#################################################################
 
 
 ##############################
-def alignment_and_breaks( yaml_output:str ):
+noop = lambda s:s
+def alignment_and_breaks( yaml_output:str, color=False ):
     '''
         align key-values in mappings at the same depth,
         add line breaks between
+        if color=True, add ansi terminal codes
     '''
 
+    ### switch colors on or off
+    dash_color      = noop
+    key_color       = noop
+    value_color     = noop
+    section_color   = noop
+    if color:
+        dash_color      = term.cyan
+        section_color   = term.white
+        # key_color       = term.dwhite
+        value_color     = term.dyellow
+
     ### parse
-    lines   = list()
+    lines = list()
     for line in yaml_output.splitlines(True):
         m       = split_fields.match(line)
         lf = LineFields(
@@ -128,12 +144,35 @@ def alignment_and_breaks( yaml_output:str ):
         lines.append(lf)
 
     ### find padding: max of mins
-    rankpadding  = defaultdict(int)
+    rankpadding = defaultdict(int)
+    flines      = list()
     for line in lines:
         line:LineFields
-        is_list     = len(line.dash) == len(line.value) == 0
-        if not is_list and rankpadding[line.rank] < line.min_padding:
-            rankpadding[line.rank] = line.min_padding
+        null_value  = len(line.value) == 0
+        is_list     = len(line.dash)  >  0
+
+        ### count terminal codes in the padding
+        dash        = dash_color(line.dash)
+        if is_list and null_value:
+            key     = value_color(line.key)
+            value   = line.value
+        elif null_value:
+            key     = section_color(line.key)
+            value   = line.value
+        else:
+            key     = key_color(line.key)
+            value   = value_color(line.value)
+
+        newline     = LineFields(line.indent, dash, key, value)
+        flines.append(newline)
+
+        ### update
+        if not is_list \
+        and not null_value \
+        and rankpadding[line.rank] < newline.min_padding:
+            rankpadding[line.rank] = newline.min_padding
+
+
     # log.info('max_len:')
     # rprint(padding)
 
@@ -142,7 +181,7 @@ def alignment_and_breaks( yaml_output:str ):
     prevline    = LineFields(' ','','','')
     header_keys = [f'{k}:' for k in ['__name__', '__version__', '__protocol__']]
 
-    for line in lines:
+    for fline, line in zip(flines, lines):
         line:LineFields
 
         empty_line  = '\n' if any(case(line, prevline)    # todo: make this pluggable
@@ -154,8 +193,8 @@ def alignment_and_breaks( yaml_output:str ):
         )        else ''
 
         padding     = rankpadding[line.rank]
-        left        = f'{line.indent}{line.dash}{line.key}'
-        padded_line = f'{left:<{padding}} {line.value}'
+        left        = fline.indent + fline.dash + fline.key
+        padded_line = f'{left:<{padding}} {fline.value}'
         result     += f'{empty_line}{padded_line}\n'
 
         prevline = line
@@ -168,22 +207,25 @@ def alignment_and_breaks( yaml_output:str ):
 
 
 ##############################
-def make_yml() :
-    yml = yaml.YAML()
-    yml.explicit_start      = False
-    yml.indent              = 2
-    yml.block_seq_indent    = 0
-    yml.typ                 = 'safe'
-    yml.tags                = False
 
-    return yml
+yml                     = yaml.YAML()
+yml.explicit_start      = False
+yml.indent              = 2
+yml.block_seq_indent    = 0
+yml.typ                 = 'safe'
+yml.tags                = False
 
 def dump( filename: Path, data ) :
-    yml = make_yml()
-
     with open( str(filename), 'w' ) as file :
-        yml.dump( data, file, transform=alignment_and_breaks )
-    # yml.dump( data, sys.stdout, transform=transformer)
+        yml.dump( data, file, transform = alignment_and_breaks )
+
+
+import io
+def yformat( data, color=True ) :
+    f = io.StringIO("yea")
+    yml.dump( data, f, transform = partial(alignment_and_breaks, color=True) )
+    return f.getvalue()
+
 
 
 #----------------------------------------------------------------------------------------------#

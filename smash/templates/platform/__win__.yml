@@ -1,0 +1,20 @@
+# __pkg__.yml -- reusable component
+##########################################################
+
+__name__:         platform/demo/win
+__protocol__:     0
+__version__:      0.0.0
+
+
+##########################################################
+
+var:
+  SYSTEMROOT:     C:\Windows
+  WIN_BIN:        ${SYSTEMROOT}/System32
+  PATH:
+    - ${SYSTEMROOT}
+    - ${WIN_BIN}
+    - '@{PATH}'
+
+
+##########################################################

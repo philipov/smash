@@ -14,6 +14,10 @@ ROOT_YAMLISP        = '__root__.yml'
 ENV_YAMLISP         = '__env__.yml'
 PKG_YAMLISP         = '__pkg__.yml'
 
+WIN_YAMLISP         = '__win__.yml'
+NIX_YAMLISP         = '__nix__.yml'
+MAC_YAMLISP         = '__mac__.yml'
+
 STOP_FILE           = TEMPLATES_ROOT / '__stop__'
 SMASH_PY            = TEMPLATES_ROOT / 'smash.py'
 SMASH_SPEC          = TEMPLATES_ROOT / 'smash.spec'
@@ -22,9 +26,10 @@ INSTANCE_CONFIG     = TEMPLATES_ROOT / 'instance' / ROOT_YAMLISP
 ENV_CONFIG          = TEMPLATES_ROOT / 'instance' / ENV_YAMLISP
 PKG_CONFIG          = TEMPLATES_ROOT / 'instance' / PKG_YAMLISP
 
-NIX_HOST            = TEMPLATES_ROOT / 'host-nix'
-WIN_HOST            = TEMPLATES_ROOT / 'host-win'
+HOST                = TEMPLATES_ROOT / 'host'
 NET                 = TEMPLATES_ROOT / 'net'
+PLATFORM            = TEMPLATES_ROOT / 'platform'
+
 PYTHON              = TEMPLATES_ROOT / 'python'
 
 

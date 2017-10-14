@@ -192,7 +192,7 @@ class Config:
         except AssertionError as e:
             raise Config.ProtocolError('Protocol version mismatch')
 
-        log.dinfo( 'Config.load = ', term.yellow(self.filepath) )
+        log.dinfo( term.yellow(self.filepath) )
 
         #print( 'parents:', self.__inherit__ )
 

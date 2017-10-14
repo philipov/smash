@@ -1,5 +1,5 @@
-# smash [under construction]
-modular reproducible research environment manager
+# smash alpha 0.0.4
+a modular non-interactive shell that's better for the environment
 
 --------------------------------------------------------------------------
 

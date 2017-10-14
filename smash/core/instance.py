@@ -89,6 +89,7 @@ class SmashTemplate( InstanceTemplate ) :
 
         print(mc)
 
+
         ###
         # log.print( term.pink( '\nattempting to register new instance with network index' ) )
         # self.register_instance()

@@ -10,12 +10,12 @@ __type__:         II
 ##########################################################
 
 pkg:
-  APP:            ${path:PKGS}/app    # installed applications
-  LIB:            ${path:PKGS}/lib    # installed libraries
-  DATA:           ${path:PKGS}/data   # installed data specifications
-  PYTHON:         ${path:PKGS}/python # self-contained python for the instance
-  HOST:           ${path:PKGS}/host   # local filesystem configuration
-  NET:            ${path:PKGS}/net    # local network configuration
+  APP:            ${path:PKGS}/app
+  LIB:            ${path:PKGS}/lib
+  DATA:           ${path:PKGS}/data
+  PYTHON:         ${path:PKGS}/python
+  HOST:           ${path:PKGS}/host
+  NET:            ${path:PKGS}/net
 
 path:
   ROOT:           .

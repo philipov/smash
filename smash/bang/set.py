@@ -9,7 +9,8 @@ from powertools import AutoLogger
 log = AutoLogger()
 
 from powertools import term
-from powertools.print import rprint, listprint, dictprint, pprint
+from powertools.print import rprint, listprint, dictprint, pprint, pformat
+from ..util.yaml import yformat
 
 from functools import partial
 from contextlib import suppress
@@ -49,13 +50,26 @@ def token_set( token:str, operator:str, input_value:str, configtree:ConfigTree )
     '''
 
     ### parse token `configfile::`
+    if '$' in token:
+        token = configtree.env['pkg'].evaluate('__token__', token, kro=configtree.env.key_resolution_order)
+
     try:
         (configpath, rest) = token.split(TOKEN_SEP_FILE)
-        print(configpath, rest)
-        print(1)
+        # log.info(configpath, rest)
+
     except ValueError as e:
-        print(2)
         (configpath, rest) = configtree.env.filepath, token
+
+    else:
+        if configpath.lower() == 'env':
+            configpath = configtree.env.filepath
+        elif configpath.lower() == 'root':
+            configpath = configtree.root.filepath
+        elif configpath in configtree.env['__inherit__'].keys():
+            configpath = configtree.env['__inherit__'][configpath]
+            # log.info('EXPORT ', configpath)
+
+
     config:Config = configtree[configpath]
 
     ### parse token `section:section:key`
@@ -92,12 +106,20 @@ def token_set( token:str, operator:str, input_value:str, configtree:ConfigTree )
     except KeyError as e:
         current_value = None
 
+    if isinstance(current_value, (str, int, float, type(None), type(NotImplemented))):
+        value_linebreak = ''
+        pfunc = partial(rprint, quiet=True)
+    else:
+        value_linebreak = '\n'
+        pfunc = yformat
     log.print(
-        "\n", term.green('SHOW: '),
-       configpath, TOKEN_SEP_FILE,
-       sections, TOKEN_SEP_SECTION,
-       key, term.green(f' {OP_SET} '), current_value
+        "\n", term.pink('SHOW: '),
+        configpath, TOKEN_SEP_FILE,
+        sections, TOKEN_SEP_SECTION,
+        key, term.pink(f' {OP_SET} '),
+        value_linebreak, pfunc(current_value)
     )
+
 
     ################################
     if operator is input_value is None:
@@ -154,6 +176,7 @@ def token_set( token:str, operator:str, input_value:str, configtree:ConfigTree )
                 view[key]:str   = input_value
                 new_value       = view[key]
 
+
     ################################
     ###     BRACKET OPERATORS
     elif operator in (OP_LIST_LEFT, OP_LIST_RIGHT):
@@ -190,7 +213,7 @@ def token_set( token:str, operator:str, input_value:str, configtree:ConfigTree )
 
                 ###
                 if isinstance(view,CommentedMap): ### which requires a different execution
-                    log.info(f'new:{new} key:{key} = {current_value}')
+                    # log.info(f'new:{new} key:{key} = {current_value}')
                     del view[key]
                     view.insert(new, key, current_value)
                     new_value = view[key]
@@ -245,10 +268,10 @@ def token_set( token:str, operator:str, input_value:str, configtree:ConfigTree )
 
     ################################
     log.print(
-        "\n", term.green('SET:  '),
+        "\n", term.pink('SET:  '),
         configpath, TOKEN_SEP_FILE,
         sections, TOKEN_SEP_SECTION,
-        key, term.green(f' {OP_SET} '), new_value
+        key, term.pink(f' {OP_SET} '), new_value
     )
 
     return config

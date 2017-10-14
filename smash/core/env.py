@@ -46,6 +46,7 @@ class Environment:
         'pure',
         'parent',
         'simulation',
+        'verbose',
 
         'children',
         'results',
@@ -56,6 +57,7 @@ class Environment:
                   pure          = True,
                   parent        = None,
                   simulation    = True,
+                  verbose       = False,
                   **kwargs ) :
         ''' homepath is the root of relative paths in the environment
             if
@@ -66,6 +68,8 @@ class Environment:
         self.pure           = pure
         self.parent         = parent
         self.simulation     = simulation
+        self.verbose        = verbose
+
 
         self.children       = list()
         self.results        = deque()
