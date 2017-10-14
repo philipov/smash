@@ -11,9 +11,10 @@ from powertools import term
 from powertools.print import pprint
 
 import click
+from click import *
+
 import inspect
 
-from types import GeneratorType
 
 #----------------------------------------------------------------------------------------------#
 
@@ -140,7 +141,7 @@ class Group(click.Group, Command):
         calling into :meth:`add_command`.
         """
         def decorator(f):
-            cmd = click_group(*args, **kwargs)(f)
+            cmd = group( *args, **kwargs )( f )
             self.add_command(cmd)
             return cmd
         return decorator
@@ -238,7 +239,7 @@ class WithGroup(Group):
         calling into :meth:`add_command`.
         """
         def decorator(f):
-            cmd = click_group(*args, **kwargs)(f)
+            cmd = group( *args, **kwargs )( f )
             self.add_command(cmd)
             return cmd
         return decorator
@@ -271,7 +272,7 @@ def _make_command(f, name, attrs, cls):
                callback=f, params=params, **attrs)
 
 
-def click_command(name=None, cls=None, **kwargs):
+def command( name=None, cls=None, **kwargs ):
     if cls is None:
         cls = click.Command
     def decorator(f):
@@ -283,13 +284,12 @@ def click_command(name=None, cls=None, **kwargs):
     return decorator
 
 
-def click_group(*args, **kwargs):
+def group( *args, **kwargs ):
     kwargs.setdefault('cls', Group)
-    return click_command(*args, **kwargs)
+    return command( *args, **kwargs )
 
 
-def subcommand_manager(f):
-    # log.info('f ', f)
+def contextmanager( f ):
     f.__is_subcommand_manager__ = True
     return f
 

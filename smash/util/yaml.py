@@ -110,9 +110,19 @@ class LineFields(namedtuple('LineFields', ['indent', 'dash', 'key', 'value'])):
 
 COMMENT_BAR = '################################################################################################\n'
 
+noop = lambda s:s
+
+match_dot = re.compile('^(\.)(.*)')
+def _value_color(s):
+    m = match_dot.match(s)
+    if m is not None:
+        a = m.group(1)
+        b = m.group(2)
+        return term.red(a) + term.dyellow(b)
+    else:
+        return term.dyellow(s)
 
 ##############################
-noop = lambda s:s
 def alignment_and_breaks( yaml_output:str, color=False ):
     '''
         align key-values in mappings at the same depth,
@@ -129,7 +139,7 @@ def alignment_and_breaks( yaml_output:str, color=False ):
         dash_color      = term.cyan
         section_color   = term.white
         # key_color       = term.dwhite
-        value_color     = term.dyellow
+        value_color     = _value_color
 
     ### parse
     lines = list()
