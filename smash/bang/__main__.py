@@ -8,14 +8,16 @@ from powertools import AutoLogger
 log = AutoLogger()
 ##############################
 from powertools import term
+from powertools import click
 from powertools.print import pprint
 
 import os
 from pathlib import Path
 from collections import namedtuple
 from contextlib import contextmanager
+from contextlib import suppress
 
-from ..util import click
+
 
 from ..core.env import ContextEnvironment
 from ..core.env import InstanceEnvironment
@@ -27,6 +29,8 @@ from ..setup.arguments import __version__
 ###     SMASH!
 ##############################
 
+term.init_color()
+
 CONTEXT_SETTINGS = dict(
     help_option_names   = ['-h', '--help'],
     terminal_width      = 97,
@@ -37,9 +41,8 @@ CONTEXT_SETTINGS = dict(
 ##############################
 @click.group(               'smash!',
     context_settings        = CONTEXT_SETTINGS,
-    cls                     = click.WithGroup
+    cls                     = click.Group
 )
-@click.contextmanager
 @click.version_option(
     __version__,
     '--version', '-V',
@@ -57,13 +60,13 @@ CONTEXT_SETTINGS = dict(
     is_flag = True,
     help    = 'What if the world is just a dream?'
 )
-# @click.pass_obj
+@click.contextmanager
 def console( verbose, simulation ) :
     ''' boxes grow on trees...
     '''
     if verbose:
         log.setDebug()
-    term.init_color()
+
 
     log.print( term.cyan( '\n~~~~~~~~~~~~~~~~~~~~ ' ), term.pink( 'SMASH'),term.cyan('.'), term.pink('BANG' ) )
     log.print( 'SCRIPT:  ', __file__ )
@@ -77,30 +80,34 @@ def console( verbose, simulation ) :
             simulation=simulation
         ) as outer_env:
         result, params = yield outer_env
-
-    # log.info('exit: ', result, ' | ', params)
+        log.info('exit: ', result, ' | ', params)
 
     log.print( '\n', term.pink( '~~~~~~~~~~~~~~~~~~~~' ), term.cyan(' DONE'), '.' )
 
 
+
 #----------------------------------------------------------------------------------------------#
-###     BOOT
+###     TREE
 ##############################
 
 @console.group('tree',
-    cls = click.WithGroup
+    cls = click.Group
 )
-@click.contextmanager
 @click.pass_obj
+@click.contextmanager
 def Tree( outer_env ) :
-    ''' create and control the boxtree.  '''
+    ''' create and control the boxtree. '''
+
+    log.info('TREE')
+    # raise SystemExit
+    yield
 
 
 ##############################
 @Tree.command( 'new' )
-@click.confirmation_option()
 @click.argument( 'instance_name' )
 @click.argument( 'template_name', default = 'smash' )
+@click.confirmation_option()
 @click.pass_obj
 def tree_new( outer_env, instance_name:str, template_name:str ) :
     ''' create new instance root in target directory using a registered template
@@ -179,11 +186,11 @@ def tree_test(outer_env) :
 ##############################
 
 @console.group('box',
-    cls         = click.WithGroup,
+    cls         = click.Group,
     short_help  = 'manage individual boxes on a boxtree instance.'
 )
-@click.contextmanager
 @click.pass_obj
+@click.contextmanager
 def Box( outer_env ) :
     ''' manage individual boxes on a boxtree instance.
     '''
@@ -273,9 +280,9 @@ def box_test( instance ) :
 
 
 #----------------------------------------------------------------------------------------------#
-
 ###     SET
 ##############################
+
 @console.command('set',
     short_help  = 'view or modify a config node on the boxtree.'
 )

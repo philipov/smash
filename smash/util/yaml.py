@@ -154,8 +154,8 @@ def alignment_and_breaks( yaml_output:str, color=False ):
         lines.append(lf)
 
     ### find padding: max of mins
-    rankpadding = defaultdict(int)
-    flines      = list()
+    rankpadding     = defaultdict(int)
+    flines          = list()
     for line in lines:
         line:LineFields
         null_value  = len(line.value) == 0
@@ -232,6 +232,7 @@ def dump( filename: Path, data ) :
 
 import io
 def yformat( data, color=True ) :
+    ''' format yaml for printing to terminal '''
     f = io.StringIO("yea")
     yml.dump( data, f, transform = partial(alignment_and_breaks, color=True) )
     return f.getvalue()

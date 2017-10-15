@@ -4,7 +4,9 @@
 __name__:         instance/{name}
 __version__:      0.0.0
 __protocol__:     0
-__type__:         II
+
+__export__:
+  subenv:         [Shell, var]
 
 
 ##########################################################
@@ -16,27 +18,19 @@ pkg:
   PYTHON:         ${path:PKGS}/python
   HOST:           ${path:PKGS}/host
   NET:            ${path:PKGS}/net
+  PLATFORM:       ${path:PKGS}/platform
 
 path:
   ROOT:           .
-  SYS:            ${ROOT}/sys
-  ENVS:           ${ROOT}/envs
-  PKGS:           ${ROOT}/pkgs
-  REPO:           ${ROOT}/repo
+  BOXES:          ${ROOT}
   DATA:           ${ROOT}/data
   SECRETS:        ${ROOT}/secrets
 
 git:
-  REMOTE:         github.com
+  DEFAULT:        ${net:GITHUB}
 
-shell:
-  PATH:           []
-
-
-##########################################################
-
-__export__:
-  subenv:         [Shell, path, remote, shell]
+net:
+  GITHUB:         github.com
 
 
 ##########################################################
