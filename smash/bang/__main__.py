@@ -67,23 +67,44 @@ def console( verbose, simulation ) :
     if verbose:
         log.setDebug()
 
-
     log.print( term.cyan( '\n~~~~~~~~~~~~~~~~~~~~ ' ), term.pink( 'SMASH'),term.cyan('.'), term.pink('BANG' ) )
     log.print( 'SCRIPT:  ', __file__ )
     cwd = Path( os.getcwd() )
     log.print( 'WORKDIR: ', cwd, '\n' )
 
-    ### precreate context environment
     with ContextEnvironment(
             cwd,
             verbose=verbose,
             simulation=simulation
         ) as outer_env:
-        result, params = yield outer_env
-        log.info('exit: ', result, ' | ', params)
+        result = yield outer_env
+        # log.info('exit: ', result)
 
     log.print( '\n', term.pink( '~~~~~~~~~~~~~~~~~~~~' ), term.cyan(' DONE'), '.' )
 
+
+#----------------------------------------------------------------------------------------------#
+###     SETUP
+##############################
+
+@console.group('setup',
+    short_help = 'add/remove smash features in the host environment'
+)
+def Setup() :
+    ''' add/remove smash features in the host environment
+    '''
+
+    result = yield
+
+
+##############################
+@Setup.command('menu',
+    short_help = "install context menus for windows' file manager"
+)
+@click.pass_obj
+def setup_menu():
+    ''' install context menus for windows' file manager
+    '''
 
 
 #----------------------------------------------------------------------------------------------#
@@ -99,8 +120,7 @@ def Tree( outer_env ) :
     ''' create and control the boxtree. '''
 
     log.info('TREE')
-    # raise SystemExit
-    yield
+    result = yield
 
 
 ##############################
@@ -110,24 +130,21 @@ def Tree( outer_env ) :
 @click.confirmation_option()
 @click.pass_obj
 def tree_new( outer_env, instance_name:str, template_name:str ) :
-    ''' create new instance root in target directory using a registered template
+    ''' create new boxtree instance in target directory using a root template
     '''
     from . import tree
 
     install_root    = outer_env.homepath.resolve() / instance_name
-
-    ### template creates the instance
     instance        = tree.new( install_root )
 
 
-
-
-@Tree.command('get')
+@Tree.command('clone')
 @click.pass_obj
-def tree_get( outer_env ) :
-    ''' get an existing box from a package index
+def tree_clone( outer_env ) :
     '''
-    log.info("BOX GET ", outer_env )
+    '''
+
+    log.info("TREE CLONE ", outer_env )
 
 
 
@@ -136,6 +153,7 @@ def tree_get( outer_env ) :
 def tree_list( outer_env ) :
     ''' list installed boxes
     '''
+
     log.info("TREE LIST ", outer_env )
 
 
@@ -143,27 +161,28 @@ def tree_list( outer_env ) :
 @Tree.command('branches')
 @click.pass_obj
 def tree_branches( outer_env ) :
-    ''' list branches
     '''
-    log.info("TREE SWITCH", outer_env )
+    '''
 
+    log.info("TREE SWITCH", outer_env )
 
 
 @Tree.command('switch')
 @click.pass_obj
 def tree_switch( outer_env ) :
-    ''' switch branches
     '''
-    log.info("TREE SWITCH", outer_env )
+    '''
 
+    log.info("TREE SWITCH", outer_env )
 
 
 @Tree.command('sync')
 @click.pass_obj
 def tree_sync( outer_env ) :
-    ''' synchronize your box with its source
     '''
-    log.info("BOX SYNC ", outer_env )
+    '''
+
+    log.info("TREE SYNC ", outer_env )
 
 
 
@@ -173,12 +192,16 @@ def tree_sync( outer_env ) :
 def tree_pack(outer_env) :
     ''' build executable distribution archive
     '''
+    log.info("TREE PACK", outer_env )
+
 
 @Tree.command( name='test' )
 @click.pass_obj
 def tree_test(outer_env) :
     ''' run deployment tests
     '''
+
+    log.info("TREE TEST", outer_env )
 
 
 #----------------------------------------------------------------------------------------------#
@@ -197,42 +220,26 @@ def Box( outer_env ) :
     log.info(term.pink('BOX '), outer_env)
 
     with InstanceEnvironment(parent=outer_env) as instance_env:
-        result, params = yield instance_env
+        result = yield instance_env
+        log.info(f'exit {result}')
 
-    log.info(f'exit {result}, {params}')
     return "BOX"
 
 
 ##############################
 @Box.command('new')
+@click.argument('boxpath')
 @click.pass_obj
-def box_new( instance ) :
+def box_new( instance, boxpath ) :
     ''' create a new box
     '''
+    from . import box
+
     log.info(term.pink("BOX NEW "), instance )
+    newbox_master   = box.new(instance, boxpath)
     interior_env    = BoxEnvironment( instance )
 
-
     return "BOX NEW"
-
-
-
-@Box.command('get')
-@click.pass_obj
-def box_get( instance ) :
-    ''' get a box from a package index
-    '''
-    log.info("BOX GET " )
-
-
-
-@Box.command('list')
-@click.pass_obj
-def box_list( instance ) :
-    ''' list box contents
-    '''
-    log.info("BOX LIST ")
-
 
 
 @Box.command('browse')
@@ -243,23 +250,20 @@ def box_browse( instance ) :
     log.info("BOX BROWSE ", instance )
 
 
-
-@Box.command('branches')
+@Box.command('clone')
 @click.pass_obj
-def box_branches( instance ) :
-    ''' list branches
+def box_get( instance ) :
+    ''' get a box from a package index
     '''
-    log.info("TREE SWITCH", instance )
+    log.info("BOX CLONE " )
 
 
-
-@Box.command('switch')
+@Box.command('list')
 @click.pass_obj
-def box_switch( instance ) :
-    ''' switch branches
+def box_list( instance ) :
+    ''' list box contents
     '''
-    log.info("TREE SWITCH", instance )
-
+    log.info("BOX LIST ")
 
 
 @Box.command('sync')
@@ -268,6 +272,14 @@ def box_sync( instance ) :
     ''' synchronize your box with its source
     '''
     log.info("BOX SYNC ", instance )
+
+
+@Box.command('branch')
+@click.pass_obj
+def box_branches( instance ) :
+    ''' list branches for a box
+    '''
+    log.info("BOX BRANCH", instance )
 
 
 ##############################
@@ -345,7 +357,6 @@ def Set( outer_env, token, operator, value ) :
             ### write
             config.dump()
 
-
     # args, kwargs = yield
     # log.info(args, ' ', kwargs)
 
@@ -353,23 +364,21 @@ def Set( outer_env, token, operator, value ) :
 ##############################
 @console.command()
 def undo() :
-    ''' undo the previous modification by set.
+    ''' undo the previous modification.
     '''
 
 
-#----------------------------------------------------------------------------------------------#
 
 
 
 #----------------------------------------------------------------------------------------------#
+### VIPER
+#############################
 
-
-##############################
 @console.group()
 def viper() :
     ''' commands for controlling a viper server.
     '''
-
 
 
 
@@ -381,7 +390,8 @@ def viper() :
 
 ##############################
 if __name__ == '__main__' :
-    console()
+    print("MAIN")
+    console(standalone_mode=False)
 
 
 #----------------------------------------------------------------------------------------------#

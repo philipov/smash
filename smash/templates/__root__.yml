@@ -1,7 +1,7 @@
 # __root__.yml -- define instance filesystem structure and dependencies
 ##########################################################
 
-__name__:         instance/{name}
+__name__:         i/{name}
 __version__:      0.0.0
 __protocol__:     0
 
@@ -11,26 +11,24 @@ __export__:
 
 ##########################################################
 
-pkg:
-  APP:            ${path:PKGS}/app
-  LIB:            ${path:PKGS}/lib
-  DATA:           ${path:PKGS}/data
-  PYTHON:         ${path:PKGS}/python
-  HOST:           ${path:PKGS}/host
-  NET:            ${path:PKGS}/net
-  PLATFORM:       ${path:PKGS}/platform
+box:
+  PLATFORM:       ${path:BOXES}/platform
+  PYTHON:         ${path:BOXES}/python
+  HOST:           ${path:BOXES}/host
+  NET:            ${path:BOXES}/net
+  SECRETS:        ${path:BOXES}/secrets
 
 path:
   ROOT:           .
   BOXES:          ${ROOT}
-  DATA:           ${ROOT}/data
-  SECRETS:        ${ROOT}/secrets
 
 git:
   DEFAULT:        ${net:GITHUB}
 
 net:
-  GITHUB:         github.com
+  viper_channels:
+    MAIN:         ${GITHUB}/philipov
+  GITHUB:         https://github.com
 
 
 ##########################################################

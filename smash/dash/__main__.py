@@ -38,7 +38,7 @@ def console( ctx, simulation ) :
     verbose = False
     term.init_color()
 
-    log.print( term.cyan( '\n~~~~~~~~~~~~~~~~~~~~ ' ), term.pink( 'SMASH' ), term.cyan( '.' ), term.pink( 'PKG' ) )
+    log.print( term.cyan( '\n~~~~~~~~~~~~~~~~~~~~ ' ), term.pink( 'SMASH' ), term.cyan( '.' ), term.pink( templates.BOX_SECTION ) )
     log.print( 'SCRIPT:  ', __file__ )
     cwd = Path( os.getcwd() )
     log.print( 'WORKDIR: ', cwd )

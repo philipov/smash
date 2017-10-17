@@ -51,8 +51,8 @@ from smash.core.constants import CONFIG_PROTOCOL
 
 from powertools import export
 
-PATH_VARS_SECTION   = 'path'
-SHELL_VARS_SECTION  = 'var'
+from .. import templates
+
 
 #----------------------------------------------------------------------------------------------#
 
@@ -226,6 +226,7 @@ class Config:
         if filepath is None:
             filepath = self.filepath
 
+        # todo: blank sections are getting added to the yaml: fix the source instead of fixing the symptom
         for name, section in copy(self._yaml_data.items()):
             if  isinstance(section, (dict, )) \
             and len(section) == 0 :
@@ -249,7 +250,6 @@ class Config:
     @property
     def name( self ) :
         return self._yaml_data['__name__']
-
 
     @property
     def protocol( self ) :
@@ -279,7 +279,7 @@ class Config:
 
         ### try to get the raw __inherit__ list
         try :
-            parent_items = self._yaml_data['__inherit__']
+            parent_items = self._yaml_data[templates.PARENTS_SECTION]
         except KeyError as e :
             parent_items = list()
         except TypeError as e:
@@ -318,7 +318,7 @@ class Config:
 
         ### evaluate tokens in resulting stringsa
         parsed_paths = ConfigSectionView( self.tree.root ).evaluate_list(
-            '__inherit__',
+            templates.PARENTS_SECTION,
             resolved_paths,
             kro=(self.tree.root,)
         )
@@ -453,11 +453,11 @@ class Config:
     def __export__( self ):
         ''' parse the export dictionary for this node and return it'''
 
-        # todo: BUG! why does 'pkg' or 'env' in the sections list evaluate to a path?
+        # todo: BUG! why does templates.BOX_SECTION or 'env' in the sections list evaluate to a path?
         try :
-            export_items    = self['__export__'].items()
+            export_items    = self[templates.EXPORT_SECTION].items()
             parsed_dict     = export_items #OrderedDict()
-            #parsed_paths    = ConfigSectionView( self.tree.root, '__export__' ).evaluate_list( '__exports__', export_dict )
+            #parsed_paths    = ConfigSectionView( self.tree.root, templates.EXPORT_SECTION ).evaluate_list( '__exports__', export_dict )
             #todo: ConfigSectionView needs refactoring if it needs to be the entrypoint for this
             # print( term.green('PARSED~~~~~'), parsed_dict )
         except KeyError as e :
@@ -477,7 +477,7 @@ class Config:
         for node in self.key_resolution_order :
             #print( term.cyan( 'node:' ), node)
             for destination, speclist in node.__export__:
-                parsed_destination = ConfigSectionView(self, PATH_VARS_SECTION).evaluate('__destination__', destination)
+                parsed_destination = ConfigSectionView(self, templates.PATH_VARS_SECTION).evaluate('__destination__', destination)
                 assert len(speclist) > 0
                 exporter_name   = speclist[0]
                 export_subtrees = OrderedSet(speclist[1:])
@@ -504,9 +504,9 @@ class Config:
         '''
         raw_scripts = OrderedDict()
         with suppress(KeyError):
-            raw_scripts = self._yaml_data['__script__']
+            raw_scripts = self._yaml_data[templates.SCRIPT_SECTION]
 
-        log.info('__script__')
+        log.info(templates.SCRIPT_SECTION)
         # rprint(raw_scripts)
 
         scripts = OrderedDict()
@@ -535,13 +535,13 @@ class Config:
                             if key in kwargs:
                                 raise Config.YamlispKwargDuplicate(script_name, line_name, key)
 
-                            value = self[PATH_VARS_SECTION].evaluate(key, raw_value, kro=self.key_resolution_order)
+                            value = self[templates.PATH_VARS_SECTION].evaluate(key, raw_value, kro=self.key_resolution_order)
                             kwargs[key] = value
                     elif isinstance(arg, list):
-                        value = self[PATH_VARS_SECTION].evaluate_list( '__script__', arg, kro=self.key_resolution_order )
+                        value = self[templates.PATH_VARS_SECTION].evaluate_list( templates.SCRIPT_SECTION, arg, kro=self.key_resolution_order )
                         args.append(value)
                     else:
-                        value = self[PATH_VARS_SECTION].evaluate( '__script__', arg, kro=self.key_resolution_order )
+                        value = self[templates.PATH_VARS_SECTION].evaluate( templates.SCRIPT_SECTION, arg, kro=self.key_resolution_order )
                         args.append(value)
 
                 scripts[script_name][line_name] = Config.ScriptLine( command_word, args, kwargs )
@@ -1368,7 +1368,7 @@ class ConfigTree :
         ''' config containing the saved hash results of the last smash invokation '''
         try:
 
-            hashfile_path = self.env['pkg']['HASHFILE']
+            hashfile_path = self.env[templates.BOX_SECTION]['HASHFILE']
         except ConfigSectionView.CouldNotGetItem as e:
             raise ConfigTree.HashfilePathUndefined(self)
 

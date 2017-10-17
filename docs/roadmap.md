@@ -37,4 +37,19 @@
 
 ---
 
+- draw an inheritance graph for an environment
+    - use the config system to draw a network diagram
+- report config values in parsed format, 
+    - and as the tree of raw values used to compose the result
 
+- reverse lookup: for a given value, find a key  
+
+---
+
+- support multiple package managers in dependencies
+    - viper
+    - pip
+    - conda
+    - cargo
+
+---

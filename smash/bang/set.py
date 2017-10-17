@@ -21,6 +21,8 @@ from copy import copy
 from ..core.config import Config, ConfigTree
 from ..core.config import getdeepitem
 
+from .. import templates
+
 #----------------------------------------------------------------------------------------------#
 __all__ = ['VALID_OPS'] # ...
 
@@ -51,7 +53,7 @@ def token_set( token:str, operator:str, input_value:str, configtree:ConfigTree )
 
     ### parse token `configfile::`
     if '$' in token:
-        token = configtree.env['pkg'].evaluate('__token__', token, kro=configtree.env.key_resolution_order)
+        token = configtree.env[templates.BOX_SECTION].evaluate('__token__', token, kro=configtree.env.key_resolution_order)
 
     try:
         (configpath, rest) = token.split(TOKEN_SEP_FILE)
@@ -65,8 +67,8 @@ def token_set( token:str, operator:str, input_value:str, configtree:ConfigTree )
             configpath = configtree.env.filepath
         elif configpath.lower() == 'root':
             configpath = configtree.root.filepath
-        elif configpath in configtree.env['__inherit__'].keys():
-            configpath = configtree.env['__inherit__'][configpath]
+        elif configpath in configtree.env[templates.PARENTS_SECTION].keys():
+            configpath = configtree.env[templates.PARENTS_SECTION][configpath]
             # log.info('EXPORT ', configpath)
 
 

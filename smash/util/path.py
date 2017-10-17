@@ -107,11 +107,11 @@ def temporary_working_directory( path: Path ) :
 #----------------------------------------------------------------------------------------------#
 
 @export
-def try_resolve( value, path:Path ) -> str:
+def try_resolve( value, path:Path ) -> (str, list):
     """"""
 
     # debug( "TRY RESOLVE--------", type( value ), value )
-    if isinstance( value, list ):
+    if isinstance( value, list) :
         return value
 
     ### early exit - spot check obviously invalid valid paths

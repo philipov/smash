@@ -1,20 +1,16 @@
-# __win__.yml -- configuration specific to windows
+# __pkg__.yml -- reusable component
 ##########################################################
 
-__name__:         host/{name}
+__name__:         pkg/{name}
 __protocol__:     0
 __version__:      0.0.0
 
 
 ##########################################################
 
-shell:
-  SYSTEMROOT:     C:\Windows
-  WIN_BIN:        ${SYSTEMROOT}/System32
-  WIN:            yes
+var:
   PATH:
-    - ${SYSTEMROOT}
-    - ${WIN_BIN}
+    - .
     - '@{PATH}'
 
 

@@ -37,7 +37,7 @@ from ruamel.yaml import dump as yaml_dump
 
 
 #----------------------------------------------------------------------------------------------#
-### LOAD YAMLISP
+### Customized YAML loading to avoid some issues with ruamel.yaml
 
 ### OrderedDictYYAMLLoader - https://gist.github.com/enaeseth/844388
 class OrderedDictYAMLLoader(  Loader ) :
@@ -80,20 +80,8 @@ class OrderedDictYAMLLoader(  Loader ) :
         return mapping
 
 
-##############################
-def load( filename:Path ) :
-    result = None
-    with filename.open( ) as file:
-        result = yaml.load(file, Loader=OrderedDictYAMLLoader )
-
-    return result
-
 #----------------------------------------------------------------------------------------------#
-
-# todo: custom dict that keeps the original file cached and associates values to lines in the file.
-
-#----------------------------------------------------------------------------------------------#
-#### DUMP YAMLISP
+#### YAML Transformer
 
 import re
 split_fields = re.compile(
@@ -216,6 +204,18 @@ def alignment_and_breaks( yaml_output:str, color=False ):
     return result
 
 
+#----------------------------------------------------------------------------------------------#
+
+##############################
+def load( filename:Path ) :
+    result = None
+    with filename.open( ) as file:
+        result = yaml.load(file, Loader=OrderedDictYAMLLoader )
+        # result = yaml.load(file, Loader=yaml.RoundTripLoader )  # todo: fix issues with RoundTripLoader
+
+    return result
+
+
 ##############################
 
 yml                     = yaml.YAML()
@@ -225,18 +225,21 @@ yml.block_seq_indent    = 0
 yml.typ                 = 'safe'
 yml.tags                = False
 
-def dump( filename: Path, data ) :
-    with open( str(filename), 'w' ) as file :
+def dump( filepath: Path, data ) :
+    ''' write YAML to filepath'''
+    with open( str(filepath), 'w' ) as file :
         yml.dump( data, file, transform = alignment_and_breaks )
+        # yml.dump( data, file )
 
 
 import io
 def yformat( data, color=True ) :
-    ''' format yaml for printing to terminal '''
-    f = io.StringIO("yea")
-    yml.dump( data, f, transform = partial(alignment_and_breaks, color=True) )
-    return f.getvalue()
+    ''' format YAML for printing to terminal '''
 
+    f = io.StringIO()
+    yml.dump( data, f, transform = partial(alignment_and_breaks, color=True) )
+    # yml.dump( data, f )
+    return f.getvalue()
 
 
 #----------------------------------------------------------------------------------------------#

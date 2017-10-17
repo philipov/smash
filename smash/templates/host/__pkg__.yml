@@ -5,19 +5,14 @@ __name__:         host/{name}
 __protocol__:     0
 __version__:      0.0.0
 
-__inherit__:
-  - Win32:        ${pkg:HOST}/__win__.yml
-    Linux:        ${pkg:HOST}/__nix__.yml
 
 ##########################################################
 
-shell:
+var:
+  V:
   PATH:
     - .
     - '@{PATH}'
-
-pkg:
-  PATH:   .
 
 
 ##########################################################

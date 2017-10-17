@@ -101,7 +101,7 @@ class SmashTemplate( InstanceTemplate ) :
         ''' strap your boots with hard-coded paths '''
 
         if root_file is None :
-            src = str( templates.INSTANCE_CONFIG )
+            src = str( templates.INSTANCE_BLANK )
             dst = str( Path( homepath ) / templates.ROOT_YAMLISP )
             print( term.cyan('writing root config: '), term.dyellow(src), "-->", term.dyellow(dst), '\n' )
             copyfile( src, dst )
@@ -118,7 +118,7 @@ class SmashTemplate( InstanceTemplate ) :
 
         paths = chain(
             config['path'].allpaths(),
-            config['pkg'].allpaths(),
+            config[templates.BOX_SECTION].allpaths(),
         )
         for key, path in paths:
             with suppress( FileExistsError ) :
@@ -139,7 +139,7 @@ class SmashTemplate( InstanceTemplate ) :
 
     def install_package(self, config:Config, template_path, pkg_name):
         src = str( template_path / templates.PKG_YAMLISP )
-        dst = str( Path(config['pkg'][pkg_name]) / templates.PKG_YAMLISP )
+        dst = str( Path(config[templates.BOX_SECTION][pkg_name]) / templates.PKG_YAMLISP )
 
         log.print( term.cyan('writing ',pkg_name,' package config: '),
                    '',term.dyellow(src),

@@ -1,20 +1,27 @@
-# __pkg__.yml -- reusable component
+# __env__.yml -- entry-point into config
 ##########################################################
 
-__name__:         pkg/{name}
+__name__:         env/{name}
 __protocol__:     0
 __version__:      0.0.0
 
+__inherit__:
+  host:           ${box:HOST}
+  platform:       ${box:PLATFORM}
+
+
 
 ##########################################################
+path:
+  HOME:         .
+  DATA_LOCAL:   ./data
 
+
+##########################################################
 shell:
   PATH:
     - .
     - '@{PATH}'
-
-pkg:
-  PATH:   .
 
 
 ##########################################################

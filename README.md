@@ -24,6 +24,10 @@ a modular non-interactive shell that's better for the environment
 
 --------------------------------------------------------------------------
 ### Motivation and Objectives
+- smash's yamlisp configuration is not an abstraction layer, it is a tool for factorization
+- need to avoid all-or-nothing adoption patterns
+    - take a small thing you already do and insert smash into it.
+    - run smash's config side-by-side with the existing implementation and compare results
 - I want a single source of truth for values in my shell environment variables and various configuration files, and for use inside other python programs.
 - yaml is easier to read than xml or json. 
     - but it doesn't have a great syntax for constructing values out of tokens, like shell scripts can.
@@ -44,7 +48,8 @@ a modular non-interactive shell that's better for the environment
     - integration to task scheduling through dask
 - use the same single source of truth for configuring both scheduled jobs and services
     - integration to some sort of service registry
-- 
+- allow interoperability with language-specific package managers
+    - track dependencies for libraries from multiple languages in one environment
 
 ---
 ### Components:

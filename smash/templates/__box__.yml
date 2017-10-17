@@ -1,25 +1,23 @@
-# __env__.yml -- entry-point into config
+# __pkg__.yml -- reusable component
 ##########################################################
 
-__name__:         env/00
+__name__:         box/{name}
 __protocol__:     0
 __version__:      0.0.0
 
 __inherit__:
-  - ${pkg:HOST}/__pkg__.yml
-
-
-##########################################################
-path:
-  HOME:         .
-  DATA_LOCAL:   ./data
-
+  active:         ${boxes:${__NAME__}:${boxes:${__NAME__}:ACTIVE}}
 
 ##########################################################
-shell:
-  PATH:
-    - .
-    - '@{PATH}'
+
+
+
+boxes:
+  ${__NAME__}:
+    ACTIVE:       master
+    branches:
+      master:     ./master
+
 
 
 ##########################################################

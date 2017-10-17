@@ -18,6 +18,8 @@ import conda
 
 from .tool import Installer
 
+from .. import templates
+
 
 #----------------------------------------------------------------------------------------------#
 
@@ -148,13 +150,13 @@ class Miniconda( Python ):
 
     @property
     def download_destination( self ) -> Path:
-        return Path(self.config['pkg']['PYTHON']).resolve()
+        return Path(self.config[templates.BOX_SECTION]['PYTHON']).resolve()
 
 
     @property
     def install_destination( self ) -> Path :
-        python_pkg_path = Path( self.config['pkg']['PYTHON'] ).resolve()
-        python_name     = self.config.tree[python_pkg_path]['python']['NAME']
+        python_pkg_path = Path( self.config[templates.BOX_SECTION]['PYTHON'] ).resolve()
+        python_name     = self.config.tree[python_pkg_path/templates.PKG_YAMLISP]['python']['NAME']
 
         return python_pkg_path / python_name
 

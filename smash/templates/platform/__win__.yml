@@ -1,7 +1,7 @@
 # __pkg__.yml -- reusable component
 ##########################################################
 
-__name__:         platform/demo/win
+__name__:         platform
 __protocol__:     0
 __version__:      0.0.0
 

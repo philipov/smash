@@ -23,7 +23,7 @@ import time
 
 
 from .config import ConfigTree
-from .config import SHELL_VARS_SECTION
+from .. import templates
 
 from ..util.proc import Subprocess
 from ..util.path import temporary_working_directory
@@ -113,7 +113,7 @@ class Environment:
         ### parse token expressions in command as if it were a key in the SHELL_VARS_SECTION section
         cmd_str = ' '.join( str( c ) for c in command )
         log.print('RAW CMD: ', cmd_str)
-        cmd_str_parsed = self.config[SHELL_VARS_SECTION].evaluate( 'CMD', cmd_str, kro=self.config.parents ).replace( r'\\', r'\\' )
+        cmd_str_parsed = self.config[templates.SHELL_VARS_SECTION].evaluate( 'CMD', cmd_str, kro=self.config.parents ).replace( r'\\', r'\\' )
         log.print( 'COMMAND: ', cmd_str_parsed, '\n')
 
         ### execute
@@ -148,7 +148,8 @@ class Environment:
             return None
 
     def send(self, value):
-        return self.run(value)
+        raise NotImplementedError
+        # return self.run(value)
 
     def close(self):
         self.closed = True
@@ -330,7 +331,7 @@ class BoxEnvironment( Environment ):
 
     def __init__( self, instance:InstanceEnvironment, **kwargs ):
         self.configtree = instance.configtree
-        homepath    = self.config.path
+        homepath        = self.config.path
         super().__init__(homepath, pure=True, **kwargs)
 
     @property
