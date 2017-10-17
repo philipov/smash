@@ -29,7 +29,7 @@ a modular non-interactive shell that's better for the environment
     - take a small thing you already do and insert smash into it.
     - run smash's config side-by-side with the existing implementation and compare results
 - I want a single source of truth for values in my shell environment variables and various configuration files, and for use inside other python programs.
-- yaml is easier to read than xml or json. 
+- yaml is easier to read than xml or json. python is even better, but less secure (does it have to be?)
     - but it doesn't have a great syntax for constructing values out of tokens, like shell scripts can.
 - it would be great to convert all my other configuration into a single yml file per project.
     - but I also want to split it up into configuration modules for each separate concern.  

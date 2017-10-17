@@ -1,0 +1,32 @@
+# IDE
+.idea/
+
+# PYTHON
+.cache/
+__pycache__
+*.pyc
+dist/
+build/
+download/
+*.egg-info
+.pyirc
+pip.ini
+
+# SMASH
+.config
+__ignore__
+__backup__
+secrets/
+logs/
+*.log
+
+
+
+
+
+
+
+
+
+
+

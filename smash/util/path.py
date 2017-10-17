@@ -13,6 +13,7 @@ info = print
 ################################
 import os
 import contextlib
+import shutil
 
 from pathlib import Path
 from itertools import chain
@@ -169,6 +170,12 @@ def fix_paths( struct, working_directory: Path ) :
 
 #----------------------------------------------------------------------------------------------#
 
+def copyfile2(source_path:Path, destination_path:Path, filename:str) -> Path:
+    ''' change the interface for copyfile'''
+    src = Path(source_path)/filename
+    dst = Path(destination_path)/filename
+    shutil.copyfile( str(src), str(dst) )
+    return dst
 
 
 #----------------------------------------------------------------------------------------------#

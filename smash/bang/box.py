@@ -14,7 +14,9 @@ from contextlib import suppress
 
 from ..core.config import Config, ConfigTree
 from ..core.env import InstanceEnvironment, BoxEnvironment
+from ..util.path import copyfile2
 from .. import templates
+
 
 #----------------------------------------------------------------------------------------------#
 
@@ -34,9 +36,11 @@ def new( instance:InstanceEnvironment, boxpath:Path ):
     with suppress( FileExistsError ) :
         instance.mkdir(newbox_master)
 
-    copyfile( templates.BOX_BLANK, str( newbox_root/templates.BOX_YAMLISP ) )
-    copyfile( templates.PKG_BLANK, str( newbox_master/templates.PKG_YAMLISP ) )
-    copyfile( templates.ENV_BLANK, str( newbox_master/templates.ENV_YAMLISP ) )
+    copyfile2( templates.TEMPLATES_ROOT, newbox_root,   templates.BOX_YAMLISP )
+    copyfile2( templates.TEMPLATES_ROOT, newbox_master, templates.PKG_YAMLISP )
+    copyfile2( templates.TEMPLATES_ROOT, newbox_master, templates.ENV_YAMLISP )
+    copyfile2( templates.TEMPLATES_ROOT, newbox_master, templates.GITIGNORE )
+    copyfile2( templates.TEMPLATES_ROOT, newbox_master, templates.README )
 
     # todo: get default templates file from instance
     # todo: perform token substitution on default files
