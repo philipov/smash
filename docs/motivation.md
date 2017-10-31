@@ -23,12 +23,18 @@
 #### serialization formats
 - xml and json are bulky and hard to read
 - yaml is good, but lacks the ability to construct nev values using old values
-- introduce a token substitution syntax: ${configfile::section:section:key}
-
+  - introduce a token substitution syntax: `${configfile::section:section:key}`
+  - class-like inheritance between config files
  
  
 #### next steps
 - refactor parsing algorithm
+- package bestex solution using smash
+- automated installation integrations
+  - conda for package management
+  - ansible? for cluster provisioning
+  - vault for secrets management
+  - consul for service discovery
 - debug features: 
   - parse tree tracing
   - reverse lookup a key for a value
