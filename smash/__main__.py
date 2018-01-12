@@ -18,10 +18,9 @@ from collections import deque
 
 
 from .core.env import ContextEnvironment
-from .core.env import InstanceEnvironment
-from .core.env import BoxEnvironment
+from .core.env import VirtualEnvironment
 
-from .setup.arguments import __version__
+from .__setup__ import __version__
 
 #----------------------------------------------------------------------------------------------#
 
@@ -54,7 +53,7 @@ def console( ctx, command, file, verbose ) :
 
 
     if verbose:
-        from .core.plugins import report_plugins
+        from .core.plugin import report_plugins
         report_plugins()
 
     result      = None
@@ -69,27 +68,27 @@ def console( ctx, command, file, verbose ) :
         ### wild lands of unmanaged state
         with ContextEnvironment(cwd) as context:
             ### the wall that guards the lands of version control
-            with InstanceEnvironment(parent=context) as instance:
+            # with InstanceEnvironment(parent=context) as instance:
                 ### virtual environments may use a different python version from instance
-                with BoxEnvironment( instance ) as interior :
-                    import re
-                    from smash.core.plugins import handlers
-                    from smash.core.handler import NoHandlerMatchedError
+            with VirtualEnvironment( cwd ) as interior :
+                import re
+                from smash.core.plugin import handlers
+                from smash.core.handler import NoHandlerMatchedError
 
-                    log.info('get handler')
-                    for pattern, Handler in reversed( handlers.items( ) ):
-                        log.info(
-                            term.dpink('handler match attempt'),
-                            f' {pattern:<16} {str(Handler):<50} {filepath.name}'
-                        )
-                        if re.match( pattern, str(filepath.name) ) :
-                            log.info('matched')
-                            result = Handler( filepath, list(arguments), interior ).run( ctx )
-                            break
-                    else :
-                        raise NoHandlerMatchedError( filepath, handlers )
+                log.info('get handler')
+                for pattern, Handler in reversed( handlers.items( ) ):
+                    log.info(
+                        term.dpink('handler match attempt'),
+                        f' {pattern:<16} {str(Handler):<50} {filepath.name}'
+                    )
+                    if re.match( pattern, str(filepath.name) ) :
+                        log.info('matched')
+                        result = Handler( filepath, list(arguments), interior ).run( ctx )
+                        break
+                else :
+                    raise NoHandlerMatchedError( filepath, handlers )
 
-                    log.info( "\ninterior.children", interior.children )
+                log.info( "\ninterior.children", interior.children )
 
 
     log.print( '\n', term.pink( '~~~~~~~~~~~~~~~~~~~~' ), term.cyan(' DONE...') )

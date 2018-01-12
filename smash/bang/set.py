@@ -18,8 +18,8 @@ from ruamel.yaml.comments import CommentedMap
 from copy import copy
 
 
-from ..core.config import Config, ConfigTree
-from ..core.config import getdeepitem
+# from ..core.Xconfig import Config, ConfigTree
+# from ..core.Xconfig import getdeepitem
 
 from .. import templates
 
@@ -91,7 +91,7 @@ def token_set( token:str, operator:str, input_value:str, configtree:ConfigTree )
     ################################
     ### op: get and display value
     try:
-        view = getdeepitem(config._yaml_data, sections)
+        view = getdeepitem(config.raw_data, sections)
     except KeyError as e:
         view = None #getdeepitem(config._yaml_data, copy(sections).pop())
     try:

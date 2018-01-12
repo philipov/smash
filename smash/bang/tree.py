@@ -37,7 +37,7 @@ def write_root( homepath: Path, root_file=None ) :
 
     if root_file is None :
         src = str( templates.INSTANCE_BLANK )
-        dst = str( Path( homepath ) / templates.ROOT_YAMLISP )
+        dst = str( Path( homepath ) / templates.ROOT_YAMLispNode )
         print( term.cyan('writing root config: '), term.dyellow(src), "-->", term.dyellow(dst), '\n' )
         copyfile( src, dst )
 
@@ -68,10 +68,10 @@ def create_pathsystem( config:Config, instance:InstanceEnvironment ) :
 
 def install_package( config:Config, template_path, pkg_name):
     for filename in [
-            templates.NIX_YAMLISP,
-            templates.WIN_YAMLISP,
-            templates.MAC_YAMLISP,
-            templates.PKG_YAMLISP,
+            templates.NIX_YAMLispNode,
+            templates.WIN_YAMLispNode,
+            templates.MAC_YAMLispNode,
+            templates.PKG_YAMLispNode,
         ]:
         src = str( template_path / filename )
         dst = str( Path(config[templates.BOX_SECTION][pkg_name]) / filename)
@@ -92,7 +92,7 @@ def install_package( config:Config, template_path, pkg_name):
 
 
 def install_default_packages( config:Config ):
-    ''' copy additional yamlisp files '''
+    ''' copy additional YAMLispNode files '''
 
     install_package( config, templates.NET,     'PLATFORM' )
     install_package( config, templates.HOST,    'HOST' )

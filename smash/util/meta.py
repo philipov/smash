@@ -5,6 +5,7 @@ higher order functions
 """
 
 
+
 #----------------------------------------------------------------------------------------------#
 
 # https://stackoverflow.com/questions/5189699/how-to-make-a-class-property

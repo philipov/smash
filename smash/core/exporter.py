@@ -19,7 +19,9 @@ from ordered_set import OrderedSet
 from pathlib import Path
 
 
-from .config import Config, ConfigSectionView, ConfigTree, CONFIG_PROTOCOL
+#from .config import YAMLispNode, YAMLispNodeSectionView, BoxTree, CONFIG_PROTOCOL
+from .yamlisp import YAMLispNode, BoxTree
+from .constants import CONFIG_PROTOCOL
 from ..util import out, yaml
 from ..util.out import rprint
 from pprint import pprint, pformat
@@ -38,13 +40,13 @@ class Exporter:
     def __key__(cls):
         return cls.__name__
 
-    def __init__( self, config:Config, sections, destination ) :
+    def __init__( self, config:YAMLispNode, sections, destination ) :
         self.config         = config
         self.sections       = sections
         self.destination    = destination
 
 
-    def write( self, config:Config, sections:list, destination:str ):
+    def write( self, config:YAMLispNode, sections:list, destination:str ):
         raise NotImplementedError
 
 
@@ -59,12 +61,12 @@ class Exporter:
 class ExportHashfile( Exporter ) :
 
     @staticmethod
-    def new_hashfile(configtree:ConfigTree):
+    def new_hashfile(configtree:BoxTree):
         ''' construct a new hashfile config node '''
 
         try :
             hashfile = configtree.hashfile
-        except ConfigTree.HashfileMissing as e:
+        except BoxTree.HashfileMissing as e:
             hashfile = None
 
         hashes = yaml.CommentedMap()
@@ -78,7 +80,7 @@ class ExportHashfile( Exporter ) :
         return hashes
 
 
-    def write( self, config: Config, sections, destination ) -> None :
+    def write( self, config: YAMLispNode, sections, destination ) -> None :
         hashes = self.new_hashfile(config.tree)
         yaml.dump(destination, hashes)
 
@@ -110,7 +112,7 @@ class ExportShell( Exporter ):
         return cls.pathlist_delimiter.join(OrderedSet(pathlist))
 
 
-    def write( self, config: Config, sections:list, destination:None ) -> OrderedDict:
+    def write( self, config: YAMLispNode, sections:list, destination:None ) -> OrderedDict:
         subenv      = OrderedDict()
         keysources  = OrderedDict()
 
@@ -146,40 +148,40 @@ class ExportShell( Exporter ):
 ################################
 @export
 class ExportShellScript( Exporter ) :
-    def write( self, config: Config, sections, destination ) -> None :
+    def write( self, config: YAMLispNode, sections, destination ) -> None :
         raise NotImplementedError
 
 ################################
 @export
 class ExportShellScriptCMD( ExportShellScript) :
-    def write( self, config: Config, sections, destination ) -> None :
+    def write( self, config: YAMLispNode, sections, destination ) -> None :
         raise NotImplementedError
 
 ################################
 @export
 class ExportShellScriptBASH( ExportShellScript ) :
-    def write( self, config: Config, sections, destination ) -> None :
+    def write( self, config: YAMLispNode, sections, destination ) -> None :
         raise NotImplementedError
 
 
 #-------------------------------------------------------------------------------------------------#
 @export
 class ExportDebug( Exporter ) :
-    def write( self, config: Config, sections, destination ) -> None:
+    def write( self, config: YAMLispNode, sections, destination ) -> None:
         raise NotImplementedError
 
 
 #-------------------------------------------------------------------------------------------------#
 @export
 class ExportYAML( Exporter ) :
-    def write( self, config: Config, sections, destination ) -> None:
+    def write( self, config: YAMLispNode, sections, destination ) -> None:
         raise NotImplementedError
 
 
 #-------------------------------------------------------------------------------------------------#
 @export
 class ExportXML( Exporter ) :
-    def write( self, config: Config, sections, destination ) -> None:
+    def write( self, config: YAMLispNode, sections, destination ) -> None:
         raise NotImplementedError
 
 
@@ -189,10 +191,10 @@ class ExportINI( ExportShell ) :
 
     pathlist_delimiter = ','
 
-    def write( self, config: Config, sections: list, destination: str ) :
-        from configparser import ConfigParser
+    def write( self, config: YAMLispNode, sections: list, destination: str ) :
+        from configparser import YAMLispNodeParser
 
-        inidata      = ConfigParser( )
+        inidata      = YAMLispNodeParser( )
         for section in sections :
             inidata.setdefault(section,OrderedDict())
             log.info( out.red( 'ExportINI Section [' ), "{}".format( str( section )), out.red(']') )

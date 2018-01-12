@@ -66,11 +66,11 @@ builtin_tools = {
 #----------------------------------------------------------------------------------------------#
 
 from .exporter import Exporter, builtin_exporters
-from .handler import Handler, builtin_handlers
+#from .handler import Handler, builtin_handlers
 
-from .instance import InstanceTemplate, builtin_templates
-from .pkg import PackageType, builtin_package_types
-from .pkg import Package, builtin_packages
+#from .instance import InstanceTemplate, builtin_templates
+#from .pkg import PackageType, builtin_package_types
+#from .pkg import Package, builtin_packages
 from .env import Environment, builtin_environment_types
 
 
@@ -92,13 +92,13 @@ __all__     = [
 plugin_modules      = _load_plugins()
 
 environment_types   = _select_class( Environment,       builtin_environment_types )
-instance_templates  = _select_class( InstanceTemplate, builtin_templates )
-package_types       = _select_class( PackageType,       builtin_package_types )
+#instance_templates  = _select_class( InstanceTemplate, builtin_templates )
+#package_types       = _select_class( PackageType,       builtin_package_types )
 
-packages            = _select_class( Package,           builtin_packages )
+#packages            = _select_class( Package,           builtin_packages )
 tools               = _select_class( tool.Tool,         builtin_tools )
 exporters           = _select_class( Exporter,          builtin_exporters )
-handlers            = _select_class( Handler,           builtin_handlers )
+#handlers            = _select_class( Handler,           builtin_handlers )
 
 
 #----------------------------------------------------------------------------------------------#
@@ -111,14 +111,14 @@ def report_plugins():
     print( term.dcyan( '~~~~~~~~~~~' ) + term.pink(' environment types:' ))
     rprint( environment_types )
 
-    print( term.dcyan( '~~~~~~~~~~~' ) + term.pink(' instance templates:' ) )
-    rprint( instance_templates )
+    # print( term.dcyan( '~~~~~~~~~~~' ) + term.pink(' instance templates:' ) )
+    # rprint( instance_templates )
 
-    print( term.dcyan( '~~~~~~~~~~~' ) + term.pink(' package types:' ) )
-    rprint( package_types )
-
-    print( term.dcyan( '~~~~~~~~~~~' ) + term.pink(' packages:' ))
-    rprint( packages )
+    # print( term.dcyan( '~~~~~~~~~~~' ) + term.pink(' package types:' ) )
+    # rprint( package_types )
+    #
+    # print( term.dcyan( '~~~~~~~~~~~' ) + term.pink(' packages:' ))
+    # rprint( packages )
 
     print( term.dcyan( '~~~~~~~~~~~' ) + term.pink(' tools:' ))
     rprint( tools )
@@ -126,8 +126,8 @@ def report_plugins():
     print( term.dcyan( '~~~~~~~~~~~' ) + term.pink(' exporters:' ) )
     rprint( exporters )
 
-    print( term.dcyan( '~~~~~~~~~~~' ) + term.pink(' handlers:' ))
-    rprint( handlers )
+    # print( term.dcyan( '~~~~~~~~~~~' ) + term.pink(' handlers:' ))
+    # rprint( handlers )
 
     print( term.dcyan( '~~~~~~~~~~~\n' ) )
 

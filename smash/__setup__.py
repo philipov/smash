@@ -4,11 +4,10 @@
     An integrated environment for reproducible research, development, testing, and production
 '''
 
-#----------------------------------------------------------------------------------------------#
-
 from pathlib import Path
 import os
-from pprint import pprint
+
+#----------------------------------------------------------------------------------------------#
 
 def collect_package_data( package_path ) :
     root_path = Path( __file__ ).parents[2].resolve() / package_path
@@ -39,7 +38,6 @@ kwargs = dict(
         'smash.tool',       # extensive subapplications
         'smash.util',       # low-level utilities
         'smash.test',       # testing plugins and utilities
-        'smash.setup',      # arguments for setup.py
         'smash.templates',  # library of default files
 
         'smash.bang',       # instance and box management cli
@@ -68,7 +66,10 @@ kwargs = dict(
         'psutil',           # process utils
         'ruamel.yaml',      # yaml parser
         'xmltodict',        # xml parser
-        'ordered_set',      # ...
+        'python-box',       # attribute-addressable nested dictionaries
+        'treelib',          # data structure
+        'ordered_set',      # data structure
+
 
         'click',            # command-line parser
         'cookiecutter',     # filesystem templater

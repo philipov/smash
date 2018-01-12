@@ -13,7 +13,7 @@ from pathlib import Path
 
 import psutil
 
-from ..core.config import ConfigTree
+# from ..core.config import ConfigTree
 
 from collections import OrderedDict
 

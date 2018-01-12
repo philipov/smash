@@ -1,11 +1,11 @@
 # __root__.yml -- define config system
 ##########################################################
+__yamlisp__:
+  name:         host/test
+  type:         pkg
+  protocol:     0
+  version:      0.0.0
 
-__protocol__:     0
-__version__:      0.0.0
-
-__name__:         smash
-__type__:         II
 
 __export__:
   subenv:         [Shell, path, shell]

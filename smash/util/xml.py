@@ -14,8 +14,8 @@ from collections import OrderedDict
 from pathlib import Path
 import types
 
-from ..core.config import getdeepitem
-from ..core.config import ConfigSectionView
+# from ..core.Xconfig import getdeepitem
+# from ..core.Xconfig import ConfigSectionView
 
 import xmltodict
 from ruamel.yaml.comments import CommentedMap

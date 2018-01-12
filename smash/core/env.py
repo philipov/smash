@@ -21,8 +21,8 @@ import subprocess
 import psutil
 import time
 
-
-from .config import ConfigTree
+# from .config import ConfigTree
+from .yamlisp import BoxTree, YAMLispNode
 from .. import templates
 
 from ..util.proc import Subprocess
@@ -45,7 +45,7 @@ class Environment:
         'homepath',
         'pure',
         'parent',
-        'simulation',
+        'simulation', # todo: need to have a SimulationEnvironment instead
         'verbose',
 
         'children',
@@ -60,7 +60,6 @@ class Environment:
                   verbose       = False,
                   **kwargs ) :
         ''' homepath is the root of relative paths in the environment
-            if
             if simulation is True, don't actually do anything; just print.
         '''
 
@@ -70,7 +69,6 @@ class Environment:
         self.simulation     = simulation
         self.verbose        = verbose
 
-
         self.children       = list()
         self.results        = deque()
         self.closed         = None
@@ -79,6 +77,9 @@ class Environment:
     ####################
     def build(self):
         ''' run all the exporters '''
+        raise NotImplementedError()
+
+    def export(self):
         raise NotImplementedError()
 
     def validate( self ) :
@@ -184,7 +185,6 @@ class Environment:
 #----------------------------------------------------------------------------------------------#
 
 
-
 #----------------------------------------------------------------------------------------------#
 
 @export
@@ -236,92 +236,12 @@ class ContextEnvironment( Environment ) :
         raise NotImplementedError()
 
 #----------------------------------------------------------------------------------------------#
-@export
-class InstanceEnvironment( Environment ) :
-    ''' Environment within which smash is running,
-        could be an explicit smash instance,
-        or some implicit unmanaged system environment
-    '''
-    __slots__ = (
-        'configtree',
-    )
-
-    def __init__( self, homepath=None, parent=None, pure=False, **kwargs ) :
-        ''' either homepath or parent.homepath '''
-        if homepath is None :
-            homepath = parent.homepath
-
-        super().__init__( homepath, pure=pure, **kwargs )
-        try :
-            self.configtree = ConfigTree.from_path( homepath )
-            assert self.configtree.final
-        except FileNotFoundError as e :
-            self.configtree = ConfigTree( )
-        except AssertionError as e :
-            raise ConfigTree.NotFinalizedError( e )
-
-        log.debug( 'CONFIGS:  ', self.configtree, '\n' )
-
-    @property
-    def instance_template( self ) :
-        ''' determine whether the context is an instance, and retrieve its template '''
-        return None
-
-    ####################
-    def build( self ) :
-        ''' do what? '''
-
-    def validate( self ) :
-        ''' defer to instance template '''
-
-    def initialize( self ) :
-        sys.path.append( str( self.homepath ) )
-        os.chdir( str( self.homepath ) )
-
-    def teardown( self ) :
-        ''' do what? '''
-
-    ####################
-
-    @property
-    def config(self):
-        return self.configtree.root
-
-    @property
-    def variables( self ) :
-        from ..core.plugins import exporters
-
-        try : # todo: refactor how environment export works. subenv should be the export sink key, and Exporters should push values into it. The virtual environment should just check that sink after exporters have been ran.
-            export_subtrees = self.config.exports['Shell']['subenv']
-        except KeyError :
-            if self.config.is_pure :
-                raise MissingShellExportError( str(
-                    self.config.filepath ) + ' and its parents did not define any Exporters for pure virtual environment.' )
-            else :
-                print( "Warning: No Shell Exporter defined. Will use only exterior environment variables." )
-                return OrderedDict()
-        exporter = exporters['Shell']
-        subenv = exporter( self.config, export_subtrees, 'subenv' ).export()
-
-        result = OrderedDict()
-        if not self.pure :
-            result.update( os.environ )
-        result.update( subenv )
-        # log.info()
-        # dictprint(result)
-        return result
-
-    def install_package( self ):
-        pass
-
-
-#----------------------------------------------------------------------------------------------#
 
 SUBPROCESS_DELAY = 0.01
 
 ################################
 @export
-class BoxEnvironment( Environment ):
+class VirtualEnvironment( Environment ):
     ''' Environment that is launched as a child of the smash process
         shell variables are supplied by evaluating the 'Environment' __export__ process in the configtree
     '''
@@ -329,35 +249,71 @@ class BoxEnvironment( Environment ):
         'configtree',
     )
 
-    def __init__( self, instance:InstanceEnvironment, **kwargs ):
-        self.configtree = instance.configtree
-        homepath        = self.config.path
-        super().__init__(homepath, pure=True, **kwargs)
+    def __init__( self,
+                  homepath  = None,
+                  parent    = None,
+                  pure      = False,
+                  **kwargs
+                  ):
 
+        if homepath is None :
+            homepath = parent.homepath
+
+        super().__init__(homepath, pure=pure, parent=parent, **kwargs)
+        try :
+            # self.configtree = ConfigTree.from_path( homepath )
+            self.configtree = BoxTree.from_path( homepath )
+            # assert self.configtree.final
+        except FileNotFoundError as e :
+            # self.configtree = ConfigTree()
+            self.configtree = BoxTree()
+        except AssertionError as e :
+            raise BoxTree.NotFinalizedError( e )
+
+        homepath        = self.config.path
+
+        log.debug( 'CONFIGS:  ', self.configtree, '\n' )
+
+
+    ####################
     @property
     def config(self):
         return self.configtree.env
 
+
     ####################
     def build( self ) :
-        ''' create config files '''
-        from .plugins import exporters
+        ''' prepare deployment artifacts necessary for tasks to run in the environment '''
 
         print(term.white('\nBUILD VIRTUAL ENVIRONMENT'))
-        log.info( term.red( 'ENVIRONMENT KEY RESOLUTION ORDER' ) )
-        listprint( self.config.key_resolution_order, pfunc=log.info )
+        # log.info( term.red( 'ENVIRONMENT KEY RESOLUTION ORDER' ) )
+        # listprint( self.config.key_resolution_order, pfunc=log.info )
 
         log.print('')
         if self.configtree.has_changed :
-            for name, target in self.config.exports.items():
-                if name == 'Shell': continue
-                exporter = exporters[name]
-                for destination, sections in target.items():
-                    print(term.red('\nEXPORT'),' {:<10} {:<50} {:<10} {:<10}'.format(str(name), str(destination), str(sections), str(exporter)) )
-                    result = exporter(self.config, sections, destination).export()
+            self.export()
         print(term.white('\n----------------'))
 
 
+    ####################
+    def export(self):
+        ''' evaluate config's  __export__ section values, and write them to the keys
+        '''
+        from .plugin import exporters
+
+        for name, target in self.config.exports.items():
+            if name == 'Shell':
+                continue
+                # todo: ShellExporter should return a dictionary that gets written to a file or env object attribute __var__
+                # todo:__export__ keys should be either magic symbols like '__var__' or else the path to the output file
+
+            exporter = exporters[name]
+            for destination, sections in target.items():
+                print(term.red('\nEXPORT'),' {:<10} {:<50} {:<10} {:<10}'.format(str(name), str(destination), str(sections), str(exporter)) )
+                result = exporter(self.config, sections, destination).export()
+
+
+    ####################
     def validate( self ) :
         pass
 
@@ -371,7 +327,7 @@ class BoxEnvironment( Environment ):
     ####################
     @property
     def variables( self ) :
-        from ..core.plugins import exporters
+        from ..core.plugin import exporters
 
         try : # todo: refactor how environment export works. subenv should be the export sink key, and Exporters should push values into it. The virtual environment should just check that sink after exporters have been ran.
             export_subtrees = self.config.exports['Shell']['subenv']
@@ -397,6 +353,8 @@ class BoxEnvironment( Environment ):
         # dictprint(result)
         return result
 
+    def send(self, value):
+        raise NotImplementedError
 
 #----------------------------------------------------------------------------------------------#
 
@@ -409,7 +367,7 @@ class BoxEnvironment( Environment ):
 
 ################################
 @export
-class CondaEnvironment( BoxEnvironment ) :
+class CondaEnvironment( VirtualEnvironment ) :
     ''' construct a conda environment, and run commands inside it '''
     __slots__ = ()
 
@@ -444,6 +402,8 @@ class CondaEnvironment( BoxEnvironment ) :
     def run( self, *command ) :
         raise NotImplementedError
 
+    def send(self, value):
+        raise NotImplementedError
 
 #----------------------------------------------------------------------------------------------#
 
@@ -485,6 +445,8 @@ class DockerEnvironment( Environment ) :
     def run( self, *command ) :
         raise NotImplementedError()
 
+    def send(self, value):
+        raise NotImplementedError
 
 #----------------------------------------------------------------------------------------------#
 @export
@@ -520,12 +482,14 @@ class RemoteEnvironment( Environment ):
     def run( self, *command ) :
         raise NotImplementedError()
 
+    def send(self, value):
+        raise NotImplementedError
 
 #----------------------------------------------------------------------------------------------#
 
 builtin_environment_types = {
     'context'   : ContextEnvironment,
-    'subenv'    : BoxEnvironment,
+    'subenv'    : VirtualEnvironment,
     'conda'     : CondaEnvironment,
     'docker'    : DockerEnvironment,
     'remote'    : RemoteEnvironment

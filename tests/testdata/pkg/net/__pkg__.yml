@@ -1,10 +1,13 @@
 # __root__.yml -- define config system
 ##########################################################
 
-__name__:         net/demo00
+__name__:         net/test
 __protocol__:     0
 __version__:      0.0.0
 
+__import__:
+  root:           [Import, root]
+# parent:         [Parent] # use importer's keys inside module
 
 ##########################################################
 path:

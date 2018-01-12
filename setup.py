@@ -4,7 +4,7 @@
 #----------------------------------------------------------------------------------------------#
 
 from setuptools import setup
-from smash.setup.arguments import kwargs
+from smash.__setup__ import kwargs
 import os
 
 with open( os.path.join( os.path.dirname( __file__ ), 'DESCRIPTION.rst' ) ) as r_file :

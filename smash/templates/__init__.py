@@ -9,14 +9,14 @@ from pathlib import Path
 #----------------------------------------------------------------------------------------------#
 
 ##########################################################
-ROOT_YAMLISP        = '__root__.yml'
-ENV_YAMLISP         = '__env__.yml'
-PKG_YAMLISP         = '__pkg__.yml'
-BOX_YAMLISP         = '__box__.yml'
+ROOT_YAMLispNode        = '__root__.yml'
+ENV_YAMLispNode         = '__env__.yml'
+PKG_YAMLispNode         = '__pkg__.yml'
+BOX_YAMLispNode         = '__box__.yml'
 
-WIN_YAMLISP         = '__win__.yml'
-NIX_YAMLISP         = '__nix__.yml'
-MAC_YAMLISP         = '__mac__.yml'
+WIN_YAMLispNode         = '__win__.yml'
+NIX_YAMLispNode         = '__nix__.yml'
+MAC_YAMLispNode         = '__mac__.yml'
 
 GITIGNORE           = '.gitignore'
 README              = 'README.md'
@@ -29,10 +29,10 @@ STOP_FILE           = TEMPLATES_ROOT / '__stop__'
 SMASH_PY            = TEMPLATES_ROOT / 'smash.py'
 SMASH_SPEC          = TEMPLATES_ROOT / 'smash.spec'
 
-INSTANCE_BLANK      = TEMPLATES_ROOT / ROOT_YAMLISP
-ENV_BLANK           = TEMPLATES_ROOT / ENV_YAMLISP
-PKG_BLANK           = TEMPLATES_ROOT / PKG_YAMLISP
-BOX_BLANK           = TEMPLATES_ROOT / BOX_YAMLISP
+INSTANCE_BLANK      = TEMPLATES_ROOT / ROOT_YAMLispNode
+ENV_BLANK           = TEMPLATES_ROOT / ENV_YAMLispNode
+PKG_BLANK           = TEMPLATES_ROOT / PKG_YAMLispNode
+BOX_BLANK           = TEMPLATES_ROOT / BOX_YAMLispNode
 
 GITIGNORE_BLANK     = TEMPLATES_ROOT / GITIGNORE
 README_BLANK        = TEMPLATES_ROOT / README

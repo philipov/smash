@@ -1,42 +1,55 @@
 # __env__.yml -- entry point for environment config
 ##########################################################
 
-__name__:         env/00
-__protocol__:     0
-__version__:      0.0.0
+__yamlisp__:
+  name:         env/00
+  protocol:     0
+  version:      0.0.0
 
-__inherit__:
-  - ${pkg:HOST}/__pkg__.yml
-  - ${pkg:APP}/__pkg__.yml
+
+__import__:
+
+  root:           [Import, root]
+
+  HOST:           ${root::pkg:HOST}/__pkg__.yml
+  NET:            ${root::pkg:NET}/__pkg__.yml
+
+__export__:
+  subenv:         [Shell, path, shell]
 
 
 ##########################################################
 path:
   ROOT:           .
   ENVS:           ${ROOT}/test
-  PATH1:          ${ROOT}/path1
-  PATH2:          ${PATH1}/path2
-  APP:            ${pkg:APP}
-  SECTION:        pkg
-  APP2:           ${${SECTION}:APP}
-  HOST1:          ${${pkg:HOST}::path:SECRETS}
-  LIST1:          ["${APP}","${ENVS}"]
+#  PATH1:          ${ROOT}/path1
+#  PATH2:          ${PATH1}/path2
+#  APP:            ${pkg:APP}
+#  SECTION:        pkg
+#  APP2:           ${${SECTION}:APP}
+#  HOST1:          ${${pkg:HOST}::path:SECRETS}
+#  LIST1:          ["${APP}","${ENVS}"]
 
-extra:
-  LIST2:
-    - abc
-    - [1, 2, 3]
-    - KEY1:       hello
-      KEY2:       world
-  SUBKEYS:
-    KEY1:       hello
-    KEY2:       world
+#extra:
+#  LIST2:
+#    - abc
+#    - [1, 2, 3]
+#    - KEY1:       hello
+#      KEY2:       world
+#  SUBKEYS:
+#    KEY1:       hello
+#    KEY2:       world
 
 
 ##########################################################
 shell:
   PYTHON:         mconda36
   RECVAL:         ${RECVAL} WORLD
+  PATH:
+    - .
+    - '@{host::PATH}'
+    - '@{net::PATH}'
+
 
 
 ##########################################################

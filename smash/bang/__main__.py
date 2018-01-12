@@ -18,11 +18,9 @@ from contextlib import contextmanager
 from contextlib import suppress
 
 
-
 from ..core.env import ContextEnvironment
-from ..core.env import InstanceEnvironment
-from ..core.env import BoxEnvironment
-from ..setup.arguments import __version__
+from ..core.env import VirtualEnvironment
+from ..__setup__ import __version__
 
 
 #----------------------------------------------------------------------------------------------#
@@ -195,7 +193,7 @@ def tree_pack(outer_env) :
     log.info("TREE PACK", outer_env )
 
 
-@Tree.command( name='test' )
+@Tree.command( 'test' )
 @click.pass_obj
 def tree_test(outer_env) :
     ''' run deployment tests
@@ -219,40 +217,44 @@ def Box( outer_env ) :
     '''
     log.info(term.pink('BOX '), outer_env)
 
-    with InstanceEnvironment(parent=outer_env) as instance_env:
-        result = yield instance_env
-        log.info(f'exit {result}')
+    # with InstanceEnvironment(parent=outer_env) as instance_env:
+    #     result = yield instance_env
+    #     log.info(f'exit {result}')
+    yield outer_env
 
     return "BOX"
 
 
 ##############################
-@Box.command('new')
-@click.argument('boxpath')
+@Box.command( 'new',
+    short_help = 'create a new box'
+)
+@click.argument( 'boxpath' )
+@click.option( '-c', '--cookiecutter', default=None , help='cookiecutter template')
 @click.pass_obj
-def box_new( instance, boxpath ) :
+def box_new( parent, boxpath ) :
     ''' create a new box
     '''
     from . import box
 
-    log.info(term.pink("BOX NEW "), instance )
-    newbox_master   = box.new(instance, boxpath)
-    interior_env    = BoxEnvironment( instance )
+    log.info(term.pink("BOX NEW "), parent )
+    newbox_master   = box.new(parent, boxpath)
+    interior_env    = VirtualEnvironment( parent )
 
     return "BOX NEW"
 
 
 @Box.command('browse')
 @click.pass_obj
-def box_browse( instance ) :
+def box_browse( parent ) :
     ''' list boxes available on package indices
     '''
-    log.info("BOX BROWSE ", instance )
+    log.info("BOX BROWSE ", parent )
 
 
 @Box.command('clone')
 @click.pass_obj
-def box_get( instance ) :
+def box_get( parent ) :
     ''' get a box from a package index
     '''
     log.info("BOX CLONE " )
@@ -260,35 +262,37 @@ def box_get( instance ) :
 
 @Box.command('list')
 @click.pass_obj
-def box_list( instance ) :
+def box_list( parent ) :
     ''' list box contents
     '''
     log.info("BOX LIST ")
+    with VirtualEnvironment( parent=parent ) as interior:
+        log.print(interior)
 
 
 @Box.command('sync')
 @click.pass_obj
-def box_sync( instance ) :
+def box_sync( parent ) :
     ''' synchronize your box with its source
     '''
-    log.info("BOX SYNC ", instance )
+    log.info("BOX SYNC ", parent )
 
 
 @Box.command('branch')
 @click.pass_obj
-def box_branches( instance ) :
+def box_branches( parent ) :
     ''' list branches for a box
     '''
-    log.info("BOX BRANCH", instance )
+    log.info("BOX BRANCH", parent )
 
 
 ##############################
 @Box.command('test')
 @click.pass_obj
-def box_test( instance ) :
+def box_test( parent ) :
     ''' run a box's testing suite
     '''
-    log.info("BOX TEST ", instance )
+    log.info("BOX TEST ", parent )
 
 
 #----------------------------------------------------------------------------------------------#

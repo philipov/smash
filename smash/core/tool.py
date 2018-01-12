@@ -12,7 +12,7 @@ from powertools import export
 from powertools import assertion
 
 from pathlib import Path
-from .config import Config
+from .yamlisp import YAMLispNode
 
 from ..util import out
 from ..util.out import rprint
@@ -34,7 +34,7 @@ class Tool:
         'env',
         'config',
     )
-    def __init__( self, env:Environment, config:Config) :
+    def __init__( self, env:Environment, config:YAMLispNode) :
         self.env    = env
         self.config = config
 
