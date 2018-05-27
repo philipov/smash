@@ -272,6 +272,7 @@ def box_list( parent ) :
 
 @Box.command('sync')
 @click.pass_obj
+
 def box_sync( parent ) :
     ''' synchronize your box with its source
     '''

@@ -7,13 +7,15 @@ package types,
 from powertools import AutoLogger
 log:AutoLogger = AutoLogger()
 from powertools import term as t
-from powertools import assertion
+from powertools.print import listprint
 
 from pathlib import Path
 from collections import namedtuple
 from collections import deque
 from collections import OrderedDict
 from ..util.yaml import CommentedMap
+
+import re
 
 import hashlib
 from ..util.yaml import load as load_yaml
@@ -23,8 +25,65 @@ from .. import templates
 
 from .exception import SmashError
 
-from treelib import Tree
+#----------------------------------------------------------------------------------------------#
 
+# Tree
+# todo: move to utils
+
+from treelib import Tree as BaseTree
+
+class Tree(BaseTree):
+    def __print_backend(self, nid=None, level=BaseTree.ROOT, idhidden=True, filter=None,
+                       key=None, reverse=False, line_type='ascii-ex',
+                       data_property=None, func=print):
+        """
+        Another implementation of printing tree using Stack
+        Print tree structure in hierarchy style.
+
+        For example:
+            Root
+            |___ C01
+            |    |___ C11
+            |         |___ C111
+            |         |___ C112
+            |___ C02
+            |___ C03
+            |    |___ C31
+
+        A more elegant way to achieve this function using Stack
+        structure, for constructing the Nodes Stack push and pop nodes
+        with additional level info.
+
+        UPDATE: the @key @reverse is present to sort node at each
+        level.
+        """
+        # Factory for proper get_label() function
+        if data_property:
+            if idhidden:
+                def get_label(node):
+                    return getattr(node.data, data_property)
+            else:
+                def get_label(node):
+                    return "%s[%s]" % (getattr(node.data, data_property), node.identifier)
+        else:
+            if idhidden:
+                def get_label(node):
+                    # Philip: Display node.data by default, and colorize
+                    return f'{t.dyellow(node.tag)} - {t.cyan(node.data)}'
+            else:
+                def get_label(node):
+                    return "%s[%s]" % (node.tag, node.identifier)
+
+        # legacy ordering
+        if key is None:
+            def key(node):
+                return node
+
+        # iter with func
+        for pre, node in self.__get(nid, level, filter, key, reverse,
+                                    line_type):
+            label = get_label(node)
+            func('{0}{1}'.format(pre, label).encode('utf-8'))
 
 #----------------------------------------------------------------------------------------------#
 #   dict/list tree traversal
@@ -58,7 +117,7 @@ def getdeepitem( data, dkey ):
 
 Item = namedtuple('Item', ['dkey', 'value'])
 
-def data2tree(data, *, config=None) -> Tree:
+def data2tree(data, *, config) -> Tree:
     ''' construct Tree object from nested dict/lists
         breadth-first stack-based tree traversal
     '''
@@ -69,6 +128,8 @@ def data2tree(data, *, config=None) -> Tree:
 
     while stack:
         cur_item = stack.popleft()
+        if len(cur_item.dkey) > 0:
+            parent = cur_item.dkey[:-1]
 
         if isinstance(cur_item.value, dict):
             node = YAMLispSection(config, cur_item.dkey, mode=dict)
@@ -81,9 +142,11 @@ def data2tree(data, *, config=None) -> Tree:
                 stack.append( Item((*cur_item.dkey, i), value) )
         else:
             node = YAMLispValue(config, cur_item.dkey, cur_item.value)
+            # tree[parent].data[cur_item.dkey[-1]] = node
+            # print('TREEPARENT', tree[parent].data[cur_item.dkey[-1]])
 
-        if len(cur_item.dkey) > 0:
-            parent = cur_item.dkey[:-1]
+
+
 
         tree.create_node(
             identifier  = cur_item.dkey,
@@ -91,9 +154,59 @@ def data2tree(data, *, config=None) -> Tree:
             parent      = parent,
             data        = node
         )
-        print(parent, t.cyan(cur_item))
+        # print(parent, t.cyan(cur_item))
 
     return tree
+
+
+def tree2data(tree) -> (dict,list):
+    '''
+    '''
+
+    tree_iter   = tree.expand_tree(mode=Tree.WIDTH)
+
+    #handle root node
+    data        = None
+    root_type   = tree[next(tree_iter)].data.mode
+    if root_type == dict:
+        data = dict()
+    elif root_type == list:
+        data = list()
+    else:
+        raise Exception('unknown root type')
+
+    # iterate over nodes and add them to data
+    for dkey in tree_iter:
+        value = tree[dkey].data
+        print("ITEM:", dkey, '|', end='')
+
+        parent_dkey = dkey[:-1]
+        leaf_key    = dkey[-1]
+        item        = getdeepitem(data, parent_dkey)
+
+        if isinstance(value, YAMLispSection):
+            print(value.mode, end='')
+            if value.mode == dict:
+                new_value = CommentedMap()
+            elif value.mode == list:
+                new_value = list()
+            else:
+                raise Exception('unknown section type')
+
+        elif isinstance(value, YAMLispValue):
+            new_value = value.raw
+
+        if isinstance(leaf_key, int):
+            item.append(new_value)
+        elif isinstance(leaf_key, str):
+            item[leaf_key] = new_value
+        else:
+            raise Exception('unknown node type')
+
+        print('')
+
+    return data
+
 
 
 #----------------------------------------------------------------------------------------------#
@@ -286,7 +399,7 @@ class YAMLispNode:
 
     ####################
     __slots__ = (
-        'tree',         # boxtree reference
+        'collection',         # boxtree reference
         'filepath',     # node identifier
         '_raw_data',    # dict of dict/list
         '_parse_tree',  # Tree of Section/Value
@@ -296,32 +409,31 @@ class YAMLispNode:
 
     )
     def __init__(self, *,
-            tree:BoxTree    = None,
-            data:dict       = None,
-            filepath:Path   = None,
+            collection:BoxTree  = None,
+            data:dict           = None,
+            filepath:Path       = None,
         ):
 
-        self.tree           = tree
+        self.collection     = collection
+        self.filepath       = filepath
 
-        if data is not None:
+        if data is None:
             self._raw_data      = CommentedMap()
             self._parse_tree    = Tree()
+            self._flat_data     = CommentedMap()
         else:
             self._raw_data      = data
             self._parse_tree    = data2tree(data, config=self)
+            self._flat_data     = data
 
         self._hash          = None
-        self.filepath       = filepath
-        if filepath is not None:
-            self.hash()
-
         self.is_final       = False
 
     ####################
     @classmethod
     def from_file( cls,
             target:Path, *,
-            tree=None
+            collection=None
         ) :
         ''' load a YAMLispNode from a YAMLispNode file'''
 
@@ -331,10 +443,20 @@ class YAMLispNode:
         if  data is None:
             raise YAMLispNode.EmptyFileWarning(filepath)
 
-        inst        = cls( tree=tree, data=data, filepath=filepath )
+        inst        = cls( collection=collection, data=data, filepath=filepath )
+
+        if filepath is not None:
+            inst.hash()
         # inst.load_parents()
 
         return inst
+
+    def write(self):
+        ''' write parsed tree to yamlisp file'''
+
+        self.parse_all()
+        # flatten data
+        # write flat data to file
 
 
     ####################
@@ -377,8 +499,10 @@ class YAMLispNode:
 
 
     ####################
-    def new_section(self, dkey):
+    def add_section(self, dkey):
         ''' add new branch for dkey'''
+
+
 
 
     ####################
@@ -449,20 +573,16 @@ class YAMLispSection:
         'config',
         'dkey',
         'mode',
-        '_raw',
-        '_parse',
-        '_flat'
     )
     def __init__(self,
             config, dkey, *,
             mode:type=dict,      # 'dict' or 'list'
         ):
+        if config is None:
+            raise Exception('config is None')
         self.config     = config
         self.dkey       = dkey
         self.mode       = mode
-        self._raw       = dict()
-        self._parse     = dict()
-        self._flat      = dict()
 
     ####################
     # def __contains__(self, key):
@@ -473,48 +593,182 @@ class YAMLispSection:
     def __getitem__(self, key):
         ''' look up the key, or pass along to another layer of YAMLispSections
         '''
-        if key in self._parse.keys():
-            return self._parse[key]
+        # if key in self._parse.keys():
+        #     return self._parse[key]
+        #
+        # if key in self._raw.keys():
+        #     return self._raw[key]
 
-        if key in self._raw.keys():
-            return self._raw[key]
+        new_dkey = (*self.dkey, key)
+        if new_dkey in self.config.parse_tree:
+            return self.config.parse_tree[new_dkey].data
 
-        return NotImplementedError
+        raise NotImplementedError
 
     ####################
     def __setitem__(self, key, value):
         ''' look up the key, or pass along to another layer of YAMLispSections
         '''
 
-        # if key in self:
-        self._raw[key] = value
+        new_dkey = (*self.dkey, key)
+        new_value = YAMLispValue(self.config, new_dkey, value)
+        self.config.parse_tree[self.dkey].data[key] = new_value
+
+
+    def __str__(self):
+        return f'<Section: {self.mode}>'
 
 
 #----------------------------------------------------------------------------------------------#
 #   Value
+
+
+token_regex = re.compile( r"([$@%]{+})")
+
+def tokenize2(config, dkey, value):
+    result = [
+        YAMLispToken(config, dkey, (index,), token)
+            for index, token in enumerate(
+                filter(lambda token: token is not '',
+                    token_regex.split(value)
+                )
+            )
+    ]
+    return result
+
+
+token_symbols = ['$', '@', '%']
+def tokenize(config, config_dkey, token_dkey, value):
+    result          = list()
+    partial_token   = ''
+    depth           = 0
+    index           = 0
+
+    previous_char   = None
+    char_pairs       = list()
+    for char in [*list(value), None]:
+        char_pairs.append((previous_char, char))
+        previous_char = char
+
+    for char, next_char in char_pairs[1:]:
+
+        # start new token
+        if char in token_symbols and next_char == '{':
+            # add token for preceeding non-expression string
+            if depth == 0 and len(partial_token) > 0:
+                result.append(YAMLispToken(config, config_dkey, (*token_dkey, index), partial_token))
+                partial_token = ''
+                index += 1
+            depth += 1
+
+        partial_token += char
+
+        if char == '}' and depth > 0:
+            depth -= 1
+            # end current token and add it to list
+            if depth == 0 and len(partial_token) > 0:
+                result.append(YAMLispToken(config, config_dkey, (*token_dkey, index), partial_token))
+                partial_token = ''
+                index += 1
+
+    # create token from remainder
+    if len(partial_token) > 0:
+        result.append(YAMLispToken(config, config_dkey, (*token_dkey, index), partial_token))
+
+    return result
+
 
 class YAMLispValue:
     ''' a string that might contain substitution or appendation tokens'''
     __slots__ = (
         'config',
         'dkey',
-        'value',
+        '_raw',
+        '_parsed',
+        'dirty',
         'tokens',
         'comment',
+        'required',
+        'usedby'
     )
     def __init__( self,
-            config, dkey, value, *,
-            comment:str = None,
-        ):
+                  config:YAMLispNode,
+                  dkey,
+                  value,
+                  *,
+                  comment:str = None,
+                  ):
         self.config     = config
         self.dkey       = dkey
-        self.value      = value
         self.comment    = comment
+        self._raw       = value
+        self._parsed    = None
+        self.dirty      = True
 
-        self.tokens     = dict()
+        self.tokens     = Tree()
+        self.required   = list()
+        self.usedby     = list()
+
+        self.parse()
+
+
+    ####################
+    def __str__(self):
+        return f'<Value: ({self._raw}) {self._parsed}>'
+
+    @property
+    def raw(self):
+        return self._raw
+
+    @raw.setter
+    def raw(self, value):
+        ''' eager parsing of the raw value and downstream dependencies '''
+        self._raw   = value
+        self.dirty  = True
+        self.parse()
+
+
+    @property
+    def parsed(self):
+        ''' read-only '''
+        return self._parsed
+
 
     ####################
 
+    def parse(self):
+        ''' generate the final value:
+                resolve path-like strings
+                determine upstream and downstream dependencies
+                perform token substitutions
+        '''
+
+        if isinstance(self._raw, (int, float)):
+           parsed = self._raw
+
+        else:
+            if len(self.raw) > 1 and self._raw[0:2] == './':
+                self._raw = str(self.config.filepath) + self._raw[2:]
+            # todo: make this a yamlisp function instead
+
+            print("RAW",self._raw)
+
+            tokens = tokenize(self.config, self.dkey, tuple(), self._raw)
+            listprint(tokens)
+
+            parsed = ''.join(token.parsed for token in tokens)
+            print(parsed)
+
+        self._parsed = parsed
+        self.dirty  = False
+
+    def find_token(self):
+        '''run the regex here'''
+
+
+
+
+    ####################
 
 #----------------------------------------------------------------------------------------------#
 #   Token
@@ -522,18 +776,54 @@ class YAMLispValue:
 class YAMLispToken:
     ''' a string that might contain substitution or appendation tokens'''
     __slots__ = (
-        'parent',
-        'value',
-        'tokens',
+        'config',
+        'value_dkey',
+        'token_dkey',
+        '_raw',
+        '_parsed',
+        'dirty',
     )
     def __init__(self,
-            parent, value,
+            config:YAMLispNode,
+            value_dkey,
+            token_dkey,
+            value,
         ):
-        self.parent = parent
-        self.value  = value
-        self.tokens = dict()
+        self.config     = config
+        self.value_dkey = value_dkey
+        self.token_dkey = token_dkey
+        self._raw       = value
+        self._parsed    = None
+        self.dirty      = True
+        self.parse()
 
     ####################
+    def __str__(self):
+        return f'<Token: {self._raw} {self.token_dkey}>'
+
+    ####################
+    @property
+    def raw(self):
+        return self._raw
+
+    @raw.setter
+    def raw(self, value):
+        ''' eager parsing of the raw value and downstream dependencies '''
+        self._raw   = value
+        self.dirty  = True
+        self.parse()
+
+    @property
+    def parsed(self):
+        if self.dirty:
+            self.parse()
+        return self._parsed
+
+
+    ####################
+    def parse(self):
+        self._parsed    = self._raw
+        self.dirty      = False
 
 
 #----------------------------------------------------------------------------------------------#
